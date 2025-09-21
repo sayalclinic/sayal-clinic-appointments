@@ -137,7 +137,7 @@ export const useAppointments = () => {
         .select('*')
         .eq('name', patientData.name)
         .eq('contact_no', patientData.contact_no)
-        .single();
+        .maybeSingle();
 
       if (existingPatient) {
         // Update existing patient
@@ -281,7 +281,7 @@ export const useAppointments = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      if (profile) {
+      if (profile?.user_id) {
         setLoading(true);
         await Promise.all([
           fetchAppointments(),
@@ -294,7 +294,7 @@ export const useAppointments = () => {
     };
 
     loadData();
-  }, [profile]);
+  }, [profile?.user_id]);
 
   return {
     appointments,

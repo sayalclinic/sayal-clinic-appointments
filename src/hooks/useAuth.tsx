@@ -59,11 +59,15 @@ export const useAuth = () => {
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       
-      setProfile(data as Profile);
+      if (data) {
+        setProfile(data as Profile);
+        // Also set a mock user object for compatibility
+        setUser({ id: userId } as any);
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
