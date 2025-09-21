@@ -17,6 +17,13 @@ export const useAuth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check for localStorage user selection first
+    const selectedUserId = localStorage.getItem('selectedUserId');
+    if (selectedUserId) {
+      fetchProfile(selectedUserId);
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -30,6 +37,9 @@ export const useAuth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Don't override localStorage-based auth
+        if (localStorage.getItem('selectedUserId')) return;
+        
         setUser(session?.user ?? null);
         if (session?.user) {
           await fetchProfile(session.user.id);
@@ -103,12 +113,13 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
+    // Clear localStorage selection
+    localStorage.removeItem('selectedUserId');
+    
     const { error } = await supabase.auth.signOut();
-    if (!error) {
-      setUser(null);
-      setProfile(null);
-      navigate('/');
-    }
+    setUser(null);
+    setProfile(null);
+    navigate('/');
     return { error };
   };
 

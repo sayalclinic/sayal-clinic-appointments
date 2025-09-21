@@ -23,8 +23,8 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!user || !profile) {
-    return <Navigate to="/signin" replace />;
+  if (!user && !profile) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
