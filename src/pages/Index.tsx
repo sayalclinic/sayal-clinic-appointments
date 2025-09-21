@@ -59,12 +59,12 @@ const Index = () => {
                         Get Started
                       </Button>
                       <Button
-                        onClick={() => navigate('/signin')}
+                        onClick={() => navigate('/user-selection')}
                         variant="outline"
                         className="w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
                       >
                         <LogIn className="w-4 h-4 mr-2" />
-                        Sign In
+                        Quick Sign In
                       </Button>
                     </div>
                   </div>
@@ -75,97 +75,7 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-medical-dark">
-              Everything you need to manage your clinic
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Comprehensive features designed for modern healthcare practices
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="shadow-card hover:shadow-card-hover transition-shadow border-0 bg-gradient-to-b from-card to-medical-light/30">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-r from-primary to-medical-blue rounded-lg flex items-center justify-center mb-4">
-                  <Stethoscope className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <CardTitle className="text-medical-dark">Doctor Dashboard</CardTitle>
-                <CardDescription>
-                  Approve appointments, manage your schedule, and track patient consultations
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="shadow-card hover:shadow-card-hover transition-shadow border-0 bg-gradient-to-b from-card to-medical-light/30">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-r from-primary to-medical-blue rounded-lg flex items-center justify-center mb-4">
-                  <Users className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <CardTitle className="text-medical-dark">Patient Management</CardTitle>
-                <CardDescription>
-                  Store patient details, medical history, and appointment records securely
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="shadow-card hover:shadow-card-hover transition-shadow border-0 bg-gradient-to-b from-card to-medical-light/30">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-r from-primary to-medical-blue rounded-lg flex items-center justify-center mb-4">
-                  <Calendar className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <CardTitle className="text-medical-dark">Smart Scheduling</CardTitle>
-                <CardDescription>
-                  Advanced appointment scheduling with conflict detection and notifications
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="shadow-card hover:shadow-card-hover transition-shadow border-0 bg-gradient-to-b from-card to-medical-light/30">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-r from-primary to-medical-blue rounded-lg flex items-center justify-center mb-4">
-                  <Shield className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <CardTitle className="text-medical-dark">Role-Based Access</CardTitle>
-                <CardDescription>
-                  Secure access control for doctors and receptionists with appropriate permissions
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="shadow-card hover:shadow-card-hover transition-shadow border-0 bg-gradient-to-b from-card to-medical-light/30">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-r from-primary to-medical-blue rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <CardTitle className="text-medical-dark">Analytics & Reports</CardTitle>
-                <CardDescription>
-                  Track clinic performance, doctor earnings, and appointment statistics
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="shadow-card hover:shadow-card-hover transition-shadow border-0 bg-gradient-to-b from-card to-medical-light/30">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-r from-primary to-medical-blue rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-5a7.5 7.5 0 00-15 0v5h5l-5 5-5-5h5V7.5A7.5 7.5 0 0115 0v5z" />
-                  </svg>
-                </div>
-                <CardTitle className="text-medical-dark">Real-time Notifications</CardTitle>
-                <CardDescription>
-                  Instant notifications for appointment approvals, denials, and schedule changes
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </div>
-        </div>
-      </div>
+          {/* Remove the features section */}
     </div>
   );
 };

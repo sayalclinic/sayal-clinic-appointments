@@ -5,9 +5,60 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar, Clock, User, FileText, Users } from 'lucide-react';
 import { DashboardLayout } from '@/components/Layout/DashboardLayout';
+import { AppointmentForm } from '@/components/Appointments/AppointmentForm';
+import { AppointmentCard } from '@/components/Appointments/AppointmentCard';
+import { AppointmentCalendar } from '@/components/Calendar/AppointmentCalendar';
+import { PaymentDialog } from '@/components/Payments/PaymentDialog';
+import { useAppointments } from '@/hooks/useAppointments';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export const ReceptionistDashboard = () => {
   const [activeTab, setActiveTab] = useState('add-appointment');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [paymentDialog, setPaymentDialog] = useState<{ open: boolean; appointmentId: string; patientName: string }>({
+    open: false,
+    appointmentId: '',
+    patientName: '',
+  });
+  
+  const { appointments, loading, updateAppointmentStatus } = useAppointments();
+  const { toast } = useToast();
+  const { profile } = useAuth();
+
+  const pendingAppointments = appointments.filter(apt => apt.status === 'pending' || apt.status === 'denied');
+  const todayAppointments = appointments.filter(apt => {
+    const today = new Date().toISOString().split('T')[0];
+    return apt.appointment_date === today;
+  });
+
+  const handleEdit = (appointmentId: string) => {
+    // TODO: Implement edit functionality
+    toast({
+      title: 'Coming Soon',
+      description: 'Edit appointment functionality will be available soon',
+    });
+  };
+
+  const handleComplete = (appointmentId: string) => {
+    const appointment = appointments.find(apt => apt.id === appointmentId);
+    if (appointment) {
+      setPaymentDialog({
+        open: true,
+        appointmentId,
+        patientName: appointment.patients?.name || 'Unknown Patient',
+      });
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    await updateAppointmentStatus(paymentDialog.appointmentId, 'completed');
+    setPaymentDialog({ open: false, appointmentId: '', patientName: '' });
+  };
+
+  const handleMissed = async (appointmentId: string) => {
+    await updateAppointmentStatus(appointmentId, 'missed');
+  };
 
   return (
     <DashboardLayout>
@@ -26,7 +77,7 @@ export const ReceptionistDashboard = () => {
               <Calendar className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">12</div>
+              <div className="text-2xl font-bold text-primary">{todayAppointments.length}</div>
               <p className="text-xs text-muted-foreground">
                 Scheduled appointments
               </p>
@@ -39,7 +90,7 @@ export const ReceptionistDashboard = () => {
               <Clock className="h-4 w-4 text-warning" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-warning">5</div>
+              <div className="text-2xl font-bold text-warning">{pendingAppointments.length}</div>
               <p className="text-xs text-muted-foreground">
                 Awaiting doctor approval
               </p>
@@ -48,26 +99,31 @@ export const ReceptionistDashboard = () => {
 
           <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Patients</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Apps</CardTitle>
               <Users className="h-4 w-4 text-success" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">156</div>
+              <div className="text-2xl font-bold text-success">{appointments.length}</div>
               <p className="text-xs text-muted-foreground">
-                Total registered patients
+                Total appointments
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Available Doctors</CardTitle>
+              <CardTitle className="text-sm font-medium">Completed Today</CardTitle>
               <User className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">8</div>
+              <div className="text-2xl font-bold text-primary">
+                {appointments.filter(apt => 
+                  apt.status === 'completed' && 
+                  apt.appointment_date === new Date().toISOString().split('T')[0]
+                ).length}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Doctors on duty today
+                Completed appointments
               </p>
             </CardContent>
           </Card>
@@ -88,28 +144,12 @@ export const ReceptionistDashboard = () => {
           </TabsList>
 
           <TabsContent value="add-appointment" className="space-y-4">
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Plus className="w-5 h-5 text-primary" />
-                  <span>Add New Appointment</span>
-                </CardTitle>
-                <CardDescription>
-                  Register a new patient and schedule their appointment
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Plus className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Appointment Form</p>
-                  <p className="text-sm mb-6">Complete appointment creation form coming soon...</p>
-                  <Button className="bg-gradient-to-r from-primary to-medical-blue hover:from-primary-hover hover:to-primary text-primary-foreground">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create New Appointment
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <AppointmentForm onSuccess={() => {
+              toast({
+                title: 'Success',
+                description: 'Appointment created successfully and sent for doctor approval',
+              });
+            }} />
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
@@ -123,92 +163,91 @@ export const ReceptionistDashboard = () => {
                   Appointments waiting for doctor approval or requiring attention
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Sample pending appointments */}
-                <div className="border rounded-lg p-4 hover:bg-medical-light/30 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-3">
-                        <h4 className="font-semibold text-medical-dark">Emma Wilson</h4>
-                        <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
-                          Pending Approval
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>Dec 24, 2024</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-4 h-4" />
-                          <span>3:00 PM</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-1 text-sm">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-medical-dark">Dr. Smith - General consultation</span>
-                      </div>
-                    </div>
-                    <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
-                      Edit
-                    </Button>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading appointments...</p>
                   </div>
-                </div>
-
-                <div className="border rounded-lg p-4 hover:bg-red-50 transition-colors border-destructive/20">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-3">
-                        <h4 className="font-semibold text-medical-dark">John Davis</h4>
-                        <Badge variant="destructive">
-                          Denied
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>Dec 23, 2024</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-4 h-4" />
-                          <span>11:00 AM</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-1 text-sm">
-                        <FileText className="w-4 h-4 text-destructive" />
-                        <span className="text-destructive">Reason: Schedule conflict, please reschedule</span>
-                      </div>
-                    </div>
-                    <Button size="sm" className="bg-primary hover:bg-primary-hover text-primary-foreground">
-                      Reschedule
-                    </Button>
+                ) : pendingAppointments.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No pending appointments</p>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingAppointments.map((appointment) => (
+                      <AppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        onEdit={handleEdit}
+                        showActions={true}
+                      />
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="schedule" className="space-y-4">
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Calendar className="w-5 h-5 text-primary" />
-                  <span>Clinic Schedule</span>
-                </CardTitle>
-                <CardDescription>
-                  View all appointments across all doctors
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Master Calendar</p>
-                  <p className="text-sm">Complete clinic schedule view coming soon...</p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <AppointmentCalendar
+                  appointments={appointments}
+                  onDateSelect={setSelectedDate}
+                  selectedDate={selectedDate}
+                />
+              </div>
+              <div className="space-y-4">
+                <Card className="shadow-card">
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      {selectedDate 
+                        ? `Appointments for ${selectedDate.toLocaleDateString()}`
+                        : 'Select a date'
+                      }
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedDate ? (
+                      (() => {
+                        const dateStr = selectedDate.toISOString().split('T')[0];
+                        const dayAppointments = appointments.filter(apt => apt.appointment_date === dateStr);
+                        return dayAppointments.length === 0 ? (
+                          <p className="text-muted-foreground text-center py-4">No appointments scheduled</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {dayAppointments.map((appointment) => (
+                              <AppointmentCard
+                                key={appointment.id}
+                                appointment={appointment}
+                                onComplete={handleComplete}
+                                onMissed={handleMissed}
+                                showActions={appointment.status === 'approved'}
+                              />
+                            ))}
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">Click on a date to view appointments</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
+
+        {/* Payment Dialog */}
+        <PaymentDialog
+          appointmentId={paymentDialog.appointmentId}
+          patientName={paymentDialog.patientName}
+          open={paymentDialog.open}
+          onOpenChange={(open) => setPaymentDialog(prev => ({ ...prev, open }))}
+          onSuccess={handlePaymentSuccess}
+        />
       </div>
     </DashboardLayout>
   );
