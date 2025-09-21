@@ -17,7 +17,6 @@ interface Profile {
   id: string;
   user_id: string;
   name: string;
-  email: string;
   role: string;
 }
 
@@ -58,25 +57,17 @@ export const UserSelectionForm = () => {
 
   const handleUserLogin = async (profile: Profile) => {
     try {
-      // Sign in using the user's credentials
-      const { error } = await supabase.auth.signInWithPassword({
-        email: profile.email,
-        password: 'quick-login', // This would need proper session management in production
-      });
-
-      if (error) {
-        toast({
-          title: 'Login Failed',
-          description: 'Please use the sign-in form for this user',
-          variant: 'destructive',
-        });
-        navigate('/signin');
-      } else {
-        navigate('/dashboard');
-      }
+      // For demo purposes, we'll create a temporary session
+      // In production, you'd implement proper session management
+      localStorage.setItem('selectedUserId', profile.user_id);
+      navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
-      navigate('/signin');
+      toast({
+        title: 'Error',
+        description: 'Failed to sign in',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -258,62 +249,8 @@ export const UserSelectionForm = () => {
               Add New User
             </Button>
           </div>
-
-          {/* Alternative Sign In */}
-          <div className="text-center mt-6">
-            <Button
-              variant="ghost"
-              className="text-primary hover:text-primary-hover"
-              onClick={() => navigate('/signin')}
-            >
-              Use Email & Password Sign In
-            </Button>
-          </div>
         </div>
       </div>
-
-      {/* Edit Profile Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit User Profile</DialogTitle>
-            <DialogDescription>
-              Update the user's name and role
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="editName">Name</Label>
-              <Input
-                id="editName"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                placeholder="Enter name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Select value={editRole} onValueChange={(value: string) => setEditRole(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="doctor">Doctor</SelectItem>
-                  <SelectItem value="receptionist">Receptionist</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveEdit} disabled={!editName.trim()}>
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

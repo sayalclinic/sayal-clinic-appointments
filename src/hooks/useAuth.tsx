@@ -7,7 +7,6 @@ export interface Profile {
   id: string;
   user_id: string;
   name: string;
-  email: string;
   role: 'doctor' | 'receptionist';
 }
 
@@ -78,7 +77,6 @@ export const useAuth = () => {
           .insert({
             user_id: data.user.id,
             name,
-            email,
             role,
           });
 

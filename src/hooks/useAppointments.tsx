@@ -27,8 +27,8 @@ export interface Appointment {
   created_at: string;
   updated_at: string;
   patients?: Patient;
-  doctor_profile?: { name: string; email: string };
-  receptionist_profile?: { name: string; email: string };
+  doctor_profile?: { name: string };
+  receptionist_profile?: { name: string };
 }
 
 export interface Payment {
@@ -57,8 +57,8 @@ export const useAppointments = () => {
         .select(`
           *,
           patients (*),
-          doctor_profile:profiles!appointments_doctor_id_fkey (name, email),
-          receptionist_profile:profiles!appointments_receptionist_id_fkey (name, email)
+          doctor_profile:profiles!appointments_doctor_id_fkey (name),
+          receptionist_profile:profiles!appointments_receptionist_id_fkey (name)
         `);
 
       // Filter based on user role
