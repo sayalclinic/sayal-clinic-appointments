@@ -81,30 +81,108 @@ export type Database = {
           },
         ]
       }
+      patient_visits: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          diagnosis: string | null
+          follow_up_date: string | null
+          follow_up_needed: boolean | null
+          id: string
+          patient_id: string
+          prescriptions: string | null
+          treatment_plan: string | null
+          updated_at: string
+          visit_date: string
+          visit_notes: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          follow_up_date?: string | null
+          follow_up_needed?: boolean | null
+          id?: string
+          patient_id: string
+          prescriptions?: string | null
+          treatment_plan?: string | null
+          updated_at?: string
+          visit_date: string
+          visit_notes?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          follow_up_date?: string | null
+          follow_up_needed?: boolean | null
+          id?: string
+          patient_id?: string
+          prescriptions?: string | null
+          treatment_plan?: string | null
+          updated_at?: string
+          visit_date?: string
+          visit_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_visits_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_visits_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           age: number
+          allergies: string | null
+          blood_type: string | null
           contact_no: string
           created_at: string
+          current_medications: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
           id: string
+          insurance_info: string | null
           medical_history: string | null
           name: string
           updated_at: string
         }
         Insert: {
           age: number
+          allergies?: string | null
+          blood_type?: string | null
           contact_no: string
           created_at?: string
+          current_medications?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           id?: string
+          insurance_info?: string | null
           medical_history?: string | null
           name: string
           updated_at?: string
         }
         Update: {
           age?: number
+          allergies?: string | null
+          blood_type?: string | null
           contact_no?: string
           created_at?: string
+          current_medications?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           id?: string
+          insurance_info?: string | null
           medical_history?: string | null
           name?: string
           updated_at?: string

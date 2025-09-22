@@ -27,7 +27,11 @@ export const AppointmentCalendar = ({
   const daysInMonth = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getAppointmentsForDate = (date: Date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
+    // Format date to local timezone to avoid UTC offset issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
     return appointments.filter(apt => apt.appointment_date === dateStr);
   };
 

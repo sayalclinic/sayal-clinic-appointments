@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { Appointment } from '@/hooks/useAppointments';
+import { PatientDetailsDialog } from '@/components/Patients/PatientDetailsDialog';
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -31,6 +32,7 @@ export const AppointmentCard = ({
 }: AppointmentCardProps) => {
   const [denyReason, setDenyReason] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [patientDialogOpen, setPatientDialogOpen] = useState(false);
   const { profile } = useAuth();
 
   const getStatusColor = (status: string) => {
@@ -67,24 +69,30 @@ export const AppointmentCard = ({
     <Dialog>
       <DialogTrigger asChild>
         <Card className="hover:shadow-card-hover transition-all duration-200 border-l-4 border-l-primary/30 cursor-pointer">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center space-x-3">
-                  <h4 className="font-semibold text-medical-dark text-lg">
+              <div className="space-y-1 flex-1 min-w-0">
+                <div className="flex items-center space-x-2 flex-wrap">
+                  <h4 
+                    className="font-semibold text-medical-dark text-base truncate cursor-pointer hover:text-primary transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPatientDialogOpen(true);
+                    }}
+                  >
                     {appointment.patients?.name}
                   </h4>
-                  <Badge variant="outline" className={getStatusColor(appointment.status)}>
+                  <Badge variant="outline" className={`${getStatusColor(appointment.status)} text-xs shrink-0`}>
                     {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                   </Badge>
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center space-x-3 text-xs text-muted-foreground">
                   <div className="flex items-center space-x-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>{format(new Date(appointment.appointment_date), 'MMM dd, yyyy')}</span>
+                    <Calendar className="w-3 h-3" />
+                    <span>{format(new Date(appointment.appointment_date), 'MMM dd')}</span>
                   </div>
                   <div className="flex items-center space-x-1">
-                    <Clock className="w-4 h-4" />
+                    <Clock className="w-3 h-3" />
                     <span>{appointment.appointment_time}</span>
                   </div>
                 </div>
@@ -93,28 +101,30 @@ export const AppointmentCard = ({
           </CardHeader>
           
           <CardContent className="pt-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4 text-sm">
-                <div className="flex items-center space-x-1">
-                  <Stethoscope className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-medical-dark">Dr. {appointment.doctor_profile?.name}</span>
-                </div>
-                {appointment.reason_for_visit && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-xs min-w-0 flex-1">
                   <div className="flex items-center space-x-1">
-                    <FileText className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">{appointment.reason_for_visit}</span>
+                    <Stethoscope className="w-3 h-3 text-muted-foreground shrink-0" />
+                    <span className="text-medical-dark truncate">Dr. {appointment.doctor_profile?.name}</span>
                   </div>
-                )}
+                </div>
               </div>
+              {appointment.reason_for_visit && (
+                <div className="flex items-start space-x-1 text-xs">
+                  <FileText className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5" />
+                  <span className="text-muted-foreground truncate">{appointment.reason_for_visit}</span>
+                </div>
+              )}
               
               {showActions && (
-                <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center space-x-1 mt-2" onClick={(e) => e.stopPropagation()}>
                   {/* Doctor Actions */}
                   {profile?.role === 'doctor' && appointment.status === 'pending' && (
-                    <>
+                    <div className="flex space-x-1">
                       <Button
                         size="sm"
-                        className="bg-success hover:bg-success/90 text-white"
+                        className="bg-success hover:bg-success/90 text-white text-xs px-2 py-1 h-6"
                         onClick={(e) => {
                           e.stopPropagation();
                           onApprove?.(appointment.id);
@@ -127,6 +137,7 @@ export const AppointmentCard = ({
                           <Button 
                             size="sm" 
                             variant="destructive"
+                            className="text-xs px-2 py-1 h-6"
                             onClick={(e) => e.stopPropagation()}
                           >
                             Deny
@@ -163,17 +174,17 @@ export const AppointmentCard = ({
                           </div>
                         </DialogContent>
                       </Dialog>
-                    </>
+                    </div>
                   )}
 
                   {/* Receptionist Actions */}
                   {profile?.role === 'receptionist' && (
-                    <>
+                    <div className="flex space-x-1">
                       {appointment.status === 'pending' || appointment.status === 'denied' ? (
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground text-xs px-2 py-1 h-6"
                           onClick={(e) => {
                             e.stopPropagation();
                             onEdit?.(appointment.id);
@@ -185,18 +196,18 @@ export const AppointmentCard = ({
                         <>
                           <Button
                             size="sm"
-                            className="bg-success hover:bg-success/90 text-white"
+                            className="bg-success hover:bg-success/90 text-white text-xs px-2 py-1 h-6"
                             onClick={(e) => {
                               e.stopPropagation();
                               onComplete?.(appointment.id);
                             }}
                           >
-                            Completed
+                            Complete
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-gray-500 text-gray-500 hover:bg-gray-500 hover:text-white"
+                            className="border-gray-500 text-gray-500 hover:bg-gray-500 hover:text-white text-xs px-2 py-1 h-6"
                             onClick={(e) => {
                               e.stopPropagation();
                               onMissed?.(appointment.id);
@@ -206,7 +217,7 @@ export const AppointmentCard = ({
                           </Button>
                         </>
                       ) : null}
-                    </>
+                    </div>
                   )}
                 </div>
               )}
@@ -289,6 +300,13 @@ export const AppointmentCard = ({
           </div>
         </div>
       </DialogContent>
+      
+      {/* Patient Details Dialog */}
+      <PatientDetailsDialog
+        patient={appointment.patients || null}
+        open={patientDialogOpen}
+        onOpenChange={setPatientDialogOpen}
+      />
     </Dialog>
   );
 };

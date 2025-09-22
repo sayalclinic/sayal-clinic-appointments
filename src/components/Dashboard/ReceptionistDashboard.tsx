@@ -211,23 +211,26 @@ export const ReceptionistDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     {selectedDate ? (
-                      (() => {
-                        const dateStr = selectedDate.toISOString().split('T')[0];
-                        const dayAppointments = appointments.filter(apt => apt.appointment_date === dateStr);
+                       (() => {
+                         const year = selectedDate.getFullYear();
+                         const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                         const day = String(selectedDate.getDate()).padStart(2, '0');
+                         const dateStr = `${year}-${month}-${day}`;
+                         const dayAppointments = appointments.filter(apt => apt.appointment_date === dateStr);
                         return dayAppointments.length === 0 ? (
                           <p className="text-muted-foreground text-center py-4">No appointments scheduled</p>
                         ) : (
-                          <div className="space-y-3">
-                            {dayAppointments.map((appointment) => (
-                              <AppointmentCard
-                                key={appointment.id}
-                                appointment={appointment}
-                                onComplete={handleComplete}
-                                onMissed={handleMissed}
-                                showActions={appointment.status === 'approved'}
-                              />
-                            ))}
-                          </div>
+            <div className="space-y-3">
+              {dayAppointments.map((appointment) => (
+                <AppointmentCard
+                  key={appointment.id}
+                  appointment={appointment}
+                  onComplete={handleComplete}
+                  onMissed={handleMissed}
+                  showActions={appointment.status === 'approved'}
+                />
+              ))}
+            </div>
                         );
                       })()
                     ) : (

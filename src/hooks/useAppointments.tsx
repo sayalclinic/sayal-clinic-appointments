@@ -64,9 +64,9 @@ export const useAppointments = () => {
       // Filter based on user role
       if (profile?.role === 'doctor') {
         query = query.eq('doctor_id', profile.user_id);
-      } else if (profile?.role === 'receptionist') {
-        query = query.eq('receptionist_id', profile.user_id);
       }
+      // Receptionists can see all appointments to manage them
+      // No filtering needed for receptionists
 
       const { data, error } = await query.order('appointment_date', { ascending: true });
 
