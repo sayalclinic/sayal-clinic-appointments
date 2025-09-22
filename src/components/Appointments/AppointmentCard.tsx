@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Clock, User, FileText, Phone, Stethoscope, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, User, FileText, Phone, Stethoscope, AlertCircle, CheckCircle, XCircle, Edit, CreditCard, UserX } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { Appointment } from '@/hooks/useAppointments';
 import { PatientDetailsDialog } from '@/components/Patients/PatientDetailsDialog';
+import { EditAppointmentDialog } from '@/components/Appointments/EditAppointmentDialog';
+import { PaymentDialog } from '@/components/Payments/PaymentDialog';
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -18,6 +20,7 @@ interface AppointmentCardProps {
   onEdit?: (appointmentId: string) => void;
   onComplete?: (appointmentId: string) => void;
   onMissed?: (appointmentId: string) => void;
+  onPaymentSuccess?: () => void;
   showActions?: boolean;
 }
 
@@ -28,11 +31,14 @@ export const AppointmentCard = ({
   onEdit,
   onComplete,
   onMissed,
+  onPaymentSuccess,
   showActions = true,
 }: AppointmentCardProps) => {
   const [denyReason, setDenyReason] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const { profile } = useAuth();
 
   const getStatusColor = (status: string) => {
@@ -57,6 +63,29 @@ export const AppointmentCard = ({
       onDeny(appointment.id, denyReason);
       setDenyReason('');
       setIsDialogOpen(false);
+    }
+  };
+
+  const handleEdit = () => {
+    setEditDialogOpen(true);
+  };
+
+  const handleComplete = () => {
+    setPaymentDialogOpen(true);
+  };
+
+  const handleMissed = () => {
+    if (onMissed) {
+      onMissed(appointment.id);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    if (onComplete) {
+      onComplete(appointment.id);
+    }
+    if (onPaymentSuccess) {
+      onPaymentSuccess();
     }
   };
 
@@ -180,43 +209,47 @@ export const AppointmentCard = ({
                   {/* Receptionist Actions */}
                   {profile?.role === 'receptionist' && (
                     <div className="flex space-x-1">
-                      {appointment.status === 'pending' || appointment.status === 'denied' ? (
+                      {(appointment.status === 'pending' || appointment.status === 'approved') && (
                         <Button
                           size="sm"
                           variant="outline"
                           className="border-primary text-primary hover:bg-primary hover:text-primary-foreground text-xs px-2 py-1 h-6"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onEdit?.(appointment.id);
+                            handleEdit();
                           }}
                         >
+                          <Edit className="w-3 h-3 mr-1" />
                           Edit
                         </Button>
-                      ) : appointment.status === 'approved' && isPastAppointment() ? (
+                      )}
+                      {appointment.status === 'approved' && (
                         <>
                           <Button
                             size="sm"
                             className="bg-success hover:bg-success/90 text-white text-xs px-2 py-1 h-6"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onComplete?.(appointment.id);
+                              handleComplete();
                             }}
                           >
+                            <CreditCard className="w-3 h-3 mr-1" />
                             Complete
                           </Button>
                           <Button
                             size="sm"
-                            variant="outline"
-                            className="border-gray-500 text-gray-500 hover:bg-gray-500 hover:text-white text-xs px-2 py-1 h-6"
+                            variant="destructive"
+                            className="text-xs px-2 py-1 h-6"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onMissed?.(appointment.id);
+                              handleMissed();
                             }}
                           >
+                            <UserX className="w-3 h-3 mr-1" />
                             Missed
                           </Button>
                         </>
-                      ) : null}
+                      )}
                     </div>
                   )}
                 </div>
@@ -306,6 +339,23 @@ export const AppointmentCard = ({
         patient={appointment.patients || null}
         open={patientDialogOpen}
         onOpenChange={setPatientDialogOpen}
+      />
+      
+      {/* Edit Appointment Dialog */}
+      <EditAppointmentDialog
+        appointment={appointment}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={() => window.location.reload()}
+      />
+
+      {/* Payment Dialog */}
+      <PaymentDialog
+        appointmentId={appointment.id}
+        patientName={appointment.patients?.name || 'Patient'}
+        open={paymentDialogOpen}
+        onOpenChange={setPaymentDialogOpen}
+        onSuccess={handlePaymentSuccess}
       />
     </Dialog>
   );

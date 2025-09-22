@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { CreditCard, DollarSign } from 'lucide-react';
+import { CreditCard, DollarSign, TestTube2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAppointments } from '@/hooks/useAppointments';
 
@@ -35,6 +36,7 @@ export const PaymentDialog = ({
   onSuccess,
 }: PaymentDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const { createPayment } = useAppointments();
 
   const form = useForm<PaymentFormData>({
@@ -48,25 +50,53 @@ export const PaymentDialog = ({
 
   const paymentMethods = [
     { value: 'cash', label: 'Cash' },
-    { value: 'card', label: 'Credit/Debit Card' },
     { value: 'upi', label: 'UPI' },
+    { value: 'card', label: 'Credit/Debit Card' },
     { value: 'google_pay', label: 'Google Pay' },
     { value: 'paytm', label: 'Paytm' },
     { value: 'phonepe', label: 'PhonePe' },
+  ];
+
+  const labTestOptions = [
+    'Blood Test',
+    'Urine Test',
+    'X-Ray',
+    'ECG',
+    'Ultrasound',
+    'CT Scan',
+    'MRI',
+    'Blood Pressure Check',
+    'Blood Sugar Test',
+    'Cholesterol Test',
+    'Thyroid Test',
+    'Liver Function Test',
+    'Kidney Function Test',
+    'Complete Blood Count (CBC)',
+    'Hemoglobin Test',
+    'ESR Test',
+    'CRP Test',
+    'Vitamin D Test',
+    'Vitamin B12 Test',
+    'Iron Test',
   ];
 
   const onSubmit = async (data: PaymentFormData) => {
     setIsLoading(true);
     
     try {
+      const testsString = selectedTests.length > 0 
+        ? selectedTests.join(', ') + (data.testsDone ? `, ${data.testsDone}` : '')
+        : data.testsDone || undefined;
+
       await createPayment({
         appointment_id: appointmentId,
         amount: data.amount,
         payment_method: data.paymentMethod,
-        tests_done: data.testsDone || undefined,
+        tests_done: testsString,
       });
 
       form.reset();
+      setSelectedTests([]);
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
@@ -131,13 +161,41 @@ export const PaymentDialog = ({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="testsDone">Tests Done (Optional)</Label>
-            <Textarea
-              id="testsDone"
-              placeholder="List any tests or procedures performed..."
-              {...form.register('testsDone')}
-            />
+          <div className="space-y-4">
+            <Label className="flex items-center space-x-2">
+              <TestTube2 className="w-4 h-4" />
+              <span>Lab Tests Performed</span>
+            </Label>
+            <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto">
+              {labTestOptions.map((test) => (
+                <div key={test} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={test}
+                    checked={selectedTests.includes(test)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedTests([...selectedTests, test]);
+                      } else {
+                        setSelectedTests(selectedTests.filter(t => t !== test));
+                      }
+                    }}
+                  />
+                  <Label htmlFor={test} className="text-sm font-normal">
+                    {test}
+                  </Label>
+                </div>
+              ))}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="testsDone">Additional Tests/Notes</Label>
+              <Textarea
+                id="testsDone"
+                placeholder="Any additional tests or notes..."
+                rows={2}
+                {...form.register('testsDone')}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

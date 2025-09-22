@@ -262,6 +262,42 @@ export const useAppointments = () => {
     }
   };
 
+  // Update appointment details
+  const updateAppointment = async (
+    appointmentId: string,
+    updateData: {
+      doctor_id?: string;
+      appointment_date?: string;
+      appointment_time?: string;
+      reason_for_visit?: string;
+      symptoms?: string;
+    }
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update(updateData)
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Appointment updated successfully',
+      });
+
+      await fetchAppointments();
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update appointment',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
   // Create payment
   const createPayment = async (paymentData: {
     appointment_id: string;
@@ -322,6 +358,7 @@ export const useAppointments = () => {
     createAppointment,
     upsertPatient,
     updateAppointmentStatus,
+    updateAppointment,
     createPayment,
     fetchAppointments,
     fetchPatients,

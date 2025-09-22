@@ -155,7 +155,7 @@ export const DoctorDashboard = () => {
                   <CardContent>
                     {selectedDate ? (
                       (() => {
-                        const dateStr = selectedDate.toISOString().split('T')[0];
+                        const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
                         const dayAppointments = appointments.filter(apt => 
                           apt.appointment_date === dateStr && apt.status === 'approved'
                         );

@@ -16,11 +16,6 @@ import { useAuth } from '@/hooks/useAuth';
 export const ReceptionistDashboard = () => {
   const [activeTab, setActiveTab] = useState('add-appointment');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [paymentDialog, setPaymentDialog] = useState<{ open: boolean; appointmentId: string; patientName: string }>({
-    open: false,
-    appointmentId: '',
-    patientName: '',
-  });
   
   const { appointments, loading, updateAppointmentStatus } = useAppointments();
   const { toast } = useToast();
@@ -33,27 +28,18 @@ export const ReceptionistDashboard = () => {
   });
 
   const handleEdit = (appointmentId: string) => {
-    // TODO: Implement edit functionality
-    toast({
-      title: 'Coming Soon',
-      description: 'Edit appointment functionality will be available soon',
-    });
+    // Edit functionality is now handled by the EditAppointmentDialog within AppointmentCard
+    console.log('Edit appointment:', appointmentId);
   };
 
   const handleComplete = (appointmentId: string) => {
-    const appointment = appointments.find(apt => apt.id === appointmentId);
-    if (appointment) {
-      setPaymentDialog({
-        open: true,
-        appointmentId,
-        patientName: appointment.patients?.name || 'Unknown Patient',
-      });
-    }
+    // Complete functionality is now handled by the PaymentDialog within AppointmentCard
+    console.log('Complete appointment:', appointmentId);
   };
 
-  const handlePaymentSuccess = async () => {
-    await updateAppointmentStatus(paymentDialog.appointmentId, 'completed');
-    setPaymentDialog({ open: false, appointmentId: '', patientName: '' });
+  const handlePaymentSuccess = () => {
+    // Refresh appointments after payment success
+    window.location.reload();
   };
 
   const handleMissed = async (appointmentId: string) => {
@@ -181,6 +167,9 @@ export const ReceptionistDashboard = () => {
                         key={appointment.id}
                         appointment={appointment}
                         onEdit={handleEdit}
+                        onComplete={handleComplete}
+                        onMissed={handleMissed}
+                        onPaymentSuccess={handlePaymentSuccess}
                         showActions={true}
                       />
                     ))}
@@ -225,9 +214,11 @@ export const ReceptionistDashboard = () => {
                 <AppointmentCard
                   key={appointment.id}
                   appointment={appointment}
+                  onEdit={handleEdit}
                   onComplete={handleComplete}
                   onMissed={handleMissed}
-                  showActions={appointment.status === 'approved'}
+                  onPaymentSuccess={handlePaymentSuccess}
+                  showActions={true}
                 />
               ))}
             </div>
@@ -243,14 +234,7 @@ export const ReceptionistDashboard = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Payment Dialog */}
-        <PaymentDialog
-          appointmentId={paymentDialog.appointmentId}
-          patientName={paymentDialog.patientName}
-          open={paymentDialog.open}
-          onOpenChange={(open) => setPaymentDialog(prev => ({ ...prev, open }))}
-          onSuccess={handlePaymentSuccess}
-        />
+        {/* Payment Dialog - No longer needed as it's handled within AppointmentCard */}
       </div>
     </DashboardLayout>
   );
