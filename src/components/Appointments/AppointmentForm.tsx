@@ -35,6 +35,15 @@ interface AppointmentFormProps {
 
 export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    patientName: '',
+    patientAge: '',
+    contactNo: '',
+    medicalHistory: '',
+    doctorId: '',
+    reasonForVisit: '',
+    symptoms: ''
+  });
   const { doctors, createAppointment, upsertPatient } = useAppointments();
 
   const form = useForm<AppointmentFormData>({
@@ -69,6 +78,16 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         symptoms: data.symptoms,
       });
 
+      // Reset form but keep form data for future use
+      setFormData({
+        patientName: data.patientName,
+        patientAge: data.patientAge.toString(),
+        contactNo: data.contactNo,
+        medicalHistory: data.medicalHistory || '',
+        doctorId: data.doctorId,
+        reasonForVisit: data.reasonForVisit || '',
+        symptoms: data.symptoms || ''
+      });
       form.reset();
       onSuccess?.();
     } catch (error) {
@@ -103,7 +122,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                 <Label htmlFor="patientName">Patient Name</Label>
                 <Input
                   id="patientName"
-                  placeholder="Enter patient name"
+                  defaultValue={formData.patientName}
                   {...form.register('patientName')}
                 />
                 {form.formState.errors.patientName && (
@@ -118,7 +137,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                 <Input
                   id="patientAge"
                   type="number"
-                  placeholder="Enter age"
+                  defaultValue={formData.patientAge}
                   {...form.register('patientAge', { valueAsNumber: true })}
                 />
                 {form.formState.errors.patientAge && (
@@ -133,7 +152,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               <Label htmlFor="contactNo">Contact Number</Label>
               <Input
                 id="contactNo"
-                placeholder="Enter contact number"
+                defaultValue={formData.contactNo}
                 {...form.register('contactNo')}
               />
               {form.formState.errors.contactNo && (
@@ -147,7 +166,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               <Label htmlFor="medicalHistory">Medical History</Label>
               <Textarea
                 id="medicalHistory"
-                placeholder="Enter any relevant medical history (optional)"
+                defaultValue={formData.medicalHistory}
                 {...form.register('medicalHistory')}
               />
             </div>
@@ -162,7 +181,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
 
             <div className="space-y-2">
               <Label>Doctor</Label>
-              <Select onValueChange={(value) => form.setValue('doctorId', value)}>
+              <Select onValueChange={(value) => form.setValue('doctorId', value)} defaultValue={formData.doctorId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a doctor" />
                 </SelectTrigger>
@@ -251,7 +270,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               <Label htmlFor="reasonForVisit">Reason for Visit</Label>
               <Input
                 id="reasonForVisit"
-                placeholder="e.g., Regular checkup, consultation (optional)"
+                defaultValue={formData.reasonForVisit}
                 {...form.register('reasonForVisit')}
               />
             </div>
@@ -260,7 +279,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               <Label htmlFor="symptoms">Symptoms</Label>
               <Textarea
                 id="symptoms"
-                placeholder="Describe any symptoms (optional)"
+                defaultValue={formData.symptoms}
                 {...form.register('symptoms')}
               />
             </div>

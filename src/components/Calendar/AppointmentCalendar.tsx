@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday, addDays } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,9 @@ export const AppointmentCalendar = ({
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
-  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const calendarStart = startOfWeek(monthStart);
+  const calendarEnd = endOfWeek(monthEnd);
+  const daysInMonth = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getAppointmentsForDate = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -86,7 +88,7 @@ export const AppointmentCalendar = ({
                 key={date.toISOString()}
                 onClick={() => onDateSelect?.(date)}
                 className={cn(
-                  'p-2 min-h-[60px] text-left rounded-lg border transition-all duration-200 hover:border-primary/50',
+                  'p-2 min-h-[100px] text-left rounded-lg border transition-all duration-200 hover:border-primary/50',
                   'flex flex-col items-start justify-start',
                   isSameMonth(date, currentMonth) 
                     ? 'border-border hover:bg-medical-light/30' 
@@ -110,14 +112,14 @@ export const AppointmentCalendar = ({
                     >
                       {appointmentCount}
                     </Badge>
-                    {appointmentCount <= 3 && (
+                    {appointmentCount <= 4 && (
                       <div className="space-y-0.5">
-                        {dayAppointments.slice(0, 3).map(apt => (
+                        {dayAppointments.slice(0, 4).map(apt => (
                           <div 
                             key={apt.id}
-                            className="text-xs text-medical-dark/80 truncate max-w-full"
+                            className="text-xs text-medical-dark/80 truncate max-w-full bg-primary/10 px-1 py-0.5 rounded"
                           >
-                            {apt.appointment_time} - Dr. {apt.doctor_profile?.name?.split(' ')[0]}
+                            {apt.appointment_time} - {apt.patients?.name}
                           </div>
                         ))}
                       </div>

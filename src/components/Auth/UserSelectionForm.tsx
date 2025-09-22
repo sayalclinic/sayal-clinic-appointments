@@ -185,13 +185,17 @@ export const UserSelectionForm = () => {
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-medical-dark mb-2">Select User</h1>
-            <p className="text-muted-foreground">Choose a user to sign in to ClinicFlow</p>
+            <p className="text-muted-foreground">Click on a user to sign in to ClinicFlow</p>
           </div>
 
           {/* User Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {profiles.map((profile) => (
-              <Card key={profile.id} className="shadow-card hover:shadow-card-hover transition-all duration-200 group">
+              <Card 
+                key={profile.id} 
+                className="shadow-card hover:shadow-card-hover hover:scale-105 transition-all duration-200 group cursor-pointer border-2 hover:border-primary/30"
+                onClick={() => handleUserLogin(profile)}
+              >
                 <CardHeader className="text-center pb-4">
                   <Avatar className="w-16 h-16 mx-auto mb-3">
                     <AvatarFallback className="bg-gradient-to-r from-primary to-medical-blue text-primary-foreground text-lg font-bold">
@@ -205,19 +209,15 @@ export const UserSelectionForm = () => {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="space-y-3">
-                    <Button
-                      className="w-full bg-gradient-to-r from-primary to-medical-blue hover:from-primary-hover hover:to-primary text-primary-foreground"
-                      onClick={() => handleUserLogin(profile)}
-                    >
-                      <User className="w-4 h-4 mr-2" />
-                      Sign In
-                    </Button>
                     <div className="flex space-x-2">
                       <Button
                         variant="outline"
                         size="sm"
                         className="flex-1 border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground"
-                        onClick={() => handleEditProfile(profile)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditProfile(profile);
+                        }}
                       >
                         <Edit className="w-3 h-3 mr-1" />
                         Edit
@@ -226,7 +226,10 @@ export const UserSelectionForm = () => {
                         variant="outline"
                         size="sm"
                         className="flex-1 border-destructive/20 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                        onClick={() => handleDeleteProfile(profile)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProfile(profile);
+                        }}
                       >
                         <Trash2 className="w-3 h-3 mr-1" />
                         Delete
@@ -251,6 +254,48 @@ export const UserSelectionForm = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+            <DialogDescription>
+              Update the name and role for this user.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editName">Name</Label>
+              <Input
+                id="editName"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editRole">Role</Label>
+              <Select value={editRole} onValueChange={setEditRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="doctor">Doctor</SelectItem>
+                  <SelectItem value="receptionist">Receptionist</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
