@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -44,11 +44,30 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
     reasonForVisit: '',
     symptoms: ''
   });
-  const { doctors, createAppointment, upsertPatient } = useAppointments();
+  const { doctors, createAppointment, upsertPatient, searchPatientByName } = useAppointments();
 
   const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
   });
+
+  // Auto-fill patient details when name is entered
+  const handlePatientNameBlur = useCallback(async (name: string) => {
+    if (name.trim()) {
+      const existingPatient = await searchPatientByName(name.trim());
+      if (existingPatient) {
+        form.setValue('patientAge', existingPatient.age);
+        form.setValue('contactNo', existingPatient.contact_no);
+        form.setValue('medicalHistory', existingPatient.medical_history || '');
+        setFormData(prev => ({
+          ...prev,
+          patientName: existingPatient.name,
+          patientAge: existingPatient.age.toString(),
+          contactNo: existingPatient.contact_no,
+          medicalHistory: existingPatient.medical_history || ''
+        }));
+      }
+    }
+  }, [form, searchPatientByName]);
 
   const timeSlots = [
     '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
@@ -123,7 +142,9 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                 <Input
                   id="patientName"
                   defaultValue={formData.patientName}
+                  autoComplete="off"
                   {...form.register('patientName')}
+                  onBlur={(e) => handlePatientNameBlur(e.target.value)}
                 />
                 {form.formState.errors.patientName && (
                   <p className="text-sm text-destructive">
@@ -138,6 +159,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                   id="patientAge"
                   type="number"
                   defaultValue={formData.patientAge}
+                  autoComplete="off"
                   {...form.register('patientAge', { valueAsNumber: true })}
                 />
                 {form.formState.errors.patientAge && (
@@ -153,6 +175,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               <Input
                 id="contactNo"
                 defaultValue={formData.contactNo}
+                autoComplete="off"
                 {...form.register('contactNo')}
               />
               {form.formState.errors.contactNo && (
@@ -167,6 +190,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               <Textarea
                 id="medicalHistory"
                 defaultValue={formData.medicalHistory}
+                autoComplete="off"
                 {...form.register('medicalHistory')}
               />
             </div>
@@ -271,6 +295,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               <Input
                 id="reasonForVisit"
                 defaultValue={formData.reasonForVisit}
+                autoComplete="off"
                 {...form.register('reasonForVisit')}
               />
             </div>
@@ -280,6 +305,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               <Textarea
                 id="symptoms"
                 defaultValue={formData.symptoms}
+                autoComplete="off"
                 {...form.register('symptoms')}
               />
             </div>

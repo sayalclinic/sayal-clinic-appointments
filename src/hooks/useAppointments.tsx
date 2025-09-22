@@ -128,6 +128,23 @@ export const useAppointments = () => {
     }
   };
 
+  // Search for patient by name
+  const searchPatientByName = async (name: string): Promise<Patient | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*')
+        .ilike('name', name)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error searching patient:', error);
+      return null;
+    }
+  };
+
   // Create or update patient
   const upsertPatient = async (patientData: Omit<Patient, 'id' | 'created_at' | 'updated_at'>) => {
     try {
@@ -309,5 +326,6 @@ export const useAppointments = () => {
     fetchAppointments,
     fetchPatients,
     fetchPayments,
+    searchPatientByName,
   };
 };
