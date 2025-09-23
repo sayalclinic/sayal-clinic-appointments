@@ -303,7 +303,7 @@ export const ReceptionistDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow cursor-pointer smooth-hover">
+              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Reports</CardTitle>
                   <FileText className="h-4 w-4 text-primary" />
@@ -329,6 +329,9 @@ export const ReceptionistDashboard = () => {
                       Payment Reports
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Access detailed reports
+                  </p>
                 </CardContent>
               </Card>
             </div>

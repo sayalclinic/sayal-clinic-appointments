@@ -35,12 +35,25 @@ export const AppointmentCalendar = ({
     return appointments.filter(apt => apt.appointment_date === dateStr);
   };
 
-  const getIntensityClass = (appointmentCount: number) => {
+  const getIntensityClass = (dayAppointments: any[]) => {
+    const appointmentCount = dayAppointments.length;
+    const completedCount = dayAppointments.filter(apt => apt.status === 'completed').length;
+    
     if (appointmentCount === 0) return '';
-    if (appointmentCount <= 2) return 'bg-primary/10';
-    if (appointmentCount <= 4) return 'bg-primary/20';
-    if (appointmentCount <= 6) return 'bg-primary/30';
-    return 'bg-primary/40';
+    
+    // If all appointments are completed, use success color
+    if (completedCount === appointmentCount) {
+      if (appointmentCount <= 2) return 'bg-success/10 border-success/20';
+      if (appointmentCount <= 4) return 'bg-success/20 border-success/30';  
+      if (appointmentCount <= 6) return 'bg-success/30 border-success/40';
+      return 'bg-success/40 border-success/50';
+    }
+    
+    // Mixed or pending appointments
+    if (appointmentCount <= 2) return 'bg-primary/10 border-primary/20';
+    if (appointmentCount <= 4) return 'bg-primary/20 border-primary/30';
+    if (appointmentCount <= 6) return 'bg-primary/30 border-primary/40';
+    return 'bg-primary/40 border-primary/50';
   };
 
   const previousMonth = () => {
@@ -97,7 +110,7 @@ export const AppointmentCalendar = ({
                   isSameMonth(date, currentMonth) 
                     ? 'border-border hover:bg-medical-light/30' 
                     : 'border-transparent text-muted-foreground/50',
-                  getIntensityClass(appointmentCount),
+                  getIntensityClass(dayAppointments),
                   isSelected && 'border-primary bg-primary/10 animate-scale-in',
                   isDayToday && 'border-primary bg-primary/5 font-semibold animate-bounce-in'
                 )}
@@ -121,13 +134,24 @@ export const AppointmentCalendar = ({
                         {dayAppointments.slice(0, 3).map(apt => (
                           <div 
                             key={apt.id}
-                            className="text-xs bg-primary/10 px-1 py-0.5 rounded smooth-transition hover:bg-primary/20"
+                            className={cn(
+                              "text-xs px-1 py-0.5 rounded smooth-transition",
+                              apt.status === 'completed' 
+                                ? "bg-success/10 hover:bg-success/20 border border-success/20" 
+                                : "bg-primary/10 hover:bg-primary/20 border border-primary/20"
+                            )}
                           >
                             <div className="text-medical-dark/80 truncate font-medium">
                               {apt.patients?.name}
                             </div>
-                            <div className="text-primary text-xs">
+                            <div className={cn(
+                              "text-xs flex items-center gap-1",
+                              apt.status === 'completed' ? "text-success" : "text-primary"
+                            )}>
                               {apt.appointment_time}
+                              {apt.status === 'completed' && (
+                                <span className="text-success">✓</span>
+                              )}
                             </div>
                           </div>
                         ))}

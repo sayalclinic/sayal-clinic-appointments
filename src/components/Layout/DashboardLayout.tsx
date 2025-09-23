@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LogOut, User, Calendar, Clock } from 'lucide-react';
+import sayalLogo from '@/assets/sayal-clinic-logo.png';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -22,24 +23,16 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-primary to-medical-blue rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-primary-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
+              <div className="w-12 h-12 flex items-center justify-center">
+                <img 
+                  src={sayalLogo} 
+                  alt="Sayal Clinic" 
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-medical-dark">ClinicFlow</h1>
-                <p className="text-xs text-muted-foreground">Professional Clinic Management</p>
+                <h1 className="text-xl font-bold text-primary">Sayal Clinic</h1>
+                <p className="text-xs text-muted-foreground">Appointment Management</p>
               </div>
             </div>
 
@@ -87,7 +80,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <span>Real-time Updates</span>
               </div>
             </div>
-            <p>&copy; 2024 ClinicFlow. Professional healthcare management.</p>
+            <p>&copy; 2024 Sayal Clinic. Professional healthcare management.</p>
           </div>
         </div>
       </footer>
