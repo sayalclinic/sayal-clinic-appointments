@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,10 +9,14 @@ import { AppointmentCard } from '@/components/Appointments/AppointmentCard';
 import { AppointmentCalendar } from '@/components/Calendar/AppointmentCalendar';
 import { useAppointments } from '@/hooks/useAppointments';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 export const DoctorDashboard = () => {
   const [activeTab, setActiveTab] = useState('pending');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [doctorEarnings, setDoctorEarnings] = useState(0);
+  const [completedToday, setCompletedToday] = useState(0);
+  const [completedThisMonth, setCompletedThisMonth] = useState(0);
   
   const { appointments, loading, updateAppointmentStatus } = useAppointments();
   const { profile } = useAuth();
@@ -23,6 +27,48 @@ export const DoctorDashboard = () => {
     return apt.appointment_date === today && apt.status === 'approved';
   });
   const totalPatients = appointments.filter(apt => apt.status === 'completed').length;
+
+  useEffect(() => {
+    if (profile?.user_id) {
+      fetchDoctorEarnings();
+    }
+  }, [appointments, profile?.user_id]);
+
+  const fetchDoctorEarnings = async () => {
+    try {
+      // Fetch earnings for appointments handled by this doctor
+      const { data: payments } = await supabase
+        .from('payments')
+        .select('amount, appointments!inner(doctor_id)')
+        .eq('appointments.doctor_id', profile?.user_id);
+      
+      const earnings = payments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
+      setDoctorEarnings(earnings);
+
+      // Calculate completed appointments for this doctor
+      const today = new Date().toISOString().split('T')[0];
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+
+      const doctorAppointments = appointments.filter(apt => apt.doctor_id === profile?.user_id);
+
+      const completedTodayCount = doctorAppointments.filter(apt => 
+        apt.status === 'completed' && apt.appointment_date === today
+      ).length;
+
+      const completedThisMonthCount = doctorAppointments.filter(apt => {
+        const aptDate = new Date(apt.appointment_date);
+        return apt.status === 'completed' && 
+               aptDate.getMonth() === currentMonth && 
+               aptDate.getFullYear() === currentYear;
+      }).length;
+
+      setCompletedToday(completedTodayCount);
+      setCompletedThisMonth(completedThisMonthCount);
+    } catch (error) {
+      console.error('Error fetching doctor earnings:', error);
+    }
+  };
 
   const handleApprove = async (appointmentId: string) => {
     await updateAppointmentStatus(appointmentId, 'approved');
@@ -143,39 +189,50 @@ export const DoctorDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
-                  <Clock className="h-4 w-4 text-warning" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-warning">{pendingAppointments.length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Appointments awaiting review
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
+                  <CardTitle className="text-sm font-medium">Monthly Appointments</CardTitle>
                   <Calendar className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">{todayAppointments.length}</div>
+                  <div className="text-2xl font-bold text-primary">
+                    {appointments.filter(apt => {
+                      const currentMonth = new Date().getMonth();
+                      const currentYear = new Date().getFullYear();
+                      const aptDate = new Date(apt.appointment_date);
+                      return aptDate.getMonth() === currentMonth && aptDate.getFullYear() === currentYear;
+                    }).length}
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    Scheduled for today
+                    Scheduled this month
                   </p>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
-                  <User className="h-4 w-4 text-success" />
+                  <CardTitle className="text-sm font-medium">Completed Appointments</CardTitle>
+                  <Clock className="h-4 w-4 text-success" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-success">{totalPatients}</div>
+                  <div className="text-2xl font-bold text-success">
+                    {completedToday} / {completedThisMonth}
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    Patients served
+                    Today / This Month
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">My Earnings</CardTitle>
+                  <User className="h-4 w-4 text-warning" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-warning">
+                    ${doctorEarnings.toFixed(2)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Your total earnings
                   </p>
                 </CardContent>
               </Card>

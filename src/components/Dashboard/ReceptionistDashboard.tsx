@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,10 +12,16 @@ import { PaymentDialog } from '@/components/Payments/PaymentDialog';
 import { useAppointments } from '@/hooks/useAppointments';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 export const ReceptionistDashboard = () => {
   const [activeTab, setActiveTab] = useState('add-appointment');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [showEarnings, setShowEarnings] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [completedToday, setCompletedToday] = useState(0);
+  const [completedThisMonth, setCompletedThisMonth] = useState(0);
   
   const { appointments, loading, updateAppointmentStatus } = useAppointments();
   const { toast } = useToast();
@@ -26,6 +32,53 @@ export const ReceptionistDashboard = () => {
     const today = new Date().toISOString().split('T')[0];
     return apt.appointment_date === today;
   });
+
+  useEffect(() => {
+    fetchEarningsData();
+  }, [appointments]);
+
+  const fetchEarningsData = async () => {
+    try {
+      // Fetch total earnings
+      const { data: payments } = await supabase
+        .from('payments')
+        .select('amount');
+      
+      const total = payments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
+      setTotalEarnings(total);
+
+      // Calculate completed appointments
+      const today = new Date().toISOString().split('T')[0];
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+
+      const completedTodayCount = appointments.filter(apt => 
+        apt.status === 'completed' && apt.appointment_date === today
+      ).length;
+
+      const completedThisMonthCount = appointments.filter(apt => {
+        const aptDate = new Date(apt.appointment_date);
+        return apt.status === 'completed' && 
+               aptDate.getMonth() === currentMonth && 
+               aptDate.getFullYear() === currentYear;
+      }).length;
+
+      setCompletedToday(completedTodayCount);
+      setCompletedThisMonth(completedThisMonthCount);
+    } catch (error) {
+      console.error('Error fetching earnings data:', error);
+    }
+  };
+
+  const checkAccessCode = () => {
+    if (accessCode === 'creative10') {
+      setShowEarnings(true);
+      setAccessCode('');
+    } else {
+      alert('Invalid access code');
+      setAccessCode('');
+    }
+  };
 
   const handleEdit = (appointmentId: string) => {
     // Edit functionality is now handled by the EditAppointmentDialog within AppointmentCard
@@ -173,61 +226,80 @@ export const ReceptionistDashboard = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
+                  <CardTitle className="text-sm font-medium">Monthly Appointments</CardTitle>
                   <Calendar className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">{todayAppointments.length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Scheduled appointments
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
-                  <Clock className="h-4 w-4 text-warning" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-warning">{pendingAppointments.length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Awaiting doctor approval
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Apps</CardTitle>
-                  <Users className="h-4 w-4 text-success" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-success">{appointments.length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Total appointments
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Completed Today</CardTitle>
-                  <User className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
                   <div className="text-2xl font-bold text-primary">
-                    {appointments.filter(apt => 
-                      apt.status === 'completed' && 
-                      apt.appointment_date === new Date().toISOString().split('T')[0]
-                    ).length}
+                    {appointments.filter(apt => {
+                      const currentMonth = new Date().getMonth();
+                      const currentYear = new Date().getFullYear();
+                      const aptDate = new Date(apt.appointment_date);
+                      return aptDate.getMonth() === currentMonth && aptDate.getFullYear() === currentYear;
+                    }).length}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Completed appointments
+                    Scheduled this month
                   </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Completed Appointments</CardTitle>
+                  <Clock className="h-4 w-4 text-success" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-success">
+                    {completedToday} / {completedThisMonth}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Today / This Month
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+                  <User className="h-4 w-4 text-warning" />
+                </CardHeader>
+                <CardContent>
+                  {showEarnings ? (
+                    <>
+                      <div className="text-2xl font-bold text-warning">
+                        ${totalEarnings.toFixed(2)}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Total revenue
+                      </p>
+                    </>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex space-x-2">
+                        <input
+                          type="password"
+                          placeholder="Enter code"
+                          value={accessCode}
+                          onChange={(e) => setAccessCode(e.target.value)}
+                          className="flex-1 px-2 py-1 text-sm border rounded"
+                          onKeyPress={(e) => e.key === 'Enter' && checkAccessCode()}
+                        />
+                        <button
+                          onClick={checkAccessCode}
+                          className="px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary/90"
+                        >
+                          Show
+                        </button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Code required to view
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
