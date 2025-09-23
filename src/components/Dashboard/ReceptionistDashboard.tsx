@@ -226,7 +226,7 @@ export const ReceptionistDashboard = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
               <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Monthly Appointments</CardTitle>
@@ -300,6 +300,35 @@ export const ReceptionistDashboard = () => {
                       </p>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow cursor-pointer smooth-hover">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Reports</CardTitle>
+                  <FileText className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-xs h-8"
+                      onClick={() => window.open('/appointment-history', '_blank')}
+                    >
+                      <FileText className="w-3 h-3 mr-1" />
+                      Patient History
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-xs h-8"
+                      onClick={() => window.open('/payment-reports', '_blank')}
+                    >
+                      <Calendar className="w-3 h-3 mr-1" />
+                      Payment Reports
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
