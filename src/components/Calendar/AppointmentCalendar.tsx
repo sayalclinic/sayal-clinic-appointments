@@ -92,14 +92,14 @@ export const AppointmentCalendar = ({
                 key={date.toISOString()}
                 onClick={() => onDateSelect?.(date)}
                 className={cn(
-                  'p-2 min-h-[100px] text-left rounded-lg border transition-all duration-200 hover:border-primary/50',
+                  'p-2 min-h-[120px] text-left rounded-lg border smooth-transition hover:border-primary/50 hover:scale-[1.02]',
                   'flex flex-col items-start justify-start',
                   isSameMonth(date, currentMonth) 
                     ? 'border-border hover:bg-medical-light/30' 
                     : 'border-transparent text-muted-foreground/50',
                   getIntensityClass(appointmentCount),
-                  isSelected && 'border-primary bg-primary/10',
-                  isDayToday && 'border-primary bg-primary/5 font-semibold'
+                  isSelected && 'border-primary bg-primary/10 animate-scale-in',
+                  isDayToday && 'border-primary bg-primary/5 font-semibold animate-bounce-in'
                 )}
               >
                 <span className={cn(
@@ -116,14 +116,19 @@ export const AppointmentCalendar = ({
                     >
                       {appointmentCount}
                     </Badge>
-                    {appointmentCount <= 4 && (
+                    {appointmentCount <= 3 && (
                       <div className="space-y-0.5">
-                        {dayAppointments.slice(0, 4).map(apt => (
+                        {dayAppointments.slice(0, 3).map(apt => (
                           <div 
                             key={apt.id}
-                            className="text-xs text-medical-dark/80 truncate max-w-full bg-primary/10 px-1 py-0.5 rounded"
+                            className="text-xs bg-primary/10 px-1 py-0.5 rounded smooth-transition hover:bg-primary/20"
                           >
-                            {apt.appointment_time} - {apt.patients?.name}
+                            <div className="text-medical-dark/80 truncate font-medium">
+                              {apt.patients?.name}
+                            </div>
+                            <div className="text-primary text-xs">
+                              {apt.appointment_time}
+                            </div>
                           </div>
                         ))}
                       </div>
