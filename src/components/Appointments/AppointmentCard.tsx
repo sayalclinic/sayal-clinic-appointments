@@ -129,7 +129,7 @@ export const AppointmentCard = ({
                 </div>
 
                 {showActions && (
-                  <div className="flex items-center space-x-1 pt-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center space-x-1 pt-2 animate-fade-in" onClick={(e) => e.stopPropagation()}>
                     {/* Doctor Actions */}
                     {profile?.role === 'doctor' && appointment.status === 'pending' && (
                       <div className="flex space-x-1">

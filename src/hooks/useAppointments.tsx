@@ -237,6 +237,11 @@ export const useAppointments = () => {
       if (denialReason) {
         updateData.denial_reason = denialReason;
       }
+      
+      // If appointment is marked as missed, reset it to pending for rescheduling
+      if (status === 'missed') {
+        updateData.status = 'pending';
+      }
 
       const { error } = await supabase
         .from('appointments')
@@ -245,9 +250,13 @@ export const useAppointments = () => {
 
       if (error) throw error;
 
+      const successMessage = status === 'missed' 
+        ? 'Appointment marked as missed and sent back for rescheduling'
+        : `Appointment ${status} successfully`;
+
       toast({
         title: 'Success',
-        description: `Appointment ${status} successfully`,
+        description: successMessage,
       });
 
       await fetchAppointments();
@@ -274,16 +283,22 @@ export const useAppointments = () => {
     }
   ) => {
     try {
+      // When appointment is edited, reset status to pending for doctor approval
+      const finalUpdateData = {
+        ...updateData,
+        status: 'pending'
+      };
+
       const { error } = await supabase
         .from('appointments')
-        .update(updateData)
+        .update(finalUpdateData)
         .eq('id', appointmentId);
 
       if (error) throw error;
 
       toast({
         title: 'Success',
-        description: 'Appointment updated successfully',
+        description: 'Appointment updated and sent back to doctor for approval',
       });
 
       await fetchAppointments();
