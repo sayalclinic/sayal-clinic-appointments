@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import sayalLogo from '@/assets/sayal-clinic-logo.png';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -14,19 +13,24 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
       <div className="w-full max-w-md">
         <Card className="shadow-elevated border-0 bg-gradient-to-b from-card to-medical-light/30">
           <CardHeader className="text-center space-y-2 pb-6">
-            <div className="mx-auto w-20 h-20 mb-4 flex items-center justify-center">
-              <img 
-                src={sayalLogo} 
-                alt="Sayal Clinic" 
-                className="w-full h-full object-contain"
-              />
+            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary to-medical-blue rounded-full flex items-center justify-center mb-4">
+              <svg
+                className="w-8 h-8 text-primary-foreground"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
             </div>
-            <h1 className="text-2xl font-bold text-primary mb-2">
-              Sayal Clinic Appointments
-            </h1>
-            <h2 className="text-lg font-semibold text-medical-dark">
+            <h1 className="text-2xl font-bold text-medical-dark">
               {title}
-            </h2>
+            </h1>
             {subtitle && (
               <p className="text-sm text-muted-foreground">
                 {subtitle}
