@@ -23,7 +23,7 @@ export const ReceptionistDashboard = () => {
   const [completedToday, setCompletedToday] = useState(0);
   const [completedThisMonth, setCompletedThisMonth] = useState(0);
   
-  const { appointments, loading, updateAppointmentStatus } = useAppointments();
+  const { appointments, loading, updateAppointmentStatus, deleteAppointment } = useAppointments();
   const { toast } = useToast();
   const { profile } = useAuth();
 
@@ -99,6 +99,10 @@ export const ReceptionistDashboard = () => {
     await updateAppointmentStatus(appointmentId, 'missed');
   };
 
+  const handleDelete = async (appointmentId: string) => {
+    await deleteAppointment(appointmentId);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -155,13 +159,14 @@ export const ReceptionistDashboard = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {pendingAppointments.map((appointment) => (
+                     {pendingAppointments.map((appointment) => (
                       <AppointmentCard
                         key={appointment.id}
                         appointment={appointment}
                         onEdit={handleEdit}
                         onComplete={handleComplete}
                         onMissed={handleMissed}
+                        onDelete={handleDelete}
                         onPaymentSuccess={handlePaymentSuccess}
                         showActions={true}
                       />
@@ -194,26 +199,60 @@ export const ReceptionistDashboard = () => {
                   <CardContent>
                     {selectedDate ? (
                        (() => {
-                         const year = selectedDate.getFullYear();
-                         const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                         const day = String(selectedDate.getDate()).padStart(2, '0');
-                         const dateStr = `${year}-${month}-${day}`;
-                         const dayAppointments = appointments.filter(apt => apt.appointment_date === dateStr);
-                        return dayAppointments.length === 0 ? (
+                          const year = selectedDate.getFullYear();
+                          const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                          const day = String(selectedDate.getDate()).padStart(2, '0');
+                          const dateStr = `${year}-${month}-${day}`;
+                          const activeAppointments = appointments.filter(apt => 
+                            apt.appointment_date === dateStr && 
+                            apt.status !== 'completed' && 
+                            apt.status !== 'denied' && 
+                            apt.status !== 'missed'
+                          );
+                          const inactiveAppointments = appointments.filter(apt => 
+                            apt.appointment_date === dateStr && 
+                            (apt.status === 'completed' || apt.status === 'denied' || apt.status === 'missed')
+                          );
+                          const hasAnyAppointments = activeAppointments.length > 0 || inactiveAppointments.length > 0;
+
+                        return !hasAnyAppointments ? (
                           <p className="text-muted-foreground text-center py-4">No appointments scheduled</p>
                         ) : (
             <div className="space-y-3">
-              {dayAppointments.map((appointment) => (
+              {activeAppointments.map((appointment) => (
                 <AppointmentCard
                   key={appointment.id}
                   appointment={appointment}
                   onEdit={handleEdit}
                   onComplete={handleComplete}
                   onMissed={handleMissed}
+                  onDelete={handleDelete}
                   onPaymentSuccess={handlePaymentSuccess}
                   showActions={true}
                 />
               ))}
+              {inactiveAppointments.length > 0 && (
+                <>
+                  {activeAppointments.length > 0 && (
+                    <div className="border-t border-border my-2 pt-2">
+                      <p className="text-xs text-muted-foreground mb-2">Past Appointments</p>
+                    </div>
+                  )}
+                  {inactiveAppointments.map((appointment) => (
+                    <AppointmentCard
+                      key={appointment.id}
+                      appointment={appointment}
+                      onEdit={handleEdit}
+                      onComplete={handleComplete}
+                      onMissed={handleMissed}
+                      onDelete={handleDelete}
+                      onPaymentSuccess={handlePaymentSuccess}
+                      showActions={false}
+                      isTranslucent={true}
+                    />
+                  ))}
+                </>
+              )}
             </div>
                         );
                       })()

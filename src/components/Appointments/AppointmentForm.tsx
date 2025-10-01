@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
 import { CalendarIcon, Clock, User, FileText, Stethoscope } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +36,7 @@ interface AppointmentFormProps {
 
 export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isWalkIn, setIsWalkIn] = useState(false);
   const [formData, setFormData] = useState({
     patientName: '',
     patientAge: '',
@@ -87,15 +89,31 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         medical_history: data.medicalHistory,
       });
 
+      // For walk-ins, use current date and time
+      const appointmentDate = isWalkIn ? format(new Date(), 'yyyy-MM-dd') : format(data.appointmentDate, 'yyyy-MM-dd');
+      const appointmentTime = isWalkIn ? format(new Date(), 'HH:mm') : data.appointmentTime;
+
       // Then create the appointment
       await createAppointment({
         patient_id: patient.id,
         doctor_id: data.doctorId,
-        appointment_date: format(data.appointmentDate, 'yyyy-MM-dd'),
-        appointment_time: data.appointmentTime,
+        appointment_date: appointmentDate,
+        appointment_time: appointmentTime,
         reason_for_visit: data.reasonForVisit,
         symptoms: data.symptoms,
       });
+
+      // Request notification permission and show notification
+      if ('Notification' in window && Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+      
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('New Appointment Created', {
+          body: `Appointment for ${data.patientName} has been scheduled`,
+          icon: '/favicon.ico'
+        });
+      }
 
       // Reset form but keep form data for future use
       setFormData({
@@ -198,10 +216,20 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
 
           {/* Appointment Details */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center space-x-2">
-              <CalendarIcon className="w-4 h-4" />
-              <span>Appointment Details</span>
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <CalendarIcon className="w-4 h-4" />
+                <span>Appointment Details</span>
+              </h3>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="walkIn" 
+                  checked={isWalkIn}
+                  onCheckedChange={(checked) => setIsWalkIn(checked as boolean)}
+                />
+                <Label htmlFor="walkIn" className="cursor-pointer">Walk-In</Label>
+              </div>
+            </div>
 
             <div className="space-y-2">
               <Label>Doctor</Label>
@@ -227,68 +255,69 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Appointment Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !form.watch('appointmentDate') && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.watch('appointmentDate') ? (
-                        format(form.watch('appointmentDate'), "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={form.watch('appointmentDate')}
-                      onSelect={(date) => form.setValue('appointmentDate', date as Date)}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-                {form.formState.errors.appointmentDate && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.appointmentDate.message}
-                  </p>
-                )}
-              </div>
+            {!isWalkIn && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Appointment Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !form.watch('appointmentDate') && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {form.watch('appointmentDate') ? (
+                          format(form.watch('appointmentDate'), "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={form.watch('appointmentDate')}
+                        onSelect={(date) => form.setValue('appointmentDate', date as Date)}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {form.formState.errors.appointmentDate && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.appointmentDate.message}
+                    </p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label>Appointment Time</Label>
-                <Select onValueChange={(value) => form.setValue('appointmentTime', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeSlots.map((time) => (
-                      <SelectItem key={time} value={time}>
-                        <div className="flex items-center space-x-2">
-                          <Clock className="w-4 h-4" />
-                          <span>{time}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.appointmentTime && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.appointmentTime.message}
-                  </p>
-                )}
+                <div className="space-y-2">
+                  <Label>Appointment Time</Label>
+                  <Select onValueChange={(value) => form.setValue('appointmentTime', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeSlots.map((time) => (
+                        <SelectItem key={time} value={time}>
+                          <div className="flex items-center space-x-2">
+                            <Clock className="w-4 h-4" />
+                            <span>{time}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.appointmentTime && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.appointmentTime.message}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="reasonForVisit">Reason for Visit</Label>

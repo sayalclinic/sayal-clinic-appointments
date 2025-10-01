@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { showNotification } from '@/utils/notifications';
 
 export interface Patient {
   id: string;
@@ -259,6 +260,11 @@ export const useAppointments = () => {
         description: successMessage,
       });
 
+      // Show notification for approval
+      if (status === 'approved') {
+        showNotification('Appointment Approved', 'An appointment has been approved by the doctor');
+      }
+
       await fetchAppointments();
     } catch (error) {
       console.error('Error updating appointment:', error);
@@ -347,6 +353,60 @@ export const useAppointments = () => {
     }
   };
 
+  // Delete appointment
+  const deleteAppointment = async (appointmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Appointment deleted successfully',
+      });
+
+      await fetchAppointments();
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete appointment',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
+  // Delete patient
+  const deletePatient = async (patientId: string) => {
+    try {
+      const { error } = await supabase
+        .from('patients')
+        .delete()
+        .eq('id', patientId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Patient deleted successfully',
+      });
+
+      await fetchPatients();
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete patient',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (profile?.user_id) {
@@ -375,6 +435,8 @@ export const useAppointments = () => {
     updateAppointmentStatus,
     updateAppointment,
     createPayment,
+    deleteAppointment,
+    deletePatient,
     fetchAppointments,
     fetchPatients,
     fetchPayments,

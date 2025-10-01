@@ -32,7 +32,25 @@ export const AppointmentCalendar = ({
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
-    return appointments.filter(apt => apt.appointment_date === dateStr);
+    // Only show active appointments (not completed, denied, or missed)
+    return appointments.filter(apt => 
+      apt.appointment_date === dateStr && 
+      apt.status !== 'completed' && 
+      apt.status !== 'denied' && 
+      apt.status !== 'missed'
+    );
+  };
+
+  const getInactiveAppointmentsForDate = (date: Date) => {
+    // Get completed, denied, or missed appointments
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    return appointments.filter(apt => 
+      apt.appointment_date === dateStr && 
+      (apt.status === 'completed' || apt.status === 'denied' || apt.status === 'missed')
+    );
   };
 
   const getIntensityClass = (appointmentCount: number) => {

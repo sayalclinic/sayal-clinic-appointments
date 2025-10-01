@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Clock, User, FileText, Phone, Stethoscope, AlertCircle, Edit, CreditCard, UserX } from 'lucide-react';
+import { Calendar, Clock, User, FileText, Phone, Stethoscope, AlertCircle, Edit, CreditCard, UserX, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,8 +20,10 @@ interface AppointmentCardProps {
   onEdit?: (appointmentId: string) => void;
   onComplete?: (appointmentId: string) => void;
   onMissed?: (appointmentId: string) => void;
+  onDelete?: (appointmentId: string) => void;
   onPaymentSuccess?: () => void;
   showActions?: boolean;
+  isTranslucent?: boolean;
 }
 
 export const AppointmentCard = ({
@@ -31,8 +33,10 @@ export const AppointmentCard = ({
   onEdit,
   onComplete,
   onMissed,
+  onDelete,
   onPaymentSuccess,
   showActions = true,
+  isTranslucent = false,
 }: AppointmentCardProps) => {
   const [denyReason, setDenyReason] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -93,7 +97,7 @@ export const AppointmentCard = ({
     <>
       <Dialog>
         <DialogTrigger asChild>
-          <Card className="smooth-hover hover:shadow-card-hover border-l-4 border-l-primary/30 cursor-pointer animate-fade-in">
+          <Card className={`smooth-hover hover:shadow-card-hover border-l-4 border-l-primary/30 cursor-pointer animate-fade-in ${isTranslucent ? 'opacity-40' : ''}`}>
             <CardHeader className="pb-3">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -161,18 +165,34 @@ export const AppointmentCard = ({
                     {profile?.role === 'receptionist' && (
                       <div className="flex space-x-1">
                         {(appointment.status === 'pending' || appointment.status === 'approved') && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground text-xs px-2 py-1 h-6 smooth-button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit();
-                            }}
-                          >
-                            <Edit className="w-3 h-3 mr-1" />
-                            Edit
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground text-xs px-2 py-1 h-6 smooth-button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit();
+                              }}
+                            >
+                              <Edit className="w-3 h-3 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="text-xs px-2 py-1 h-6 smooth-button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm('Are you sure you want to delete this appointment?')) {
+                                  onDelete?.(appointment.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3 mr-1" />
+                              Delete
+                            </Button>
+                          </>
                         )}
                         {appointment.status === 'approved' && (
                           <>
