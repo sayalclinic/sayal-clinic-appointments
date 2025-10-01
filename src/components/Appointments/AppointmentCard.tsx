@@ -163,13 +163,13 @@ export const AppointmentCard = ({
 
                     {/* Receptionist Actions */}
                     {profile?.role === 'receptionist' && (
-                      <div className="flex space-x-1">
+                      <div className="flex flex-col space-y-1">
                         {(appointment.status === 'pending' || appointment.status === 'approved') && (
-                          <>
+                          <div className="flex space-x-1">
                             <Button
                               size="sm"
                               variant="outline"
-                              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground text-xs px-2 py-1 h-6 smooth-button"
+                              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground text-xs px-2 py-1 h-6 smooth-button flex-1"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleEdit();
@@ -181,10 +181,10 @@ export const AppointmentCard = ({
                             <Button
                               size="sm"
                               variant="destructive"
-                              className="text-xs px-2 py-1 h-6 smooth-button"
+                              className="text-xs px-2 py-1 h-6 smooth-button flex-1"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (confirm('Are you sure you want to delete this appointment?')) {
+                                if (window.confirm('Are you sure you want to delete this appointment?')) {
                                   onDelete?.(appointment.id);
                                 }
                               }}
@@ -192,13 +192,13 @@ export const AppointmentCard = ({
                               <Trash2 className="w-3 h-3 mr-1" />
                               Delete
                             </Button>
-                          </>
+                          </div>
                         )}
                         {appointment.status === 'approved' && (
-                          <>
+                          <div className="flex space-x-1">
                             <Button
                               size="sm"
-                              className="bg-success hover:bg-success/90 text-white text-xs px-2 py-1 h-6 smooth-button"
+                              className="bg-success hover:bg-success/90 text-white text-xs px-2 py-1 h-6 smooth-button flex-1"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleComplete();
@@ -210,7 +210,7 @@ export const AppointmentCard = ({
                             <Button
                               size="sm"
                               variant="destructive"
-                              className="text-xs px-2 py-1 h-6 smooth-button"
+                              className="text-xs px-2 py-1 h-6 smooth-button flex-1"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleMissed();
@@ -219,7 +219,7 @@ export const AppointmentCard = ({
                               <UserX className="w-3 h-3 mr-1" />
                               Missed
                             </Button>
-                          </>
+                          </div>
                         )}
                       </div>
                     )}
@@ -346,6 +346,10 @@ export const AppointmentCard = ({
         patient={appointment.patients || null}
         open={patientDialogOpen}
         onOpenChange={setPatientDialogOpen}
+        onDelete={(patientId) => {
+          // Refresh page after patient deletion
+          window.location.reload();
+        }}
       />
       
       {/* Edit Appointment Dialog */}

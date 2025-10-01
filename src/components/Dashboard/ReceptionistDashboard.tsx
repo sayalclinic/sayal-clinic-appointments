@@ -100,7 +100,20 @@ export const ReceptionistDashboard = () => {
   };
 
   const handleDelete = async (appointmentId: string) => {
-    await deleteAppointment(appointmentId);
+    try {
+      await deleteAppointment(appointmentId);
+      toast({
+        title: 'Success',
+        description: 'Appointment deleted successfully',
+      });
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete appointment',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (

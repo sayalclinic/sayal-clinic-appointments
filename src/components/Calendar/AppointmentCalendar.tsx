@@ -127,7 +127,7 @@ export const AppointmentCalendar = ({
                   {format(date, 'd')}
                 </span>
                 {appointmentCount > 0 && (
-                  <div className="mt-1 space-y-1">
+                  <div className="mt-1 space-y-1 w-full overflow-hidden">
                     <Badge 
                       variant="secondary" 
                       className="text-xs py-0 px-1 h-4 bg-primary/20 text-primary"
@@ -135,16 +135,16 @@ export const AppointmentCalendar = ({
                       {appointmentCount}
                     </Badge>
                     {appointmentCount <= 3 && (
-                      <div className="space-y-0.5">
+                      <div className="space-y-0.5 w-full">
                         {dayAppointments.slice(0, 3).map(apt => (
                           <div 
                             key={apt.id}
-                            className="text-xs bg-primary/10 px-1 py-0.5 rounded smooth-transition hover:bg-primary/20"
+                            className="text-[10px] bg-primary/10 px-1 py-0.5 rounded smooth-transition hover:bg-primary/20 w-full"
                           >
-                            <div className="text-medical-dark/80 truncate font-medium">
+                            <div className="text-medical-dark/80 truncate font-medium leading-tight">
                               {apt.patients?.name}
                             </div>
-                            <div className="text-primary text-xs">
+                            <div className="text-primary leading-tight">
                               {apt.appointment_time}
                             </div>
                           </div>

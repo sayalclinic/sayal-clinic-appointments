@@ -17,6 +17,7 @@ interface PatientDetailsDialogProps {
   patient: Patient | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDelete?: (patientId: string) => void;
 }
 
 interface PatientVisit {
@@ -40,7 +41,7 @@ interface ExtendedPatient extends Patient {
   blood_type?: string;
 }
 
-export const PatientDetailsDialog = ({ patient, open, onOpenChange }: PatientDetailsDialogProps) => {
+export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: PatientDetailsDialogProps) => {
   const [patientDetails, setPatientDetails] = useState<ExtendedPatient | null>(null);
   const [visits, setVisits] = useState<PatientVisit[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -156,6 +157,34 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange }: PatientDet
     }
   };
 
+  const handleDeletePatient = async () => {
+    if (!patientDetails || !window.confirm('Are you sure you want to delete this patient? This action cannot be undone.')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('patients')
+        .delete()
+        .eq('id', patientDetails.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Patient deleted successfully',
+      });
+      
+      onDelete?.(patientDetails.id);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete patient',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (!patientDetails) return null;
 
   return (
@@ -188,14 +217,25 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange }: PatientDet
                   </Button>
                 </>
               ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsEditing(true)}
-                >
-                  <Edit2 className="w-4 h-4 mr-1" />
-                  Edit
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Edit2 className="w-4 h-4 mr-1" />
+                    Edit
+                  </Button>
+                  {onDelete && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={handleDeletePatient}
+                    >
+                      Delete Patient
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </DialogTitle>

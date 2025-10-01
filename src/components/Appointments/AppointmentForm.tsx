@@ -255,89 +255,91 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               )}
             </div>
 
-            {!isWalkIn && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Appointment Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !form.watch('appointmentDate') && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {form.watch('appointmentDate') ? (
-                          format(form.watch('appointmentDate'), "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={form.watch('appointmentDate')}
-                        onSelect={(date) => form.setValue('appointmentDate', date as Date)}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {form.formState.errors.appointmentDate && (
-                    <p className="text-sm text-destructive">
-                      {form.formState.errors.appointmentDate.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Appointment Time</Label>
-                  <Select onValueChange={(value) => form.setValue('appointmentTime', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeSlots.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          <div className="flex items-center space-x-2">
-                            <Clock className="w-4 h-4" />
-                            <span>{time}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.appointmentTime && (
-                    <p className="text-sm text-destructive">
-                      {form.formState.errors.appointmentTime.message}
-                    </p>
-                  )}
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Appointment Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !form.watch('appointmentDate') && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.watch('appointmentDate') ? (
+                        format(form.watch('appointmentDate'), "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form.watch('appointmentDate')}
+                      onSelect={(date) => form.setValue('appointmentDate', date as Date)}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                {form.formState.errors.appointmentDate && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.appointmentDate.message}
+                  </p>
+                )}
               </div>
+
+              <div className="space-y-2">
+                <Label>Appointment Time</Label>
+                <Select onValueChange={(value) => form.setValue('appointmentTime', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeSlots.map((time) => (
+                      <SelectItem key={time} value={time}>
+                        <div className="flex items-center space-x-2">
+                          <Clock className="w-4 h-4" />
+                          <span>{time}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.appointmentTime && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.appointmentTime.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {!isWalkIn && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="reasonForVisit">Reason for Visit</Label>
+                  <Input
+                    id="reasonForVisit"
+                    defaultValue={formData.reasonForVisit}
+                    autoComplete="off"
+                    {...form.register('reasonForVisit')}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="symptoms">Symptoms</Label>
+                  <Textarea
+                    id="symptoms"
+                    defaultValue={formData.symptoms}
+                    autoComplete="off"
+                    {...form.register('symptoms')}
+                  />
+                </div>
+              </>
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="reasonForVisit">Reason for Visit</Label>
-              <Input
-                id="reasonForVisit"
-                defaultValue={formData.reasonForVisit}
-                autoComplete="off"
-                {...form.register('reasonForVisit')}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="symptoms">Symptoms</Label>
-              <Textarea
-                id="symptoms"
-                defaultValue={formData.symptoms}
-                autoComplete="off"
-                {...form.register('symptoms')}
-              />
-            </div>
           </div>
 
           <Button
