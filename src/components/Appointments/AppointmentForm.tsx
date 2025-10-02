@@ -103,11 +103,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         symptoms: data.symptoms,
       });
 
-      // Request notification permission and show notification
-      if ('Notification' in window && Notification.permission === 'default') {
-        await Notification.requestPermission();
-      }
-      
+      // Show local notification as confirmation
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('New Appointment Created', {
           body: `Appointment for ${data.patientName} has been scheduled`,

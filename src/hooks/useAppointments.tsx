@@ -214,6 +214,20 @@ export const useAppointments = () => {
         description: 'Appointment created successfully',
       });
 
+      // Send push notification to the doctor
+      const { sendPushNotification } = await import('@/utils/notifications');
+      const { data: patient } = await supabase
+        .from('patients')
+        .select('name')
+        .eq('id', appointmentData.patient_id)
+        .single();
+      
+      await sendPushNotification(
+        appointmentData.doctor_id,
+        'New Appointment',
+        `New appointment scheduled with ${patient?.name || 'a patient'} on ${appointmentData.appointment_date} at ${appointmentData.appointment_time}`
+      );
+
       await fetchAppointments();
       return data;
     } catch (error) {
@@ -260,8 +274,29 @@ export const useAppointments = () => {
         description: successMessage,
       });
 
-      // Show notification for approval
+      // Send push notification to receptionist when appointment is approved
       if (status === 'approved') {
+        const { data: appointment } = await supabase
+          .from('appointments')
+          .select('receptionist_id, patient_id, appointment_date, appointment_time')
+          .eq('id', appointmentId)
+          .single();
+
+        if (appointment?.receptionist_id) {
+          const { data: patient } = await supabase
+            .from('patients')
+            .select('name')
+            .eq('id', appointment.patient_id)
+            .single();
+
+          const { sendPushNotification } = await import('@/utils/notifications');
+          await sendPushNotification(
+            appointment.receptionist_id,
+            'Appointment Approved',
+            `Appointment with ${patient?.name || 'patient'} on ${appointment.appointment_date} at ${appointment.appointment_time} has been approved`
+          );
+        }
+
         showNotification('Appointment Approved', 'An appointment has been approved by the doctor');
       }
 
