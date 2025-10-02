@@ -89,11 +89,10 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         medical_history: data.medicalHistory,
       });
 
-      // For walk-ins, use current date and time
-      const appointmentDate = isWalkIn ? format(new Date(), 'yyyy-MM-dd') : format(data.appointmentDate, 'yyyy-MM-dd');
-      const appointmentTime = isWalkIn ? format(new Date(), 'HH:mm') : data.appointmentTime;
+      const appointmentDate = format(data.appointmentDate, 'yyyy-MM-dd');
+      const appointmentTime = data.appointmentTime;
 
-      // Then create the appointment
+      // Then create the appointment, passing isWalkIn flag
       await createAppointment({
         patient_id: patient.id,
         doctor_id: data.doctorId,
@@ -101,6 +100,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         appointment_time: appointmentTime,
         reason_for_visit: data.reasonForVisit,
         symptoms: data.symptoms,
+        isWalkIn: isWalkIn,
       });
 
       // Show local notification as confirmation
@@ -122,6 +122,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         symptoms: data.symptoms || ''
       });
       form.reset();
+      setIsWalkIn(false);
       onSuccess?.();
     } catch (error) {
       console.error('Error creating appointment:', error);
@@ -143,72 +144,74 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Patient Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center space-x-2">
-              <User className="w-4 h-4" />
-              <span>Patient Information</span>
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Patient Information - Hidden for Walk-In */}
+          {!isWalkIn && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <User className="w-4 h-4" />
+                <span>Patient Information</span>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="patientName">Patient Name</Label>
+                  <Input
+                    id="patientName"
+                    defaultValue={formData.patientName}
+                    autoComplete="off"
+                    {...form.register('patientName')}
+                    onBlur={(e) => handlePatientNameBlur(e.target.value)}
+                  />
+                  {form.formState.errors.patientName && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.patientName.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="patientAge">Age</Label>
+                  <Input
+                    id="patientAge"
+                    type="number"
+                    defaultValue={formData.patientAge}
+                    autoComplete="off"
+                    {...form.register('patientAge', { valueAsNumber: true })}
+                  />
+                  {form.formState.errors.patientAge && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.patientAge.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="patientName">Patient Name</Label>
+                <Label htmlFor="contactNo">Contact Number</Label>
                 <Input
-                  id="patientName"
-                  defaultValue={formData.patientName}
+                  id="contactNo"
+                  defaultValue={formData.contactNo}
                   autoComplete="off"
-                  {...form.register('patientName')}
-                  onBlur={(e) => handlePatientNameBlur(e.target.value)}
+                  {...form.register('contactNo')}
                 />
-                {form.formState.errors.patientName && (
+                {form.formState.errors.contactNo && (
                   <p className="text-sm text-destructive">
-                    {form.formState.errors.patientName.message}
+                    {form.formState.errors.contactNo.message}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="patientAge">Age</Label>
-                <Input
-                  id="patientAge"
-                  type="number"
-                  defaultValue={formData.patientAge}
+                <Label htmlFor="medicalHistory">Medical History</Label>
+                <Textarea
+                  id="medicalHistory"
+                  defaultValue={formData.medicalHistory}
                   autoComplete="off"
-                  {...form.register('patientAge', { valueAsNumber: true })}
+                  {...form.register('medicalHistory')}
                 />
-                {form.formState.errors.patientAge && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.patientAge.message}
-                  </p>
-                )}
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="contactNo">Contact Number</Label>
-              <Input
-                id="contactNo"
-                defaultValue={formData.contactNo}
-                autoComplete="off"
-                {...form.register('contactNo')}
-              />
-              {form.formState.errors.contactNo && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.contactNo.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="medicalHistory">Medical History</Label>
-              <Textarea
-                id="medicalHistory"
-                defaultValue={formData.medicalHistory}
-                autoComplete="off"
-                {...form.register('medicalHistory')}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Appointment Details */}
           <div className="space-y-4">
@@ -313,29 +316,6 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               </div>
             </div>
 
-            {!isWalkIn && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="reasonForVisit">Reason for Visit</Label>
-                  <Input
-                    id="reasonForVisit"
-                    defaultValue={formData.reasonForVisit}
-                    autoComplete="off"
-                    {...form.register('reasonForVisit')}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="symptoms">Symptoms</Label>
-                  <Textarea
-                    id="symptoms"
-                    defaultValue={formData.symptoms}
-                    autoComplete="off"
-                    {...form.register('symptoms')}
-                  />
-                </div>
-              </>
-            )}
           </div>
 
           <Button

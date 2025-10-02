@@ -193,40 +193,55 @@ export const useAppointments = () => {
     appointment_time: string;
     reason_for_visit?: string;
     symptoms?: string;
+    isWalkIn?: boolean;
   }) => {
     try {
       if (!profile?.user_id) throw new Error('User not authenticated');
 
+      // Walk-in appointments are auto-approved
+      const appointmentStatus = appointmentData.isWalkIn ? 'approved' : 'pending';
+
       const { data, error } = await supabase
         .from('appointments')
         .insert({
-          ...appointmentData,
+          patient_id: appointmentData.patient_id,
+          doctor_id: appointmentData.doctor_id,
+          appointment_date: appointmentData.appointment_date,
+          appointment_time: appointmentData.appointment_time,
+          reason_for_visit: appointmentData.reason_for_visit,
+          symptoms: appointmentData.symptoms,
           receptionist_id: profile.user_id,
-          status: 'pending',
+          status: appointmentStatus,
         })
         .select()
         .single();
 
       if (error) throw error;
 
+      const successMessage = appointmentData.isWalkIn 
+        ? 'Walk-in appointment created and automatically approved'
+        : 'Appointment created successfully';
+
       toast({
         title: 'Success',
-        description: 'Appointment created successfully',
+        description: successMessage,
       });
 
-      // Send push notification to the doctor
-      const { sendPushNotification } = await import('@/utils/notifications');
-      const { data: patient } = await supabase
-        .from('patients')
-        .select('name')
-        .eq('id', appointmentData.patient_id)
-        .single();
-      
-      await sendPushNotification(
-        appointmentData.doctor_id,
-        'New Appointment',
-        `New appointment scheduled with ${patient?.name || 'a patient'} on ${appointmentData.appointment_date} at ${appointmentData.appointment_time}`
-      );
+      // Only send push notification to doctor if it's NOT a walk-in
+      if (!appointmentData.isWalkIn) {
+        const { sendPushNotification } = await import('@/utils/notifications');
+        const { data: patient } = await supabase
+          .from('patients')
+          .select('name')
+          .eq('id', appointmentData.patient_id)
+          .single();
+        
+        await sendPushNotification(
+          appointmentData.doctor_id,
+          'New Appointment',
+          `New appointment scheduled with ${patient?.name || 'a patient'} on ${appointmentData.appointment_date} at ${appointmentData.appointment_time}`
+        );
+      }
 
       await fetchAppointments();
       return data;
