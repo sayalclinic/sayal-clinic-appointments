@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LogOut, User, Calendar, Clock } from 'lucide-react';
+import clinicLogo from '@/assets/sayal-clinic-logo.png';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -16,52 +17,54 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-medical-light via-background to-accent/20">
+    <div className="min-h-screen clinic-gradient">
       {/* Header */}
-      <header className="bg-card/80 backdrop-blur-sm border-b border-border/50 shadow-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-primary to-medical-blue rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-primary-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
+      <header className="bg-card/90 backdrop-blur-md border-b border-border shadow-card sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            {/* Logo Section */}
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 smooth-hover flex-shrink-0">
+                <img 
+                  src={clinicLogo} 
+                  alt="Sayal Clinic Logo" 
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-medical-dark">ClinicFlow</h1>
-                <p className="text-xs text-muted-foreground">Professional Clinic Management</p>
+              <div className="hidden sm:block">
+                <h1 className="text-lg sm:text-xl font-bold text-primary">Sayal Clinic</h1>
+                <p className="text-xs text-muted-foreground">Appointment Manager</p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <Card className="px-3 py-2 bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20">
+            {/* User Info & Actions */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* User Profile Card - Hidden on small screens */}
+              <Card className="hidden md:flex px-3 py-2 bg-card border border-border/50 shadow-sm">
                 <div className="flex items-center space-x-2">
-                  <User className="w-4 h-4 text-primary" />
+                  <User className="w-4 h-4 text-primary flex-shrink-0" />
                   <div className="text-sm">
-                    <p className="font-medium text-medical-dark">{profile?.name}</p>
+                    <p className="font-medium text-foreground">{profile?.name}</p>
                     <p className="text-xs text-muted-foreground capitalize">{profile?.role}</p>
                   </div>
                 </div>
               </Card>
               
+              {/* Mobile User Indicator */}
+              <div className="md:hidden flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-secondary/50">
+                <User className="w-4 h-4 text-primary" />
+                <span className="text-xs font-medium text-foreground capitalize">{profile?.role}</span>
+              </div>
+              
+              {/* Sign Out Button */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleSignOut}
-                className="border-medical-accent text-primary hover:bg-medical-light"
+                className="smooth-button border-border hover:bg-secondary text-primary"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+                <LogOut className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Sign Out</span>
               </Button>
             </div>
           </div>
@@ -69,25 +72,25 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {children}
       </main>
 
-      {/* Quick Stats Footer */}
-      <footer className="bg-card/60 backdrop-blur-sm border-t border-border/50 mt-auto">
+      {/* Footer - Hidden on mobile */}
+      <footer className="hidden sm:block bg-card/70 backdrop-blur-sm border-t border-border/50 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center space-x-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 sm:gap-6">
               <div className="flex items-center space-x-2">
                 <Calendar className="w-4 h-4 text-primary" />
-                <span>Today's Schedule</span>
+                <span className="text-xs sm:text-sm">Today's Schedule</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Clock className="w-4 h-4 text-primary" />
-                <span>Real-time Updates</span>
+                <span className="text-xs sm:text-sm">Real-time Updates</span>
               </div>
             </div>
-            <p>&copy; 2024 ClinicFlow. Professional healthcare management.</p>
+            <p className="text-xs sm:text-sm">&copy; 2024 Sayal Clinic. Professional healthcare management.</p>
           </div>
         </div>
       </footer>

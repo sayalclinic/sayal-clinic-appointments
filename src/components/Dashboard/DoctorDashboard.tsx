@@ -80,33 +80,41 @@ export const DoctorDashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Welcome Section */}
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-medical-dark mb-2">Doctor Dashboard</h2>
-          <p className="text-muted-foreground">Manage your appointments and patient care</p>
+        <div className="text-center px-2">
+          <h2 className="text-2xl sm:text-3xl font-bold text-primary mb-2">Doctor Dashboard</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage your appointments and patient care</p>
         </div>
 
         {/* Main Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-medical-light/50">
-            <TabsTrigger value="pending" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Pending Approvals
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-2 bg-secondary/50 h-auto p-1">
+            <TabsTrigger 
+              value="pending" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground smooth-transition text-xs sm:text-sm py-2"
+            >
+              <span className="hidden sm:inline">Pending Approvals</span>
+              <span className="sm:hidden">Pending</span>
             </TabsTrigger>
-            <TabsTrigger value="schedule" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              My Schedule
+            <TabsTrigger 
+              value="schedule" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground smooth-transition text-xs sm:text-sm py-2"
+            >
+              <span className="hidden sm:inline">My Schedule</span>
+              <span className="sm:hidden">Schedule</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Clock className="w-5 h-5 text-warning" />
-                  <span>Appointments Awaiting Approval</span>
+            <Card className="clinic-card">
+              <CardHeader className="px-4 sm:px-6 py-4">
+                <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-warning flex-shrink-0" />
+                  <span className="text-sm sm:text-base">Awaiting Approval</span>
                 </CardTitle>
-                <CardDescription>
-                  Review and approve or deny appointment requests
+                <CardDescription className="text-xs sm:text-sm">
+                  Review and approve or deny requests
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -186,7 +194,7 @@ export const DoctorDashboard = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mt-4 sm:mt-6">
               <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Monthly Appointments</CardTitle>
