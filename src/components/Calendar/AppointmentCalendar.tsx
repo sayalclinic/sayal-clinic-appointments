@@ -32,26 +32,12 @@ export const AppointmentCalendar = ({
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
-    // Only show active appointments (not completed, denied, or missed)
+    // Show all appointments including completed ones
     return appointments.filter(apt => 
-      apt.appointment_date === dateStr && 
-      apt.status !== 'completed' && 
-      apt.status !== 'denied' && 
-      apt.status !== 'missed'
+      apt.appointment_date === dateStr
     );
   };
 
-  const getInactiveAppointmentsForDate = (date: Date) => {
-    // Get completed, denied, or missed appointments
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-    return appointments.filter(apt => 
-      apt.appointment_date === dateStr && 
-      (apt.status === 'completed' || apt.status === 'denied' || apt.status === 'missed')
-    );
-  };
 
   const getIntensityClass = (appointmentCount: number) => {
     if (appointmentCount === 0) return '';
@@ -87,18 +73,19 @@ export const AppointmentCalendar = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-6">
         {/* Calendar Header */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
-              {day}
+            <div key={day} className="p-1 sm:p-2 text-center text-[10px] sm:text-sm font-medium text-muted-foreground">
+              <span className="hidden sm:inline">{day}</span>
+              <span className="sm:hidden">{day.slice(0, 1)}</span>
             </div>
           ))}
         </div>
 
         {/* Calendar Days */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
           {daysInMonth.map(date => {
             const dayAppointments = getAppointmentsForDate(date);
             const appointmentCount = dayAppointments.length;
@@ -110,7 +97,7 @@ export const AppointmentCalendar = ({
                 key={date.toISOString()}
                 onClick={() => onDateSelect?.(date)}
                 className={cn(
-                  'p-2 min-h-[120px] text-left rounded-lg border smooth-transition hover:border-primary/50 hover:scale-[1.02]',
+                  'p-1 sm:p-2 min-h-[60px] sm:min-h-[100px] text-left rounded border sm:rounded-lg smooth-transition hover:border-primary/50',
                   'flex flex-col items-start justify-start',
                   isSameMonth(date, currentMonth) 
                     ? 'border-border hover:bg-medical-light/30' 
@@ -121,21 +108,21 @@ export const AppointmentCalendar = ({
                 )}
               >
                 <span className={cn(
-                  'text-sm',
+                  'text-xs sm:text-sm',
                   isDayToday && 'text-primary font-bold'
                 )}>
                   {format(date, 'd')}
                 </span>
                 {appointmentCount > 0 && (
-                  <div className="mt-1 space-y-1 w-full overflow-hidden">
+                  <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1 w-full overflow-hidden">
                     <Badge 
                       variant="secondary" 
-                      className="text-xs py-0 px-1 h-4 bg-primary/20 text-primary"
+                      className="text-[8px] sm:text-xs py-0 px-0.5 sm:px-1 h-3 sm:h-4 bg-primary/20 text-primary"
                     >
                       {appointmentCount}
                     </Badge>
                     {appointmentCount <= 3 && (
-                      <div className="space-y-0.5 w-full">
+                      <div className="hidden sm:block space-y-0.5 w-full">
                         {dayAppointments.slice(0, 3).map(apt => (
                           <div 
                             key={apt.id}
@@ -159,22 +146,26 @@ export const AppointmentCalendar = ({
         </div>
 
         {/* Legend */}
-        <div className="mt-4 flex items-center justify-center space-x-4 text-xs text-muted-foreground">
+        <div className="mt-3 sm:mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-xs text-muted-foreground">
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-primary/10 rounded-sm border"></div>
-            <span>1-2 appointments</span>
+            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-primary/10 rounded-sm border"></div>
+            <span className="hidden sm:inline">1-2 appointments</span>
+            <span className="sm:hidden">1-2</span>
           </div>
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-primary/20 rounded-sm border"></div>
-            <span>3-4 appointments</span>
+            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-primary/20 rounded-sm border"></div>
+            <span className="hidden sm:inline">3-4 appointments</span>
+            <span className="sm:hidden">3-4</span>
           </div>
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-primary/30 rounded-sm border"></div>
-            <span>5-6 appointments</span>
+            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-primary/30 rounded-sm border"></div>
+            <span className="hidden sm:inline">5-6 appointments</span>
+            <span className="sm:hidden">5-6</span>
           </div>
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-primary/40 rounded-sm border"></div>
-            <span>7+ appointments</span>
+            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-primary/40 rounded-sm border"></div>
+            <span className="hidden sm:inline">7+ appointments</span>
+            <span className="sm:hidden">7+</span>
           </div>
         </div>
       </CardContent>
