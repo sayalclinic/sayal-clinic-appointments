@@ -377,6 +377,7 @@ export const useAppointments = () => {
     tests_done?: string;
   }) => {
     try {
+      // Create payment record
       const { data, error } = await supabase
         .from('payments')
         .insert(paymentData)
@@ -385,15 +386,24 @@ export const useAppointments = () => {
 
       if (error) throw error;
 
+      // Update appointment status to completed
+      const { error: updateError } = await supabase
+        .from('appointments')
+        .update({ status: 'completed' })
+        .eq('id', paymentData.appointment_id);
+
+      if (updateError) throw updateError;
+
       toast({
         title: 'Success',
-        description: 'Payment recorded successfully',
+        description: 'Payment recorded and appointment completed',
       });
 
       await fetchPayments();
+      await fetchAppointments();
       return data;
     } catch (error) {
-      console.error('Error creating payment:', error);
+      console.error('Error recording payment:', error);
       toast({
         title: 'Error',
         description: 'Failed to record payment',

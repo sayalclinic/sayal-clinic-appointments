@@ -88,6 +88,7 @@ export const PaymentDialog = ({
         ? selectedTests.join(', ') + (data.testsDone ? `, ${data.testsDone}` : '')
         : data.testsDone || undefined;
 
+      // Create payment record
       await createPayment({
         appointment_id: appointmentId,
         amount: data.amount,

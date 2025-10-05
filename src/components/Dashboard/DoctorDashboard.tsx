@@ -149,7 +149,7 @@ export const DoctorDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <AppointmentCalendar
-                  appointments={appointments.filter(apt => apt.status === 'approved')}
+                  appointments={appointments}
                   onDateSelect={setSelectedDate}
                   selectedDate={selectedDate}
                 />
@@ -168,20 +168,44 @@ export const DoctorDashboard = () => {
                     {selectedDate ? (
                       (() => {
                         const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
-                        const dayAppointments = appointments.filter(apt => 
-                          apt.appointment_date === dateStr && apt.status === 'approved'
+                        const activeAppointments = appointments.filter(apt => 
+                          apt.appointment_date === dateStr && 
+                          apt.status === 'approved'
                         );
-                        return dayAppointments.length === 0 ? (
+                        const completedAppointments = appointments.filter(apt => 
+                          apt.appointment_date === dateStr && 
+                          apt.status === 'completed'
+                        );
+                        const hasAnyAppointments = activeAppointments.length > 0 || completedAppointments.length > 0;
+                        
+                        return !hasAnyAppointments ? (
                           <p className="text-muted-foreground text-center py-4">No appointments scheduled</p>
                         ) : (
                           <div className="space-y-3">
-                            {dayAppointments.map((appointment) => (
+                            {activeAppointments.map((appointment) => (
                               <AppointmentCard
                                 key={appointment.id}
                                 appointment={appointment}
                                 showActions={false}
                               />
                             ))}
+                            {completedAppointments.length > 0 && (
+                              <>
+                                {activeAppointments.length > 0 && (
+                                  <div className="border-t border-border my-2 pt-2">
+                                    <p className="text-xs text-muted-foreground font-medium">Completed Appointments</p>
+                                  </div>
+                                )}
+                                {completedAppointments.map((appointment) => (
+                                  <AppointmentCard
+                                    key={appointment.id}
+                                    appointment={appointment}
+                                    showActions={false}
+                                    isTranslucent={true}
+                                  />
+                                ))}
+                              </>
+                            )}
                           </div>
                         );
                       })()
