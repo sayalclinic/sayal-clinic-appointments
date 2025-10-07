@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
-import { useToast } from './use-toast';
-import { showNotification } from '@/utils/notifications';
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./useAuth";
+import { useToast } from "./use-toast";
+import { showNotification } from "@/utils/notifications";
 
 export interface Patient {
   id: string;
@@ -54,9 +54,7 @@ export const useAppointments = () => {
   // Fetch all appointments
   const fetchAppointments = async () => {
     try {
-      let query = supabase
-        .from('appointments')
-        .select(`
+      let query = supabase.from("appointments_lovable").select(`
           *,
           patients (*),
           doctor_profile:profiles!appointments_doctor_id_fkey (name),
@@ -64,22 +62,22 @@ export const useAppointments = () => {
         `);
 
       // Filter based on user role
-      if (profile?.role === 'doctor') {
-        query = query.eq('doctor_id', profile.user_id);
+      if (profile?.role === "doctor") {
+        query = query.eq("doctor_id", profile.user_id);
       }
       // Receptionists can see all appointments to manage them
       // No filtering needed for receptionists
 
-      const { data, error } = await query.order('appointment_date', { ascending: true });
+      const { data, error } = await query.order("appointment_date", { ascending: true });
 
       if (error) throw error;
       setAppointments(data || []);
     } catch (error) {
-      console.error('Error fetching appointments:', error);
+      console.error("Error fetching appointments:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to fetch appointments',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to fetch appointments",
+        variant: "destructive",
       });
     }
   };
@@ -87,15 +85,12 @@ export const useAppointments = () => {
   // Fetch all patients
   const fetchPatients = async () => {
     try {
-      const { data, error } = await supabase
-        .from('patients')
-        .select('*')
-        .order('name', { ascending: true });
+      const { data, error } = await supabase.from("patients").select("*").order("name", { ascending: true });
 
       if (error) throw error;
       setPatients(data || []);
     } catch (error) {
-      console.error('Error fetching patients:', error);
+      console.error("Error fetching patients:", error);
     }
   };
 
@@ -103,67 +98,60 @@ export const useAppointments = () => {
   const fetchDoctors = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'doctor')
-        .order('name', { ascending: true });
+        .from("profiles")
+        .select("*")
+        .eq("role", "doctor")
+        .order("name", { ascending: true });
 
       if (error) throw error;
       setDoctors(data || []);
     } catch (error) {
-      console.error('Error fetching doctors:', error);
+      console.error("Error fetching doctors:", error);
     }
   };
 
   // Fetch payments
   const fetchPayments = async () => {
     try {
-      const { data, error } = await supabase
-        .from('payments')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.from("payments").select("*").order("created_at", { ascending: false });
 
       if (error) throw error;
       setPayments(data || []);
     } catch (error) {
-      console.error('Error fetching payments:', error);
+      console.error("Error fetching payments:", error);
     }
   };
 
   // Search for patient by name
   const searchPatientByName = async (name: string): Promise<Patient | null> => {
     try {
-      const { data, error } = await supabase
-        .from('patients')
-        .select('*')
-        .ilike('name', name)
-        .maybeSingle();
+      const { data, error } = await supabase.from("patients").select("*").ilike("name", name).maybeSingle();
 
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Error searching patient:', error);
+      console.error("Error searching patient:", error);
       return null;
     }
   };
 
   // Create or update patient
-  const upsertPatient = async (patientData: Omit<Patient, 'id' | 'created_at' | 'updated_at'>) => {
+  const upsertPatient = async (patientData: Omit<Patient, "id" | "created_at" | "updated_at">) => {
     try {
       // Check if patient already exists by name and contact
       const { data: existingPatient } = await supabase
-        .from('patients')
-        .select('*')
-        .eq('name', patientData.name)
-        .eq('contact_no', patientData.contact_no)
+        .from("patients")
+        .select("*")
+        .eq("name", patientData.name)
+        .eq("contact_no", patientData.contact_no)
         .maybeSingle();
 
       if (existingPatient) {
         // Update existing patient
         const { data, error } = await supabase
-          .from('patients')
+          .from("patients")
           .update(patientData)
-          .eq('id', existingPatient.id)
+          .eq("id", existingPatient.id)
           .select()
           .single();
 
@@ -171,17 +159,13 @@ export const useAppointments = () => {
         return data;
       } else {
         // Create new patient
-        const { data, error } = await supabase
-          .from('patients')
-          .insert(patientData)
-          .select()
-          .single();
+        const { data, error } = await supabase.from("patients").insert(patientData).select().single();
 
         if (error) throw error;
         return data;
       }
     } catch (error) {
-      console.error('Error upserting patient:', error);
+      console.error("Error upserting patient:", error);
       throw error;
     }
   };
@@ -198,13 +182,13 @@ export const useAppointments = () => {
     isWalkIn?: boolean;
   }) => {
     try {
-      if (!profile?.user_id) throw new Error('User not authenticated');
+      if (!profile?.user_id) throw new Error("User not authenticated");
 
       // Walk-in appointments are auto-approved
-      const appointmentStatus = appointmentData.isWalkIn ? 'approved' : 'pending';
+      const appointmentStatus = appointmentData.isWalkIn ? "approved" : "pending";
 
       const { data, error } = await supabase
-        .from('appointments')
+        .from("appointments_lovable")
         .insert({
           patient_id: appointmentData.patient_id,
           patient_name: appointmentData.patient_name,
@@ -221,110 +205,104 @@ export const useAppointments = () => {
 
       if (error) throw error;
 
-      const successMessage = appointmentData.isWalkIn 
-        ? 'Walk-in appointment created and automatically approved'
-        : 'Appointment created successfully';
+      const successMessage = appointmentData.isWalkIn
+        ? "Walk-in appointment created and automatically approved"
+        : "Appointment created successfully";
 
       toast({
-        title: 'Success',
+        title: "Success",
         description: successMessage,
       });
 
       // Only send push notification to doctor if it's NOT a walk-in
       if (!appointmentData.isWalkIn) {
-        const { sendPushNotification } = await import('@/utils/notifications');
+        const { sendPushNotification } = await import("@/utils/notifications");
         const { data: patient } = await supabase
-          .from('patients')
-          .select('name')
-          .eq('id', appointmentData.patient_id)
+          .from("patients")
+          .select("name")
+          .eq("id", appointmentData.patient_id)
           .single();
-        
+
         await sendPushNotification(
           appointmentData.doctor_id,
-          'New Appointment',
-          `New appointment scheduled with ${patient?.name || 'a patient'} on ${appointmentData.appointment_date} at ${appointmentData.appointment_time}`
+          "New Appointment",
+          `New appointment scheduled with ${patient?.name || "a patient"} on ${appointmentData.appointment_date} at ${appointmentData.appointment_time}`,
         );
       }
 
       await fetchAppointments();
       return data;
     } catch (error) {
-      console.error('Error creating appointment:', error);
+      console.error("Error creating appointment:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to create appointment',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to create appointment",
+        variant: "destructive",
       });
       throw error;
     }
   };
 
   // Update appointment status
-  const updateAppointmentStatus = async (
-    appointmentId: string,
-    status: string,
-    denialReason?: string
-  ) => {
+  const updateAppointmentStatus = async (appointmentId: string, status: string, denialReason?: string) => {
     try {
       const updateData: any = { status };
       if (denialReason) {
         updateData.denial_reason = denialReason;
       }
-      
+
       // If appointment is marked as missed, reset it to pending for rescheduling
-      if (status === 'missed') {
-        updateData.status = 'pending';
+      if (status === "missed") {
+        updateData.status = "pending";
       }
 
-      const { error } = await supabase
-        .from('appointments')
-        .update(updateData)
-        .eq('id', appointmentId);
+      const { error } = await supabase.from("appointments_lovable").update(updateData).eq("id", appointmentId);
 
       if (error) throw error;
 
-      const successMessage = status === 'missed' 
-        ? 'Appointment marked as missed and sent back for rescheduling'
-        : `Appointment ${status} successfully`;
+      const successMessage =
+        status === "missed"
+          ? "Appointment marked as missed and sent back for rescheduling"
+          : `Appointment ${status} successfully`;
 
       toast({
-        title: 'Success',
+        title: "Success",
         description: successMessage,
       });
 
       // Send push notification to receptionist when appointment is approved
-      if (status === 'approved') {
+      if (status === "approved") {
         const { data: appointment } = await supabase
-          .from('appointments')
-          .select('receptionist_id, patient_id, appointment_date, appointment_time')
-          .eq('id', appointmentId)
+          .from("appointments_lovable")
+          .select("receptionist_id, patient_id, appointment_date, appointment_time")
+          .eq("id", appointmentId)
           .single();
 
         if (appointment?.receptionist_id) {
           const { data: patient } = await supabase
-            .from('patients')
-            .select('name')
-            .eq('id', appointment.patient_id)
+            .from("patients")
+            .select("name")
+            .eq("id", appointment.patient_id)
             .single();
 
-          const { sendPushNotification } = await import('@/utils/notifications');
+          const { sendPushNotification } = await import("@/utils/notifications");
           await sendPushNotification(
             appointment.receptionist_id,
-            'Appointment Approved',
-            `Appointment with ${patient?.name || 'patient'} on ${appointment.appointment_date} at ${appointment.appointment_time} has been approved`
+            "Appointment Approved",
+            `Appointment with ${patient?.name || "patient"} on ${appointment.appointment_date} at ${appointment.appointment_time} has been approved`,
           );
         }
 
-        showNotification('Appointment Approved', 'An appointment has been approved by the doctor');
+        showNotification("Appointment Approved", "An appointment has been approved by the doctor");
       }
 
       await fetchAppointments();
     } catch (error) {
-      console.error('Error updating appointment:', error);
+      console.error("Error updating appointment:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to update appointment',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to update appointment",
+        variant: "destructive",
       });
       throw error;
     }
@@ -339,34 +317,31 @@ export const useAppointments = () => {
       appointment_time?: string;
       reason_for_visit?: string;
       symptoms?: string;
-    }
+    },
   ) => {
     try {
       // When appointment is edited, reset status to pending for doctor approval
       const finalUpdateData = {
         ...updateData,
-        status: 'pending'
+        status: "pending",
       };
 
-      const { error } = await supabase
-        .from('appointments')
-        .update(finalUpdateData)
-        .eq('id', appointmentId);
+      const { error } = await supabase.from("appointments_lovable").update(finalUpdateData).eq("id", appointmentId);
 
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: 'Appointment updated and sent back to doctor for approval',
+        title: "Success",
+        description: "Appointment updated and sent back to doctor for approval",
       });
 
       await fetchAppointments();
     } catch (error) {
-      console.error('Error updating appointment:', error);
+      console.error("Error updating appointment:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to update appointment',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to update appointment",
+        variant: "destructive",
       });
       throw error;
     }
@@ -381,36 +356,32 @@ export const useAppointments = () => {
   }) => {
     try {
       // Create payment record
-      const { data, error } = await supabase
-        .from('payments')
-        .insert(paymentData)
-        .select()
-        .single();
+      const { data, error } = await supabase.from("payments").insert(paymentData).select().single();
 
       if (error) throw error;
 
       // Update appointment status to completed
       const { error: updateError } = await supabase
-        .from('appointments')
-        .update({ status: 'completed' })
-        .eq('id', paymentData.appointment_id);
+        .from("appointments_lovable")
+        .update({ status: "completed" })
+        .eq("id", paymentData.appointment_id);
 
       if (updateError) throw updateError;
 
       toast({
-        title: 'Success',
-        description: 'Payment recorded and appointment completed',
+        title: "Success",
+        description: "Payment recorded and appointment completed",
       });
 
       await fetchPayments();
       await fetchAppointments();
       return data;
     } catch (error) {
-      console.error('Error recording payment:', error);
+      console.error("Error recording payment:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to record payment',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to record payment",
+        variant: "destructive",
       });
       throw error;
     }
@@ -419,25 +390,22 @@ export const useAppointments = () => {
   // Delete appointment
   const deleteAppointment = async (appointmentId: string) => {
     try {
-      const { error } = await supabase
-        .from('appointments')
-        .delete()
-        .eq('id', appointmentId);
+      const { error } = await supabase.from("appointments_lovable").delete().eq("id", appointmentId);
 
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: 'Appointment deleted successfully',
+        title: "Success",
+        description: "Appointment deleted successfully",
       });
 
       await fetchAppointments();
     } catch (error) {
-      console.error('Error deleting appointment:', error);
+      console.error("Error deleting appointment:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to delete appointment',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to delete appointment",
+        variant: "destructive",
       });
       throw error;
     }
@@ -446,25 +414,22 @@ export const useAppointments = () => {
   // Delete patient
   const deletePatient = async (patientId: string) => {
     try {
-      const { error } = await supabase
-        .from('patients')
-        .delete()
-        .eq('id', patientId);
+      const { error } = await supabase.from("patients").delete().eq("id", patientId);
 
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: 'Patient deleted successfully',
+        title: "Success",
+        description: "Patient deleted successfully",
       });
 
       await fetchPatients();
     } catch (error) {
-      console.error('Error deleting patient:', error);
+      console.error("Error deleting patient:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to delete patient',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to delete patient",
+        variant: "destructive",
       });
       throw error;
     }
@@ -474,12 +439,7 @@ export const useAppointments = () => {
     const loadData = async () => {
       if (profile?.user_id) {
         setLoading(true);
-        await Promise.all([
-          fetchAppointments(),
-          fetchPatients(),
-          fetchDoctors(),
-          fetchPayments(),
-        ]);
+        await Promise.all([fetchAppointments(), fetchPatients(), fetchDoctors(), fetchPayments()]);
         setLoading(false);
       }
     };
