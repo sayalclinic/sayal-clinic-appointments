@@ -95,6 +95,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       // Then create the appointment, passing isWalkIn flag
       await createAppointment({
         patient_id: patient.id,
+        patient_name: data.patientName,
         doctor_id: data.doctorId,
         appointment_date: appointmentDate,
         appointment_time: appointmentTime,

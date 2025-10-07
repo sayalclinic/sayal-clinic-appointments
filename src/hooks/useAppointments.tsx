@@ -17,6 +17,7 @@ export interface Patient {
 export interface Appointment {
   id: string;
   patient_id: string;
+  patient_name?: string;
   doctor_id: string;
   receptionist_id: string;
   appointment_date: string;
@@ -188,6 +189,7 @@ export const useAppointments = () => {
   // Create appointment
   const createAppointment = async (appointmentData: {
     patient_id: string;
+    patient_name: string;
     doctor_id: string;
     appointment_date: string;
     appointment_time: string;
@@ -205,6 +207,7 @@ export const useAppointments = () => {
         .from('appointments')
         .insert({
           patient_id: appointmentData.patient_id,
+          patient_name: appointmentData.patient_name,
           doctor_id: appointmentData.doctor_id,
           appointment_date: appointmentData.appointment_date,
           appointment_time: appointmentData.appointment_time,
