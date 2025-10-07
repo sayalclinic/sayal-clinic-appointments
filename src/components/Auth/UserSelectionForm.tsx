@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Plus, Edit, Trash2 } from 'lucide-react';
+import { User, Plus, Edit, Trash2, Calendar, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import clinicLogo from '@/assets/sayal-clinic-logo.png';
 
 interface Profile {
   id: string;
@@ -154,84 +155,84 @@ export const UserSelectionForm = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-medical-light via-background to-medical-accent flex items-center justify-center">
+      <div className="min-h-screen clinic-gradient flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading users...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-foreground font-medium">Loading users...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-medical-light via-background to-medical-accent">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary to-medical-blue rounded-2xl flex items-center justify-center mb-4 shadow-elevated">
-              <svg
-                className="w-8 h-8 text-primary-foreground"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
+    <div className="min-h-screen clinic-gradient">
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-5xl mx-auto">
+          {/* Header with Logo and Title */}
+          <div className="text-center mb-12 smooth-fade">
+            <div className="mx-auto w-24 h-24 mb-6 smooth-hover">
+              <img 
+                src={clinicLogo} 
+                alt="Sayal Clinic Logo" 
+                className="w-full h-full object-contain drop-shadow-xl"
+              />
             </div>
-            <h1 className="text-3xl font-bold text-medical-dark mb-2">Select User</h1>
-            <p className="text-muted-foreground">Click on a user to sign in to ClinicFlow</p>
+            <h1 className="text-4xl md:text-5xl font-bold text-primary mb-3 tracking-tight">
+              Sayal Clinic Appointments
+            </h1>
+            <p className="text-lg text-foreground/80 mb-2">
+              Professional Healthcare Management System
+            </p>
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <Calendar className="w-4 h-4" />
+              <span className="text-sm">Select your profile to continue</span>
+            </div>
           </div>
 
           {/* User Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             {profiles.map((profile) => (
               <Card 
                 key={profile.id} 
-                className="shadow-card hover:shadow-card-hover hover:scale-105 transition-all duration-200 group cursor-pointer border-2 hover:border-primary/30"
+                className="clinic-card hover:scale-[1.03] smooth-transition group cursor-pointer border border-border/50 hover:border-primary/50 bg-card/95 backdrop-blur-sm"
                 onClick={() => handleUserLogin(profile)}
               >
                 <CardHeader className="text-center pb-4">
-                  <Avatar className="w-16 h-16 mx-auto mb-3">
-                    <AvatarFallback className="bg-gradient-to-r from-primary to-medical-blue text-primary-foreground text-lg font-bold">
+                  <Avatar className="w-20 h-20 mx-auto mb-4 smooth-hover ring-2 ring-border group-hover:ring-primary/50 smooth-transition">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary-hover text-primary-foreground text-xl font-bold">
                       {getInitials(profile.name)}
                     </AvatarFallback>
                   </Avatar>
-                  <CardTitle className="text-medical-dark text-lg">{profile.name}</CardTitle>
-                  <Badge variant="outline" className={getRoleColor(profile.role)}>
+                  <CardTitle className="text-foreground text-xl mb-2">{profile.name}</CardTitle>
+                  <Badge variant="outline" className={`${getRoleColor(profile.role)} font-medium`}>
                     {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
                   </Badge>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <div className="flex space-x-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1 border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground"
+                        className="flex-1 smooth-button border-border hover:border-primary hover:bg-primary hover:text-primary-foreground"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEditProfile(profile);
                         }}
                       >
-                        <Edit className="w-3 h-3 mr-1" />
+                        <Edit className="w-3.5 h-3.5 mr-1.5" />
                         Edit
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1 border-destructive/20 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        className="flex-1 smooth-button border-border hover:border-destructive hover:bg-destructive hover:text-destructive-foreground"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteProfile(profile);
                         }}
                       >
-                        <Trash2 className="w-3 h-3 mr-1" />
+                        <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                         Delete
                       </Button>
                     </div>
@@ -245,7 +246,8 @@ export const UserSelectionForm = () => {
           <div className="text-center">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-medical-accent to-primary hover:from-medical-accent/90 hover:to-primary/90 text-primary-foreground px-8"
+              className="smooth-button bg-primary hover:bg-primary-hover text-primary-foreground px-10 py-6 text-lg font-semibold rounded-xl"
+              style={{ boxShadow: 'var(--shadow-elevated)' }}
               onClick={() => navigate('/signup')}
             >
               <Plus className="w-5 h-5 mr-2" />

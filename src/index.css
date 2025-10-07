@@ -7,57 +7,65 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 220 100% 20%;
+    --foreground: 220 90% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 100% 20%;
+    --card-foreground: 220 90% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 100% 20%;
+    --popover-foreground: 220 90% 15%;
 
-    --primary: 220 100% 25%;
+    --primary: 220 95% 32%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 220 100% 20%;
+    --primary-hover: 220 95% 28%;
 
-    --secondary: 165 45% 85%;
-    --secondary-foreground: 220 100% 25%;
+    --secondary: 165 50% 88%;
+    --secondary-foreground: 220 90% 20%;
 
-    --muted: 165 30% 95%;
-    --muted-foreground: 220 40% 45%;
+    --muted: 220 20% 96%;
+    --muted-foreground: 220 30% 40%;
 
-    --accent: 40 60% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 40 85% 55%;
+    --accent-foreground: 220 90% 15%;
 
-    --success: 142 76% 36%;
+    --success: 142 76% 40%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 38 96% 56%;
+    --warning-foreground: 220 90% 15%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 165 25% 88%;
-    --input: 165 25% 88%;
-    --ring: 220 100% 25%;
+    --border: 220 20% 90%;
+    --input: 220 20% 92%;
+    --ring: 220 95% 32%;
 
     /* Sayal Clinic brand colors */
-    --clinic-navy: 220 100% 25%;
-    --clinic-mint: 165 45% 80%;
-    --clinic-gold: 40 60% 50%;
-    --clinic-mint-light: 165 40% 92%;
+    --clinic-navy: 220 95% 32%;
+    --clinic-mint: 165 50% 75%;
+    --clinic-gold: 40 85% 55%;
+    --clinic-mint-light: 165 45% 95%;
+
+    /* Medical-specific colors */
+    --medical-blue: 220 95% 32%;
+    --medical-light: 165 45% 95%;
+    --medical-accent: 40 85% 55%;
+    --medical-dark: 220 90% 15%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(220 100% 25%), hsl(220 90% 35%));
-    --gradient-secondary: linear-gradient(135deg, hsl(165 45% 80%), hsl(165 50% 88%));
-    --gradient-accent: linear-gradient(135deg, hsl(40 60% 50%), hsl(40 70% 60%));
+    --gradient-primary: linear-gradient(135deg, hsl(220 95% 32%), hsl(220 90% 42%));
+    --gradient-secondary: linear-gradient(135deg, hsl(165 50% 85%), hsl(165 45% 95%));
+    --gradient-accent: linear-gradient(135deg, hsl(40 85% 55%), hsl(40 80% 65%));
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(165 40% 98%));
+    --gradient-smooth: linear-gradient(135deg, hsl(165 45% 95%), hsl(0 0% 100%), hsl(220 30% 97%));
     
-    /* Shadows with brand colors */
-    --shadow-card: 0 2px 12px hsl(220 100% 25% / 0.08);
-    --shadow-card-hover: 0 6px 20px hsl(220 100% 25% / 0.12);
-    --shadow-elevated: 0 10px 40px hsl(220 100% 25% / 0.15);
-    --shadow-accent: 0 4px 16px hsl(40 60% 50% / 0.2);
+    /* Enhanced shadows with better contrast */
+    --shadow-card: 0 4px 16px hsl(220 95% 32% / 0.10);
+    --shadow-card-hover: 0 8px 24px hsl(220 95% 32% / 0.15);
+    --shadow-elevated: 0 12px 40px hsl(220 95% 32% / 0.20);
+    --shadow-accent: 0 4px 20px hsl(40 85% 55% / 0.25);
+    --shadow-smooth: 0 2px 8px hsl(220 30% 20% / 0.08);
 
     --radius: 0.75rem;
 
@@ -79,58 +87,66 @@
   }
 
   .dark {
-    --background: 220 100% 8%;
+    --background: 220 90% 10%;
     --foreground: 165 40% 95%;
 
-    --card: 220 90% 12%;
+    --card: 220 85% 14%;
     --card-foreground: 165 40% 95%;
 
-    --popover: 220 90% 12%;
+    --popover: 220 85% 14%;
     --popover-foreground: 165 40% 95%;
 
-    --primary: 165 45% 75%;
-    --primary-foreground: 220 100% 10%;
-    --primary-hover: 165 45% 70%;
+    --primary: 165 50% 70%;
+    --primary-foreground: 220 90% 10%;
+    --primary-hover: 165 50% 65%;
 
-    --secondary: 220 80% 18%;
+    --secondary: 220 75% 22%;
     --secondary-foreground: 165 40% 95%;
 
-    --muted: 220 70% 15%;
-    --muted-foreground: 165 20% 70%;
+    --muted: 220 65% 18%;
+    --muted-foreground: 165 25% 75%;
 
-    --accent: 40 60% 55%;
-    --accent-foreground: 220 100% 10%;
+    --accent: 40 85% 60%;
+    --accent-foreground: 220 90% 10%;
 
-    --success: 142 76% 36%;
+    --success: 142 76% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 38 96% 60%;
+    --warning-foreground: 220 90% 10%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 70% 20%;
-    --input: 220 70% 20%;
-    --ring: 165 45% 75%;
+    --border: 220 60% 25%;
+    --input: 220 60% 25%;
+    --ring: 165 50% 70%;
 
     /* Sayal Clinic brand colors for dark mode */
-    --clinic-navy: 165 45% 75%;
-    --clinic-mint: 165 35% 25%;
-    --clinic-gold: 40 60% 55%;
-    --clinic-mint-light: 220 80% 18%;
+    --clinic-navy: 165 50% 70%;
+    --clinic-mint: 165 40% 30%;
+    --clinic-gold: 40 85% 60%;
+    --clinic-mint-light: 220 75% 22%;
+
+    /* Medical-specific colors */
+    --medical-blue: 165 50% 70%;
+    --medical-light: 220 75% 22%;
+    --medical-accent: 40 85% 60%;
+    --medical-dark: 165 40% 95%;
 
     /* Dark mode gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(165 45% 75%), hsl(165 50% 68%));
-    --gradient-secondary: linear-gradient(135deg, hsl(220 90% 12%), hsl(220 80% 18%));
-    --gradient-accent: linear-gradient(135deg, hsl(40 60% 55%), hsl(40 70% 65%));
-    --gradient-card: linear-gradient(180deg, hsl(220 90% 12%), hsl(220 85% 15%));
+    --gradient-primary: linear-gradient(135deg, hsl(165 50% 70%), hsl(165 45% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(220 85% 14%), hsl(220 75% 22%));
+    --gradient-accent: linear-gradient(135deg, hsl(40 85% 60%), hsl(40 80% 70%));
+    --gradient-card: linear-gradient(180deg, hsl(220 85% 14%), hsl(220 80% 18%));
+    --gradient-smooth: linear-gradient(135deg, hsl(220 75% 22%), hsl(220 85% 14%), hsl(220 80% 18%));
     
-    /* Dark mode shadows */
-    --shadow-card: 0 2px 12px hsl(0 0% 0% / 0.5);
-    --shadow-card-hover: 0 6px 20px hsl(0 0% 0% / 0.7);
-    --shadow-elevated: 0 10px 40px hsl(0 0% 0% / 0.85);
-    --shadow-accent: 0 4px 16px hsl(40 60% 55% / 0.3);
+    /* Enhanced dark mode shadows */
+    --shadow-card: 0 4px 16px hsl(0 0% 0% / 0.6);
+    --shadow-card-hover: 0 8px 24px hsl(0 0% 0% / 0.8);
+    --shadow-elevated: 0 12px 40px hsl(0 0% 0% / 0.9);
+    --shadow-accent: 0 4px 20px hsl(40 85% 60% / 0.4);
+    --shadow-smooth: 0 2px 8px hsl(0 0% 0% / 0.5);
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -145,40 +161,47 @@
 @layer base {
   * {
     @apply border-border;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-feature-settings: "liga" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
 @layer components {
   .smooth-transition {
-    @apply transition-all duration-500 ease-out;
+    @apply transition-all duration-300 ease-out;
   }
   
   .smooth-hover {
-    @apply transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-lg;
+    @apply transition-all duration-200 ease-out hover:scale-[1.02];
   }
   
   .smooth-button {
-    @apply transition-all duration-300 ease-out hover:shadow-xl active:scale-[0.98];
+    @apply transition-all duration-200 ease-out hover:scale-[1.02] active:scale-[0.98];
   }
   
   .smooth-slide {
-    @apply transition-transform duration-500 ease-out;
+    @apply transition-transform duration-300 ease-out;
   }
   
   .smooth-fade {
-    @apply transition-opacity duration-500 ease-out;
+    @apply transition-opacity duration-300 ease-out;
   }
 
   .clinic-card {
-    @apply bg-card rounded-xl shadow-md hover:shadow-lg smooth-transition border border-border/50;
+    @apply bg-card rounded-xl border border-border/50 smooth-transition;
+    box-shadow: var(--shadow-card);
+  }
+
+  .clinic-card:hover {
+    box-shadow: var(--shadow-card-hover);
   }
 
   .clinic-gradient {
-    @apply bg-gradient-to-br from-secondary via-background to-muted;
+    background: var(--gradient-smooth);
   }
 }
