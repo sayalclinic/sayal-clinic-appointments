@@ -9,7 +9,7 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_nXZO0R9vwso0dFmCK-HrGw_eHdOgqh5
 ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtb3Nnd29zYnFsdHFscnd0dXBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MjcxMzgsImV4cCI6MjA3NTMwMzEzOH0.yZ0Zkg82ddTyhRlibmTm1el7EzWNEyNuwwpvKoMJjz");
 
 // ⚙ Create and export the client
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_KEY, {
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true,
