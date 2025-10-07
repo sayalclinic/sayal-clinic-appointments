@@ -149,8 +149,14 @@ export const UserSelectionForm = () => {
 
   const getRoleColor = (role: string) => {
     return role === 'doctor' 
-      ? 'bg-primary/10 text-primary border-primary/20'
-      : 'bg-medical-accent/10 text-medical-accent border-medical-accent/20';
+      ? 'bg-primary/15 text-primary border-primary/30 font-semibold'
+      : 'bg-accent/15 text-accent-foreground border-accent/30 font-semibold';
+  };
+
+  const getCardGradient = (role: string) => {
+    return role === 'doctor'
+      ? 'bg-gradient-to-br from-primary/5 via-card to-primary/5'
+      : 'bg-gradient-to-br from-accent/5 via-card to-accent/5';
   };
 
   if (loading) {
@@ -165,7 +171,7 @@ export const UserSelectionForm = () => {
   }
 
   return (
-    <div className="min-h-screen clinic-gradient">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/10">
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-5xl mx-auto">
           {/* Header with Logo and Title */}
@@ -180,12 +186,12 @@ export const UserSelectionForm = () => {
             <h1 className="text-4xl md:text-5xl font-bold text-primary mb-3 tracking-tight">
               Sayal Clinic Appointments
             </h1>
-            <p className="text-lg text-foreground/80 mb-2">
+            <p className="text-lg text-foreground mb-2 font-medium">
               Professional Healthcare Management System
             </p>
-            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+            <div className="flex items-center justify-center gap-2 text-foreground/70">
               <Calendar className="w-4 h-4" />
-              <span className="text-sm">Select your profile to continue</span>
+              <span className="text-sm font-medium">Select your profile to continue</span>
             </div>
           </div>
 
@@ -194,17 +200,25 @@ export const UserSelectionForm = () => {
             {profiles.map((profile) => (
               <Card 
                 key={profile.id} 
-                className="clinic-card hover:scale-[1.03] smooth-transition group cursor-pointer border border-border/50 hover:border-primary/50 bg-card/95 backdrop-blur-sm"
+                className={`clinic-card hover:scale-[1.03] smooth-transition group cursor-pointer border-2 hover:border-primary/50 backdrop-blur-sm ${getCardGradient(profile.role)}`}
                 onClick={() => handleUserLogin(profile)}
               >
                 <CardHeader className="text-center pb-4">
-                  <Avatar className="w-20 h-20 mx-auto mb-4 smooth-hover ring-2 ring-border group-hover:ring-primary/50 smooth-transition">
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary-hover text-primary-foreground text-xl font-bold">
+                  <Avatar className={`w-20 h-20 mx-auto mb-4 smooth-hover ring-2 group-hover:ring-4 smooth-transition ${
+                    profile.role === 'doctor' 
+                      ? 'ring-primary/30 group-hover:ring-primary/60' 
+                      : 'ring-accent/30 group-hover:ring-accent/60'
+                  }`}>
+                    <AvatarFallback className={`text-xl font-bold text-primary-foreground ${
+                      profile.role === 'doctor'
+                        ? 'bg-gradient-to-br from-primary to-primary-hover'
+                        : 'bg-gradient-to-br from-accent to-accent/80'
+                    }`}>
                       {getInitials(profile.name)}
                     </AvatarFallback>
                   </Avatar>
-                  <CardTitle className="text-foreground text-xl mb-2">{profile.name}</CardTitle>
-                  <Badge variant="outline" className={`${getRoleColor(profile.role)} font-medium`}>
+                  <CardTitle className="text-foreground text-xl mb-3 font-bold">{profile.name}</CardTitle>
+                  <Badge variant="outline" className={getRoleColor(profile.role)}>
                     {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
                   </Badge>
                 </CardHeader>
@@ -214,7 +228,7 @@ export const UserSelectionForm = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1 smooth-button border-border hover:border-primary hover:bg-primary hover:text-primary-foreground"
+                        className="flex-1 smooth-button border-border/50 hover:border-primary hover:bg-primary hover:text-primary-foreground font-medium"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEditProfile(profile);
@@ -226,7 +240,7 @@ export const UserSelectionForm = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1 smooth-button border-border hover:border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        className="flex-1 smooth-button border-border/50 hover:border-destructive hover:bg-destructive hover:text-destructive-foreground font-medium"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteProfile(profile);
