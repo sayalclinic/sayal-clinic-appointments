@@ -1,17 +1,17 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Phone, Heart, Calendar, FileText, Plus, Edit2, Save } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Patient } from "@/hooks/useAppointments";
-import { format } from "date-fns";
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { User, Phone, Heart, Calendar, FileText, Plus, Edit2, Save } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Patient } from '@/hooks/useAppointments';
+import { format } from 'date-fns';
 
 interface PatientDetailsDialogProps {
   patient: Patient | null;
@@ -59,69 +59,71 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
 
   const fetchPatientDetails = async () => {
     if (!patient) return;
-
+    
     try {
-      const { data, error } = await supabase.from("patients").select("*").eq("id", patient.id).single();
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('id', patient.id)
+        .single();
 
       if (error) throw error;
       setPatientDetails(data);
     } catch (error) {
-      console.error("Error fetching patient details:", error);
+      console.error('Error fetching patient details:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch patient details",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to fetch patient details',
+        variant: 'destructive',
       });
     }
   };
 
   const fetchPatientVisits = async () => {
     if (!patient) return;
-
+    
     try {
       const { data, error } = await supabase
-        .from("patient_visits")
-        .select("*")
-        .eq("patient_id", patient.id)
-        .order("visit_date", { ascending: false });
+        .from('patient_visits')
+        .select('*')
+        .eq('patient_id', patient.id)
+        .order('visit_date', { ascending: false });
 
       if (error) throw error;
       setVisits(data || []);
     } catch (error) {
-      console.error("Error fetching patient visits:", error);
+      console.error('Error fetching patient visits:', error);
     }
   };
 
   const fetchPatientAppointments = async () => {
     if (!patient) return;
-
+    
     try {
       const { data, error } = await supabase
-        .from("appointments_lovable")
-        .select(
-          `
+        .from('appointments')
+        .select(`
           *,
           doctor_profile:profiles!appointments_doctor_id_fkey (name),
           payments (amount, payment_method, tests_done)
-        `,
-        )
-        .eq("patient_id", patient.id)
-        .order("appointment_date", { ascending: false });
+        `)
+        .eq('patient_id', patient.id)
+        .order('appointment_date', { ascending: false });
 
       if (error) throw error;
       setAppointments(data || []);
     } catch (error) {
-      console.error("Error fetching patient appointments:", error);
+      console.error('Error fetching patient appointments:', error);
     }
   };
 
   const handleSavePatient = async () => {
     if (!patientDetails) return;
-
+    
     setLoading(true);
     try {
       const { error } = await supabase
-        .from("patients")
+        .from('patients')
         .update({
           name: patientDetails.name,
           age: patientDetails.age,
@@ -134,21 +136,21 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
           insurance_info: patientDetails.insurance_info,
           blood_type: patientDetails.blood_type,
         })
-        .eq("id", patientDetails.id);
+        .eq('id', patientDetails.id);
 
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Patient details updated successfully",
+        title: 'Success',
+        description: 'Patient details updated successfully',
       });
       setIsEditing(false);
     } catch (error) {
-      console.error("Error updating patient:", error);
+      console.error('Error updating patient:', error);
       toast({
-        title: "Error",
-        description: "Failed to update patient details",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to update patient details',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -156,30 +158,29 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
   };
 
   const handleDeletePatient = async () => {
-    if (
-      !patientDetails ||
-      !window.confirm("Are you sure you want to delete this patient? This action cannot be undone.")
-    )
-      return;
-
+    if (!patientDetails || !window.confirm('Are you sure you want to delete this patient? This action cannot be undone.')) return;
+    
     try {
-      const { error } = await supabase.from("patients").delete().eq("id", patientDetails.id);
+      const { error } = await supabase
+        .from('patients')
+        .delete()
+        .eq('id', patientDetails.id);
 
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Patient deleted successfully",
+        title: 'Success',
+        description: 'Patient deleted successfully',
       });
-
+      
       onDelete?.(patientDetails.id);
       onOpenChange(false);
     } catch (error) {
-      console.error("Error deleting patient:", error);
+      console.error('Error deleting patient:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete patient",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to delete patient',
+        variant: 'destructive',
       });
     }
   };
@@ -207,18 +208,30 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                     <Save className="w-4 h-4 mr-1" />
                     Save
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditing(false)}
+                  >
                     Cancel
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditing(true)}
+                  >
                     <Edit2 className="w-4 h-4 mr-1" />
                     Edit
                   </Button>
                   {onDelete && (
-                    <Button size="sm" variant="destructive" onClick={handleDeletePatient}>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={handleDeletePatient}
+                    >
                       Delete Patient
                     </Button>
                   )}
@@ -280,7 +293,7 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                     <Label htmlFor="blood_type">Blood Type</Label>
                     <Input
                       id="blood_type"
-                      value={patientDetails.blood_type || ""}
+                      value={patientDetails.blood_type || ''}
                       onChange={(e) => setPatientDetails({ ...patientDetails, blood_type: e.target.value })}
                       disabled={!isEditing}
                       placeholder="e.g., A+"
@@ -299,7 +312,7 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                     <Label htmlFor="emergency_name">Contact Name</Label>
                     <Input
                       id="emergency_name"
-                      value={patientDetails.emergency_contact_name || ""}
+                      value={patientDetails.emergency_contact_name || ''}
                       onChange={(e) => setPatientDetails({ ...patientDetails, emergency_contact_name: e.target.value })}
                       disabled={!isEditing}
                     />
@@ -308,10 +321,8 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                     <Label htmlFor="emergency_phone">Contact Phone</Label>
                     <Input
                       id="emergency_phone"
-                      value={patientDetails.emergency_contact_phone || ""}
-                      onChange={(e) =>
-                        setPatientDetails({ ...patientDetails, emergency_contact_phone: e.target.value })
-                      }
+                      value={patientDetails.emergency_contact_phone || ''}
+                      onChange={(e) => setPatientDetails({ ...patientDetails, emergency_contact_phone: e.target.value })}
                       disabled={!isEditing}
                     />
                   </div>
@@ -319,7 +330,7 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                     <Label htmlFor="insurance">Insurance Information</Label>
                     <Textarea
                       id="insurance"
-                      value={patientDetails.insurance_info || ""}
+                      value={patientDetails.insurance_info || ''}
                       onChange={(e) => setPatientDetails({ ...patientDetails, insurance_info: e.target.value })}
                       disabled={!isEditing}
                     />
@@ -341,7 +352,7 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                   <Label htmlFor="allergies">Allergies</Label>
                   <Textarea
                     id="allergies"
-                    value={patientDetails.allergies || ""}
+                    value={patientDetails.allergies || ''}
                     onChange={(e) => setPatientDetails({ ...patientDetails, allergies: e.target.value })}
                     disabled={!isEditing}
                     placeholder="List any known allergies..."
@@ -351,7 +362,7 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                   <Label htmlFor="medications">Current Medications</Label>
                   <Textarea
                     id="medications"
-                    value={patientDetails.current_medications || ""}
+                    value={patientDetails.current_medications || ''}
                     onChange={(e) => setPatientDetails({ ...patientDetails, current_medications: e.target.value })}
                     disabled={!isEditing}
                     placeholder="List current medications..."
@@ -361,7 +372,7 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                   <Label htmlFor="medical_history">Medical History</Label>
                   <Textarea
                     id="medical_history"
-                    value={patientDetails.medical_history || ""}
+                    value={patientDetails.medical_history || ''}
                     onChange={(e) => setPatientDetails({ ...patientDetails, medical_history: e.target.value })}
                     disabled={!isEditing}
                     placeholder="Medical history and conditions..."
@@ -392,7 +403,7 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-base">
-                          Visit - {format(new Date(visit.visit_date), "MMM dd, yyyy")}
+                          Visit - {format(new Date(visit.visit_date), 'MMM dd, yyyy')}
                         </CardTitle>
                         {visit.follow_up_needed && (
                           <Badge variant="outline" className="bg-warning/10 text-warning">
@@ -447,19 +458,15 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-base">
-                          {format(new Date(appointment.appointment_date), "MMM dd, yyyy")} at{" "}
-                          {appointment.appointment_time}
+                          {format(new Date(appointment.appointment_date), 'MMM dd, yyyy')} at {appointment.appointment_time}
                         </CardTitle>
-                        <Badge
-                          variant="outline"
+                        <Badge 
+                          variant="outline" 
                           className={
-                            appointment.status === "completed"
-                              ? "bg-success/10 text-success"
-                              : appointment.status === "approved"
-                                ? "bg-primary/10 text-primary"
-                                : appointment.status === "pending"
-                                  ? "bg-warning/10 text-warning"
-                                  : "bg-destructive/10 text-destructive"
+                            appointment.status === 'completed' ? 'bg-success/10 text-success' :
+                            appointment.status === 'approved' ? 'bg-primary/10 text-primary' :
+                            appointment.status === 'pending' ? 'bg-warning/10 text-warning' :
+                            'bg-destructive/10 text-destructive'
                           }
                         >
                           {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
@@ -485,9 +492,7 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                           <span className="font-medium">Payment Details:</span>
                           {appointment.payments.map((payment: any, index: number) => (
                             <div key={index} className="text-sm text-muted-foreground pl-4">
-                              <div>
-                                Amount: ${payment.amount} ({payment.payment_method})
-                              </div>
+                              <div>Amount: ${payment.amount} ({payment.payment_method})</div>
                               {payment.tests_done && <div>Tests: {payment.tests_done}</div>}
                             </div>
                           ))}
