@@ -98,7 +98,13 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
     try {
       const { data, error } = await supabase
         .from("appointments")
-        .select("*")
+        .select(
+          `
+          *,
+         doctor_profile:profiles!doctor_id(name),
+         payments (amount, payment_method, tests_done)
+         `,
+        )
         .eq("patient_id", patient.id)
         .order("appointment_date", { ascending: false });
 
