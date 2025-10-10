@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import clinicLogo from '@/assets/sayal-clinic-logo.png';
+import { PinDialog } from './PinDialog';
 
 interface Profile {
   id: string;
@@ -28,6 +29,8 @@ export const UserSelectionForm = () => {
   const [editName, setEditName] = useState('');
   const [editRole, setEditRole] = useState<string>('doctor');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [pinDialogOpen, setPinDialogOpen] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -57,9 +60,18 @@ export const UserSelectionForm = () => {
   };
 
   const handleUserLogin = async (profile: Profile) => {
+    // If doctor, require PIN
+    if (profile.role === 'doctor') {
+      setSelectedProfile(profile);
+      setPinDialogOpen(true);
+    } else {
+      // Receptionist can login directly
+      completeLogin(profile);
+    }
+  };
+
+  const completeLogin = (profile: Profile) => {
     try {
-      // For demo purposes, we'll create a temporary session
-      // In production, you'd implement proper session management
       localStorage.setItem('selectedUserId', profile.user_id);
       navigate('/dashboard');
     } catch (error) {
@@ -312,6 +324,21 @@ export const UserSelectionForm = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* PIN Dialog for Doctor Login */}
+      <PinDialog
+        open={pinDialogOpen}
+        onOpenChange={setPinDialogOpen}
+        onSuccess={() => {
+          if (selectedProfile) {
+            completeLogin(selectedProfile);
+          }
+          setPinDialogOpen(false);
+          setSelectedProfile(null);
+        }}
+        title="Doctor Authentication"
+        description="Please enter your 4-digit PIN to access the doctor dashboard"
+      />
     </div>
   );
 };

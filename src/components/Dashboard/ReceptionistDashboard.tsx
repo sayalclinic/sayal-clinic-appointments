@@ -365,32 +365,24 @@ export const ReceptionistDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow cursor-pointer smooth-hover">
+              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Reports</CardTitle>
+                  <CardTitle className="text-sm font-medium">Statistics</CardTitle>
                   <FileText className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full text-xs h-8"
-                      onClick={() => window.open('/appointment-history', '_blank')}
-                    >
-                      <FileText className="w-3 h-3 mr-1" />
-                      Patient History
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full text-xs h-8"
-                      onClick={() => window.open('/payment-reports', '_blank')}
-                    >
-                      <Calendar className="w-3 h-3 mr-1" />
-                      Payment Reports
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="w-full"
+                    onClick={() => window.location.href = '/stats'}
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    View Stats & Reports
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    PIN required
+                  </p>
                 </CardContent>
               </Card>
             </div>

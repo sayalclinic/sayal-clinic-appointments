@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { AppointmentHistory } from "./pages/AppointmentHistory";
 import { PaymentReports } from "./pages/PaymentReports";
+import { StatsPage } from "./pages/StatsPage";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const AppContent = () => {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/appointment-history" element={<AppointmentHistory />} />
       <Route path="/payment-reports" element={<PaymentReports />} />
+      <Route path="/stats" element={<StatsPage />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>

@@ -97,12 +97,18 @@ export const AppointmentCard = ({
     <>
       <Dialog>
         <DialogTrigger asChild>
-          <Card className={`smooth-hover hover:shadow-card-hover border-l-4 border-l-primary/30 cursor-pointer animate-fade-in ${isTranslucent ? 'opacity-40' : ''}`}>
-            <CardHeader className="pb-3">
+          <Card className={`smooth-hover hover:shadow-elevated border-l-4 ${
+            appointment.status === 'approved' ? 'border-l-success' : 
+            appointment.status === 'denied' ? 'border-l-destructive' : 
+            'border-l-primary'
+          } cursor-pointer animate-fade-in transition-all duration-300 ${
+            isTranslucent ? 'opacity-50' : ''
+          }`}>
+            <CardHeader className="pb-3 px-4">
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <h3 
-                    className="font-bold text-medical-dark text-xl truncate cursor-pointer hover:text-primary smooth-transition"
+                    className="font-bold text-foreground text-lg truncate cursor-pointer hover:text-primary smooth-transition"
                     onClick={(e) => {
                       e.stopPropagation();
                       setPatientDialogOpen(true);
@@ -110,24 +116,24 @@ export const AppointmentCard = ({
                   >
                     {appointment.patients?.name}
                   </h3>
-                  <Badge variant="outline" className={`${getStatusColor(appointment.status)} text-xs smooth-transition`}>
+                  <Badge variant="outline" className={`${getStatusColor(appointment.status)} text-xs smooth-transition px-2 py-0.5 font-semibold`}>
                     {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                   </Badge>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>{format(new Date(appointment.appointment_date), 'MMM dd, yyyy')}</span>
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span className="font-medium">{format(new Date(appointment.appointment_date), 'MMM dd, yyyy')}</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{appointment.appointment_time}</span>
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span className="font-medium">{appointment.appointment_time}</span>
                     </div>
                   </div>
                   
-                  <div className="text-sm font-medium text-medical-dark">
+                  <div className="text-sm font-semibold text-foreground bg-secondary/50 px-2.5 py-1 rounded-md">
                     Age: {appointment.patients?.age}
                   </div>
                 </div>

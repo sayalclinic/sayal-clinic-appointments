@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, User, FileText } from 'lucide-react';
+import { Calendar, Clock, User, FileText, IndianRupee } from 'lucide-react';
 import { DashboardLayout } from '@/components/Layout/DashboardLayout';
 import { AppointmentCard } from '@/components/Appointments/AppointmentCard';
 import { AppointmentCalendar } from '@/components/Calendar/AppointmentCalendar';
@@ -257,11 +257,11 @@ export const DoctorDashboard = () => {
               <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">My Earnings</CardTitle>
-                  <User className="h-4 w-4 text-warning" />
+                  <IndianRupee className="h-4 w-4 text-warning" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-warning">
-                    ${doctorEarnings.toFixed(2)}
+                    ₹{doctorEarnings.toFixed(2)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Your total earnings
