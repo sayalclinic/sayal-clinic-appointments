@@ -9,6 +9,8 @@ export interface Patient {
   name: string;
   age: number;
   contact_no: string;
+  gender?: string;
+  location?: string;
   medical_history?: string;
   created_at: string;
   updated_at: string;

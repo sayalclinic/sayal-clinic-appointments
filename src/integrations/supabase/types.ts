@@ -154,8 +154,10 @@ export type Database = {
           current_medications: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          gender: string | null
           id: string
           insurance_info: string | null
+          location: string | null
           medical_history: string | null
           name: string
           updated_at: string
@@ -169,8 +171,10 @@ export type Database = {
           current_medications?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          gender?: string | null
           id?: string
           insurance_info?: string | null
+          location?: string | null
           medical_history?: string | null
           name: string
           updated_at?: string
@@ -184,8 +188,10 @@ export type Database = {
           current_medications?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          gender?: string | null
           id?: string
           insurance_info?: string | null
+          location?: string | null
           medical_history?: string | null
           name?: string
           updated_at?: string
