@@ -13,7 +13,6 @@ import { useAppointments } from '@/hooks/useAppointments';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-
 export const ReceptionistDashboard = () => {
   const [activeTab, setActiveTab] = useState('add-appointment');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -22,28 +21,32 @@ export const ReceptionistDashboard = () => {
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [completedToday, setCompletedToday] = useState(0);
   const [completedThisMonth, setCompletedThisMonth] = useState(0);
-  
-  const { appointments, loading, updateAppointmentStatus, deleteAppointment } = useAppointments();
-  const { toast } = useToast();
-  const { profile } = useAuth();
-
+  const {
+    appointments,
+    loading,
+    updateAppointmentStatus,
+    deleteAppointment
+  } = useAppointments();
+  const {
+    toast
+  } = useToast();
+  const {
+    profile
+  } = useAuth();
   const pendingAppointments = appointments.filter(apt => apt.status === 'pending' || apt.status === 'denied');
   const todayAppointments = appointments.filter(apt => {
     const today = new Date().toISOString().split('T')[0];
     return apt.appointment_date === today;
   });
-
   useEffect(() => {
     fetchEarningsData();
   }, [appointments]);
-
   const fetchEarningsData = async () => {
     try {
       // Fetch total earnings
-      const { data: payments } = await supabase
-        .from('payments')
-        .select('amount');
-      
+      const {
+        data: payments
+      } = await supabase.from('payments').select('amount');
       const total = payments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
       setTotalEarnings(total);
 
@@ -51,25 +54,17 @@ export const ReceptionistDashboard = () => {
       const today = new Date().toISOString().split('T')[0];
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
-
-      const completedTodayCount = appointments.filter(apt => 
-        apt.status === 'completed' && apt.appointment_date === today
-      ).length;
-
+      const completedTodayCount = appointments.filter(apt => apt.status === 'completed' && apt.appointment_date === today).length;
       const completedThisMonthCount = appointments.filter(apt => {
         const aptDate = new Date(apt.appointment_date);
-        return apt.status === 'completed' && 
-               aptDate.getMonth() === currentMonth && 
-               aptDate.getFullYear() === currentYear;
+        return apt.status === 'completed' && aptDate.getMonth() === currentMonth && aptDate.getFullYear() === currentYear;
       }).length;
-
       setCompletedToday(completedTodayCount);
       setCompletedThisMonth(completedThisMonthCount);
     } catch (error) {
       console.error('Error fetching earnings data:', error);
     }
   };
-
   const checkAccessCode = () => {
     if (accessCode === 'creative10') {
       setShowEarnings(true);
@@ -79,45 +74,38 @@ export const ReceptionistDashboard = () => {
       setAccessCode('');
     }
   };
-
   const handleEdit = (appointmentId: string) => {
     // Edit functionality is now handled by the EditAppointmentDialog within AppointmentCard
     console.log('Edit appointment:', appointmentId);
   };
-
   const handleComplete = (appointmentId: string) => {
     // Complete functionality is now handled by the PaymentDialog within AppointmentCard
     console.log('Complete appointment:', appointmentId);
   };
-
   const handlePaymentSuccess = () => {
     // Refresh appointments after payment success
     window.location.reload();
   };
-
   const handleMissed = async (appointmentId: string) => {
     await updateAppointmentStatus(appointmentId, 'missed');
   };
-
   const handleDelete = async (appointmentId: string) => {
     try {
       await deleteAppointment(appointmentId);
       toast({
         title: 'Success',
-        description: 'Appointment deleted successfully',
+        description: 'Appointment deleted successfully'
       });
     } catch (error) {
       console.error('Error deleting appointment:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete appointment',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
-
-  return (
-    <DashboardLayout>
+  return <DashboardLayout>
       <div className="space-y-4 sm:space-y-6">
         {/* Welcome Section */}
         <div className="text-center px-2">
@@ -128,34 +116,25 @@ export const ReceptionistDashboard = () => {
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           <TabsList className="grid w-full grid-cols-3 bg-secondary/50 h-auto p-1">
-            <TabsTrigger 
-              value="add-appointment" 
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground smooth-transition text-xs sm:text-sm py-2"
-            >
+            <TabsTrigger value="add-appointment" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground smooth-transition text-xs sm:text-sm py-2">
               <span className="hidden sm:inline">Add Appointment</span>
               <span className="sm:hidden">Add</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="pending" 
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground smooth-transition text-xs sm:text-sm py-2"
-            >
+            <TabsTrigger value="pending" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground smooth-transition text-xs sm:text-sm py-2">
               Pending
             </TabsTrigger>
-            <TabsTrigger 
-              value="schedule" 
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground smooth-transition text-xs sm:text-sm py-2"
-            >
+            <TabsTrigger value="schedule" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground smooth-transition text-xs sm:text-sm py-2">
               Schedule
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="add-appointment" className="space-y-4">
             <AppointmentForm onSuccess={() => {
-              toast({
-                title: 'Success',
-                description: 'Appointment created successfully and sent for doctor approval',
-              });
-            }} />
+            toast({
+              title: 'Success',
+              description: 'Appointment created successfully and sent for doctor approval'
+            });
+          }} />
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
@@ -170,32 +149,15 @@ export const ReceptionistDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {loading ? (
-                  <div className="text-center py-8">
+                {loading ? <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
                     <p className="text-muted-foreground">Loading appointments...</p>
-                  </div>
-                ) : pendingAppointments.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  </div> : pendingAppointments.length === 0 ? <div className="text-center py-8 text-muted-foreground">
                     <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>No pending appointments</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                     {pendingAppointments.map((appointment) => (
-                      <AppointmentCard
-                        key={appointment.id}
-                        appointment={appointment}
-                        onEdit={handleEdit}
-                        onComplete={handleComplete}
-                        onMissed={handleMissed}
-                        onDelete={handleDelete}
-                        onPaymentSuccess={handlePaymentSuccess}
-                        showActions={true}
-                      />
-                    ))}
-                  </div>
-                )}
+                  </div> : <div className="space-y-4">
+                     {pendingAppointments.map(appointment => <AppointmentCard key={appointment.id} appointment={appointment} onEdit={handleEdit} onComplete={handleComplete} onMissed={handleMissed} onDelete={handleDelete} onPaymentSuccess={handlePaymentSuccess} showActions={true} />)}
+                  </div>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -203,85 +165,34 @@ export const ReceptionistDashboard = () => {
           <TabsContent value="schedule" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
-                <AppointmentCalendar
-                  appointments={appointments}
-                  onDateSelect={setSelectedDate}
-                  selectedDate={selectedDate}
-                />
+                <AppointmentCalendar appointments={appointments} onDateSelect={setSelectedDate} selectedDate={selectedDate} />
               </div>
               <div className="space-y-4">
                 <Card className="shadow-card">
                   <CardHeader>
                     <CardTitle className="text-lg">
-                      {selectedDate 
-                        ? `Appointments for ${selectedDate.toLocaleDateString()}`
-                        : 'Select a date'
-                      }
+                      {selectedDate ? `Appointments for ${selectedDate.toLocaleDateString()}` : 'Select a date'}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {selectedDate ? (
-                       (() => {
-                          const year = selectedDate.getFullYear();
-                          const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                          const day = String(selectedDate.getDate()).padStart(2, '0');
-                          const dateStr = `${year}-${month}-${day}`;
-                          const activeAppointments = appointments.filter(apt => 
-                            apt.appointment_date === dateStr && 
-                            apt.status !== 'completed' && 
-                            apt.status !== 'denied' && 
-                            apt.status !== 'missed'
-                          );
-                          const inactiveAppointments = appointments.filter(apt => 
-                            apt.appointment_date === dateStr && 
-                            (apt.status === 'completed' || apt.status === 'denied' || apt.status === 'missed')
-                          );
-                          const hasAnyAppointments = activeAppointments.length > 0 || inactiveAppointments.length > 0;
-
-                        return !hasAnyAppointments ? (
-                          <p className="text-muted-foreground text-center py-4">No appointments scheduled</p>
-                        ) : (
-            <div className="space-y-3">
-              {activeAppointments.map((appointment) => (
-                <AppointmentCard
-                  key={appointment.id}
-                  appointment={appointment}
-                  onEdit={handleEdit}
-                  onComplete={handleComplete}
-                  onMissed={handleMissed}
-                  onDelete={handleDelete}
-                  onPaymentSuccess={handlePaymentSuccess}
-                  showActions={true}
-                />
-              ))}
-              {inactiveAppointments.length > 0 && (
-                <>
-                  {activeAppointments.length > 0 && (
-                    <div className="border-t border-border my-2 pt-2">
+                    {selectedDate ? (() => {
+                    const year = selectedDate.getFullYear();
+                    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(selectedDate.getDate()).padStart(2, '0');
+                    const dateStr = `${year}-${month}-${day}`;
+                    const activeAppointments = appointments.filter(apt => apt.appointment_date === dateStr && apt.status !== 'completed' && apt.status !== 'denied' && apt.status !== 'missed');
+                    const inactiveAppointments = appointments.filter(apt => apt.appointment_date === dateStr && (apt.status === 'completed' || apt.status === 'denied' || apt.status === 'missed'));
+                    const hasAnyAppointments = activeAppointments.length > 0 || inactiveAppointments.length > 0;
+                    return !hasAnyAppointments ? <p className="text-muted-foreground text-center py-4">No appointments scheduled</p> : <div className="space-y-3">
+              {activeAppointments.map(appointment => <AppointmentCard key={appointment.id} appointment={appointment} onEdit={handleEdit} onComplete={handleComplete} onMissed={handleMissed} onDelete={handleDelete} onPaymentSuccess={handlePaymentSuccess} showActions={true} />)}
+              {inactiveAppointments.length > 0 && <>
+                  {activeAppointments.length > 0 && <div className="border-t border-border my-2 pt-2">
                       <p className="text-xs text-muted-foreground mb-2">Past Appointments</p>
-                    </div>
-                  )}
-                  {inactiveAppointments.map((appointment) => (
-                    <AppointmentCard
-                      key={appointment.id}
-                      appointment={appointment}
-                      onEdit={handleEdit}
-                      onComplete={handleComplete}
-                      onMissed={handleMissed}
-                      onDelete={handleDelete}
-                      onPaymentSuccess={handlePaymentSuccess}
-                      showActions={false}
-                      isTranslucent={true}
-                    />
-                  ))}
-                </>
-              )}
-            </div>
-                        );
-                      })()
-                    ) : (
-                      <p className="text-muted-foreground text-center py-4">Click on a date to view appointments</p>
-                    )}
+                    </div>}
+                  {inactiveAppointments.map(appointment => <AppointmentCard key={appointment.id} appointment={appointment} onEdit={handleEdit} onComplete={handleComplete} onMissed={handleMissed} onDelete={handleDelete} onPaymentSuccess={handlePaymentSuccess} showActions={false} isTranslucent={true} />)}
+                </>}
+            </div>;
+                  })() : <p className="text-muted-foreground text-center py-4">Click on a date to view appointments</p>}
                   </CardContent>
                 </Card>
               </div>
@@ -297,11 +208,11 @@ export const ReceptionistDashboard = () => {
                 <CardContent>
                   <div className="text-2xl font-bold text-primary">
                     {appointments.filter(apt => {
-                      const currentMonth = new Date().getMonth();
-                      const currentYear = new Date().getFullYear();
-                      const aptDate = new Date(apt.appointment_date);
-                      return aptDate.getMonth() === currentMonth && aptDate.getFullYear() === currentYear;
-                    }).length}
+                    const currentMonth = new Date().getMonth();
+                    const currentYear = new Date().getFullYear();
+                    const aptDate = new Date(apt.appointment_date);
+                    return aptDate.getMonth() === currentMonth && aptDate.getFullYear() === currentYear;
+                  }).length}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Scheduled this month
@@ -324,46 +235,7 @@ export const ReceptionistDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                  <User className="h-4 w-4 text-warning" />
-                </CardHeader>
-                <CardContent>
-                  {showEarnings ? (
-                    <>
-                      <div className="text-2xl font-bold text-warning">
-                        ${totalEarnings.toFixed(2)}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Total revenue
-                      </p>
-                    </>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex space-x-2">
-                        <input
-                          type="password"
-                          placeholder="Enter code"
-                          value={accessCode}
-                          onChange={(e) => setAccessCode(e.target.value)}
-                          className="flex-1 px-2 py-1 text-sm border rounded"
-                          onKeyPress={(e) => e.key === 'Enter' && checkAccessCode()}
-                        />
-                        <button
-                          onClick={checkAccessCode}
-                          className="px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary/90"
-                        >
-                          Show
-                        </button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Code required to view
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              
 
               <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -371,12 +243,7 @@ export const ReceptionistDashboard = () => {
                   <FileText className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="w-full"
-                    onClick={() => window.location.href = '/stats'}
-                  >
+                  <Button size="sm" variant="default" className="w-full" onClick={() => window.location.href = '/stats'}>
                     <FileText className="w-4 h-4 mr-2" />
                     View Stats & Reports
                   </Button>
@@ -391,6 +258,5 @@ export const ReceptionistDashboard = () => {
 
         {/* Payment Dialog - No longer needed as it's handled within AppointmentCard */}
       </div>
-    </DashboardLayout>
-  );
+    </DashboardLayout>;
 };
