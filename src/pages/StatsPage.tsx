@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PinDialog } from "@/components/Auth/PinDialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Download, IndianRupee, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Download, IndianRupee, Maximize2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface AppointmentHistoryRow {
   patient_name: string;
@@ -38,11 +39,7 @@ export const StatsPage = () => {
   const [appointmentHistory, setAppointmentHistory] = useState<AppointmentHistoryRow[]>([]);
   const [patientHistory, setPatientHistory] = useState<PatientHistoryRow[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryRow[]>([]);
-  const [expandedSections, setExpandedSections] = useState({
-    appointments: false,
-    patients: false,
-    payments: false
-  });
+  const [openModal, setOpenModal] = useState<'appointments' | 'patients' | 'payments' | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -144,13 +141,6 @@ export const StatsPage = () => {
       fetchData();
     }
   }, [isAuthenticated, toast]);
-
-  const toggleSection = (section: 'appointments' | 'patients' | 'payments') => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
 
   // Calculate gender distribution
   const genderData = patientHistory.reduce((acc, patient) => {
@@ -261,62 +251,77 @@ export const StatsPage = () => {
           </CardContent>
         </Card>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Gender Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Gender Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={genderData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {genderData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+        {/* Appointment History */}
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => setOpenModal('appointments')}
+        >
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Appointment History</span>
+              <Maximize2 className="w-5 h-5 text-muted-foreground" />
+            </CardTitle>
+          </CardHeader>
+        </Card>
 
-          {/* Age Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Age Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={ageData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="value" fill="#8884d8" name="Patients" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+        {/* Patient History with Charts */}
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => setOpenModal('patients')}
+        >
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Patient History & Analytics</span>
+              <Maximize2 className="w-5 h-5 text-muted-foreground" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Charts inside Patient History */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Gender Distribution */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Gender Distribution</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={genderData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {genderData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
 
-          {/* Location Distribution */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Patient Location Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              {/* Age Distribution */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Age Distribution</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={ageData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="value" fill="#8884d8" name="Patients" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Location Distribution */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Location Distribution</h3>
+              <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={locationData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
@@ -326,177 +331,151 @@ export const StatsPage = () => {
                   <Bar dataKey="value" fill="#00C49F" name="Patients" />
                 </BarChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Appointment History */}
-        <Card>
-          <CardHeader 
-            className="flex flex-row items-center justify-between cursor-pointer hover:bg-accent/5 transition-colors"
-            onClick={() => toggleSection('appointments')}
-          >
-            <CardTitle className="flex items-center">
-              Appointment History
-              {expandedSections.appointments ? (
-                <ChevronUp className="w-5 h-5 ml-2" />
-              ) : (
-                <ChevronDown className="w-5 h-5 ml-2" />
-              )}
-            </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                downloadCSV(appointmentHistory, 'appointment-history');
-              }}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download CSV
-            </Button>
-          </CardHeader>
-          {expandedSections.appointments && (
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2">Patient Name</th>
-                      <th className="text-left p-2">Age</th>
-                      <th className="text-left p-2">Phone</th>
-                      <th className="text-left p-2">Date</th>
-                      <th className="text-left p-2">Doctor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {appointmentHistory.map((apt, idx) => (
-                      <tr key={idx} className="border-b hover:bg-accent/5">
-                        <td className="p-2">{apt.patient_name}</td>
-                        <td className="p-2">{apt.patient_age}</td>
-                        <td className="p-2">{apt.patient_contact}</td>
-                        <td className="p-2">{apt.appointment_date}</td>
-                        <td className="p-2">{apt.doctor_name}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          )}
-        </Card>
-
-        {/* Patient History */}
-        <Card>
-          <CardHeader 
-            className="flex flex-row items-center justify-between cursor-pointer hover:bg-accent/5 transition-colors"
-            onClick={() => toggleSection('patients')}
-          >
-            <CardTitle className="flex items-center">
-              Patient History
-              {expandedSections.patients ? (
-                <ChevronUp className="w-5 h-5 ml-2" />
-              ) : (
-                <ChevronDown className="w-5 h-5 ml-2" />
-              )}
-            </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                downloadCSV(patientHistory, 'patient-history');
-              }}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download CSV
-            </Button>
-          </CardHeader>
-          {expandedSections.patients && (
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2">Name</th>
-                      <th className="text-left p-2">Age</th>
-                      <th className="text-left p-2">Gender</th>
-                      <th className="text-left p-2">Location</th>
-                      <th className="text-left p-2">Phone</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {patientHistory.map((patient, idx) => (
-                      <tr key={idx} className="border-b hover:bg-accent/5">
-                        <td className="p-2">{patient.name}</td>
-                        <td className="p-2">{patient.age}</td>
-                        <td className="p-2">{patient.gender || 'N/A'}</td>
-                        <td className="p-2">{patient.location || 'N/A'}</td>
-                        <td className="p-2">{patient.contact_no}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          )}
+            </div>
+          </CardContent>
         </Card>
 
         {/* Payment History */}
-        <Card>
-          <CardHeader 
-            className="flex flex-row items-center justify-between cursor-pointer hover:bg-accent/5 transition-colors"
-            onClick={() => toggleSection('payments')}
-          >
-            <CardTitle className="flex items-center">
-              Payment History
-              {expandedSections.payments ? (
-                <ChevronUp className="w-5 h-5 ml-2" />
-              ) : (
-                <ChevronDown className="w-5 h-5 ml-2" />
-              )}
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => setOpenModal('payments')}
+        >
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Payment History</span>
+              <Maximize2 className="w-5 h-5 text-muted-foreground" />
             </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                downloadCSV(paymentHistory, 'payment-history');
-              }}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download CSV
-            </Button>
           </CardHeader>
-          {expandedSections.payments && (
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2">Patient</th>
-                      <th className="text-left p-2">Date</th>
-                      <th className="text-left p-2">Tests</th>
-                      <th className="text-left p-2">Amount</th>
-                      <th className="text-left p-2">Method</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paymentHistory.map((payment, idx) => (
-                      <tr key={idx} className="border-b hover:bg-accent/5">
-                        <td className="p-2">{payment.patient_name}</td>
-                        <td className="p-2">{payment.date}</td>
-                        <td className="p-2">{payment.tests_done || 'N/A'}</td>
-                        <td className="p-2">₹{payment.amount.toFixed(2)}</td>
-                        <td className="p-2">{payment.payment_method}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          )}
         </Card>
+
+        {/* Appointment History Modal */}
+        <Dialog open={openModal === 'appointments'} onOpenChange={() => setOpenModal(null)}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span>Appointment History</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => downloadCSV(appointmentHistory, 'appointment-history')}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download CSV
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2">Patient Name</th>
+                    <th className="text-left p-2">Age</th>
+                    <th className="text-left p-2">Phone</th>
+                    <th className="text-left p-2">Date</th>
+                    <th className="text-left p-2">Doctor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {appointmentHistory.map((apt, idx) => (
+                    <tr key={idx} className="border-b hover:bg-accent/5">
+                      <td className="p-2">{apt.patient_name}</td>
+                      <td className="p-2">{apt.patient_age}</td>
+                      <td className="p-2">{apt.patient_contact}</td>
+                      <td className="p-2">{apt.appointment_date}</td>
+                      <td className="p-2">{apt.doctor_name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Patient History Modal */}
+        <Dialog open={openModal === 'patients'} onOpenChange={() => setOpenModal(null)}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span>Patient History</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => downloadCSV(patientHistory, 'patient-history')}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download CSV
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2">Name</th>
+                    <th className="text-left p-2">Age</th>
+                    <th className="text-left p-2">Gender</th>
+                    <th className="text-left p-2">Location</th>
+                    <th className="text-left p-2">Phone</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {patientHistory.map((patient, idx) => (
+                    <tr key={idx} className="border-b hover:bg-accent/5">
+                      <td className="p-2">{patient.name}</td>
+                      <td className="p-2">{patient.age}</td>
+                      <td className="p-2">{patient.gender || 'N/A'}</td>
+                      <td className="p-2">{patient.location || 'N/A'}</td>
+                      <td className="p-2">{patient.contact_no}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Payment History Modal */}
+        <Dialog open={openModal === 'payments'} onOpenChange={() => setOpenModal(null)}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span>Payment History</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => downloadCSV(paymentHistory, 'payment-history')}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download CSV
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2">Patient</th>
+                    <th className="text-left p-2">Date</th>
+                    <th className="text-left p-2">Tests</th>
+                    <th className="text-left p-2">Amount</th>
+                    <th className="text-left p-2">Method</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paymentHistory.map((payment, idx) => (
+                    <tr key={idx} className="border-b hover:bg-accent/5">
+                      <td className="p-2">{payment.patient_name}</td>
+                      <td className="p-2">{payment.date}</td>
+                      <td className="p-2">{payment.tests_done || 'N/A'}</td>
+                      <td className="p-2">₹{payment.amount.toFixed(2)}</td>
+                      <td className="p-2">{payment.payment_method}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
