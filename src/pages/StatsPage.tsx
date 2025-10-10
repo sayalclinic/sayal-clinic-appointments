@@ -6,7 +6,7 @@ import { PinDialog } from "@/components/Auth/PinDialog";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Download, IndianRupee, Maximize2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface AppointmentHistoryRow {
@@ -21,8 +21,6 @@ interface PatientHistoryRow {
   name: string;
   age: number;
   contact_no: string;
-  gender: string | null;
-  location: string | null;
 }
 
 interface PaymentHistoryRow {
@@ -91,7 +89,7 @@ export const StatsPage = () => {
       // Fetch patient history
       const { data: patients } = await supabase
         .from("patients")
-        .select("name, age, contact_no, gender, location")
+        .select("name, age, contact_no")
         .order("name", { ascending: true });
 
       if (patients) {
@@ -142,17 +140,6 @@ export const StatsPage = () => {
     }
   }, [isAuthenticated, toast]);
 
-  // Calculate gender distribution
-  const genderData = patientHistory.reduce((acc, patient) => {
-    const gender = patient.gender || 'Not Specified';
-    const existing = acc.find(item => item.name === gender);
-    if (existing) {
-      existing.value += 1;
-    } else {
-      acc.push({ name: gender, value: 1 });
-    }
-    return acc;
-  }, [] as { name: string; value: number }[]);
 
   // Calculate age distribution (age groups)
   const ageData = patientHistory.reduce((acc, patient) => {
@@ -176,19 +163,8 @@ export const StatsPage = () => {
   const ageGroupOrder = ['0-17', '18-29', '30-44', '45-59', '60+'];
   ageData.sort((a, b) => ageGroupOrder.indexOf(a.name) - ageGroupOrder.indexOf(b.name));
 
-  // Calculate location distribution
-  const locationData = patientHistory.reduce((acc, patient) => {
-    const location = patient.location || 'Not Specified';
-    const existing = acc.find(item => item.name === location);
-    if (existing) {
-      existing.value += 1;
-    } else {
-      acc.push({ name: location, value: 1 });
-    }
-    return acc;
-  }, [] as { name: string; value: number }[]);
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
+  
 
   const downloadCSV = (data: any[], filename: string) => {
     if (data.length === 0) return;
@@ -276,59 +252,17 @@ export const StatsPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Charts inside Patient History */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Gender Distribution */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Gender Distribution</h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={genderData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {genderData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Age Distribution */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Age Distribution</h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={ageData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="value" fill="#8884d8" name="Patients" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Location Distribution */}
+            {/* Age Distribution Only */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Location Distribution</h3>
+              <h3 className="text-lg font-semibold mb-4">Age Distribution</h3>
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={locationData}>
+                <BarChart data={ageData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="value" fill="#00C49F" name="Patients" />
+                  <Bar dataKey="value" fill="#8884d8" name="Patients" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -413,8 +347,6 @@ export const StatsPage = () => {
                   <tr className="border-b">
                     <th className="text-left p-2">Name</th>
                     <th className="text-left p-2">Age</th>
-                    <th className="text-left p-2">Gender</th>
-                    <th className="text-left p-2">Location</th>
                     <th className="text-left p-2">Phone</th>
                   </tr>
                 </thead>
@@ -423,8 +355,6 @@ export const StatsPage = () => {
                     <tr key={idx} className="border-b hover:bg-accent/5">
                       <td className="p-2">{patient.name}</td>
                       <td className="p-2">{patient.age}</td>
-                      <td className="p-2">{patient.gender || 'N/A'}</td>
-                      <td className="p-2">{patient.location || 'N/A'}</td>
                       <td className="p-2">{patient.contact_no}</td>
                     </tr>
                   ))}

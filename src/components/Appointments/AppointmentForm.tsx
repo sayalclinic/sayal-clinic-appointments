@@ -20,8 +20,6 @@ const appointmentSchema = z.object({
   patientName: z.string().min(1, 'Patient name is required'),
   patientAge: z.number().min(1, 'Age must be at least 1').max(150, 'Age must be less than 150'),
   contactNo: z.string().min(10, 'Contact number must be at least 10 digits'),
-  gender: z.string().optional(),
-  location: z.string().optional(),
   medicalHistory: z.string().optional(),
   doctorId: z.string().min(1, 'Please select a doctor'),
   appointmentDate: z.date({ required_error: 'Please select a date' }),
@@ -39,17 +37,15 @@ interface AppointmentFormProps {
 export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(false);
-  const [formData, setFormData] = useState({
-    patientName: '',
-    patientAge: '',
-    contactNo: '',
-    gender: '',
-    location: '',
-    medicalHistory: '',
-    doctorId: '',
-    reasonForVisit: '',
-    symptoms: ''
-  });
+const [formData, setFormData] = useState({
+  patientName: '',
+  patientAge: '',
+  contactNo: '',
+  medicalHistory: '',
+  doctorId: '',
+  reasonForVisit: '',
+  symptoms: ''
+});
   const { doctors, createAppointment, upsertPatient, searchPatientByName } = useAppointments();
 
   const form = useForm<AppointmentFormData>({
@@ -63,16 +59,12 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       if (existingPatient) {
         form.setValue('patientAge', existingPatient.age);
         form.setValue('contactNo', existingPatient.contact_no);
-        form.setValue('gender', existingPatient.gender || '');
-        form.setValue('location', existingPatient.location || '');
         form.setValue('medicalHistory', existingPatient.medical_history || '');
         setFormData(prev => ({
           ...prev,
           patientName: existingPatient.name,
           patientAge: existingPatient.age.toString(),
           contactNo: existingPatient.contact_no,
-          gender: existingPatient.gender || '',
-          location: existingPatient.location || '',
           medicalHistory: existingPatient.medical_history || ''
         }));
       }
@@ -94,8 +86,6 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         name: data.patientName,
         age: data.patientAge,
         contact_no: data.contactNo,
-        gender: data.gender,
-        location: data.location,
         medical_history: data.medicalHistory,
       });
 
@@ -127,8 +117,6 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         patientName: data.patientName,
         patientAge: data.patientAge.toString(),
         contactNo: data.contactNo,
-        gender: data.gender || '',
-        location: data.location || '',
         medicalHistory: data.medicalHistory || '',
         doctorId: data.doctorId,
         reasonForVisit: data.reasonForVisit || '',
@@ -199,32 +187,6 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="gender">Gender</Label>
-                  <Select onValueChange={(value) => form.setValue('gender', value)} defaultValue={formData.gender}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Female">Female</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
-                    defaultValue={formData.location}
-                    autoComplete="off"
-                    placeholder="City/Area"
-                    {...form.register('location')}
-                  />
-                </div>
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="contactNo">Contact Number</Label>
