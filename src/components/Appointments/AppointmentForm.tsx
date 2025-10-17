@@ -75,23 +75,27 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
   );
 
   const timeSlots = [
-    "09:00",
-    "09:30",
-    "10:00",
-    "10:30",
-    "11:00",
-    "11:30",
-    "12:00",
-    "12:30",
-    "14:00",
-    "14:30",
-    "15:00",
-    "15:30",
-    "16:00",
-    "16:30",
-    "17:00",
-    "17:30",
-    "18:00",
+    { value: "10:00", label: "10:00 AM" },
+    { value: "10:30", label: "10:30 AM" },
+    { value: "11:00", label: "11:00 AM" },
+    { value: "11:30", label: "11:30 AM" },
+    { value: "12:00", label: "12:00 PM" },
+    { value: "12:30", label: "12:30 PM" },
+    { value: "13:00", label: "1:00 PM" },
+    { value: "13:30", label: "1:30 PM" },
+    { value: "14:00", label: "2:00 PM" },
+    { value: "14:30", label: "2:30 PM" },
+    { value: "15:00", label: "3:00 PM" },
+    { value: "15:30", label: "3:30 PM" },
+    { value: "16:00", label: "4:00 PM" },
+    { value: "16:30", label: "4:30 PM" },
+    { value: "17:00", label: "5:00 PM" },
+    { value: "17:30", label: "5:30 PM" },
+    { value: "18:00", label: "6:00 PM" },
+    { value: "18:30", label: "6:30 PM" },
+    { value: "19:00", label: "7:00 PM" },
+    { value: "19:30", label: "7:30 PM" },
+    { value: "20:00", label: "8:00 PM" },
   ];
 
   const onSubmit = async (data: AppointmentFormData) => {
@@ -298,15 +302,19 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               <div className="space-y-2">
                 <Label>Appointment Time</Label>
                 <Select onValueChange={(value) => form.setValue("appointmentTime", value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12">
                     <SelectValue placeholder="Select time" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {timeSlots.map((time) => (
-                      <SelectItem key={time} value={time}>
-                        <div className="flex items-center space-x-2">
-                          <Clock className="w-4 h-4" />
-                          <span>{time}</span>
+                  <SelectContent className="max-h-[300px]">
+                    {timeSlots.map((slot) => (
+                      <SelectItem 
+                        key={slot.value} 
+                        value={slot.value}
+                        className="h-11 cursor-pointer hover:bg-accent"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Clock className="w-4 h-4 text-primary" />
+                          <span className="font-medium">{slot.label}</span>
                         </div>
                       </SelectItem>
                     ))}
