@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { TimeWheelPicker } from "@/components/ui/time-wheel-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -312,25 +313,23 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                     >
                       <Clock className="mr-2 h-4 w-4" />
                       {form.watch("appointmentTime") ? (
-                        timeSlots.find(slot => slot.value === form.watch("appointmentTime"))?.label
+                        (() => {
+                          const time = form.watch("appointmentTime");
+                          const [hours, mins] = time.split(":").map(Number);
+                          const hour = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+                          const period = hours >= 12 ? "PM" : "AM";
+                          return `${hour}:${String(mins).padStart(2, "0")} ${period}`;
+                        })()
                       ) : (
                         <span>Select time</span>
                       )}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <div className="grid grid-cols-3 gap-1 p-3 max-h-[300px] overflow-y-auto pointer-events-auto">
-                      {timeSlots.map((slot) => (
-                        <Button
-                          key={slot.value}
-                          variant={form.watch("appointmentTime") === slot.value ? "default" : "ghost"}
-                          className="h-11 font-medium"
-                          onClick={() => form.setValue("appointmentTime", slot.value)}
-                        >
-                          {slot.label}
-                        </Button>
-                      ))}
-                    </div>
+                    <TimeWheelPicker
+                      value={form.watch("appointmentTime")}
+                      onChange={(time) => form.setValue("appointmentTime", time)}
+                    />
                   </PopoverContent>
                 </Popover>
                 {form.formState.errors.appointmentTime && (
