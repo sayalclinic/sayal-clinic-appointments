@@ -145,13 +145,26 @@ const [formData, setFormData] = useState({
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Patient Information - Hidden for Walk-In */}
-          {!isWalkIn && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center space-x-2">
-                <User className="w-4 h-4" />
-                <span>Patient Information</span>
-              </h3>
+          {/* Walk-In Toggle at Top */}
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="walkIn" 
+                checked={isWalkIn}
+                onCheckedChange={(checked) => setIsWalkIn(checked as boolean)}
+              />
+              <Label htmlFor="walkIn" className="cursor-pointer font-medium">
+                Walk-In Appointment (Auto-approved)
+              </Label>
+            </div>
+          </div>
+
+          {/* Patient Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold flex items-center space-x-2">
+              <User className="w-4 h-4" />
+              <span>Patient Information</span>
+            </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -212,25 +225,14 @@ const [formData, setFormData] = useState({
                   {...form.register('medicalHistory')}
                 />
               </div>
-            </div>
-          )}
+          </div>
 
           {/* Appointment Details */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold flex items-center space-x-2">
-                <CalendarIcon className="w-4 h-4" />
-                <span>Appointment Details</span>
-              </h3>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="walkIn" 
-                  checked={isWalkIn}
-                  onCheckedChange={(checked) => setIsWalkIn(checked as boolean)}
-                />
-                <Label htmlFor="walkIn" className="cursor-pointer">Walk-In</Label>
-              </div>
-            </div>
+            <h3 className="text-lg font-semibold flex items-center space-x-2">
+              <CalendarIcon className="w-4 h-4" />
+              <span>Appointment Details</span>
+            </h3>
 
             <div className="space-y-2">
               <Label>Doctor</Label>
