@@ -301,25 +301,38 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
 
               <div className="space-y-2">
                 <Label>Appointment Time</Label>
-                <Select onValueChange={(value) => form.setValue("appointmentTime", value)}>
-                  <SelectTrigger className="h-12">
-                    <SelectValue placeholder="Select time" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    {timeSlots.map((slot) => (
-                      <SelectItem 
-                        key={slot.value} 
-                        value={slot.value}
-                        className="h-11 cursor-pointer hover:bg-accent"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <Clock className="w-4 h-4 text-primary" />
-                          <span className="font-medium">{slot.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !form.watch("appointmentTime") && "text-muted-foreground",
+                      )}
+                    >
+                      <Clock className="mr-2 h-4 w-4" />
+                      {form.watch("appointmentTime") ? (
+                        timeSlots.find(slot => slot.value === form.watch("appointmentTime"))?.label
+                      ) : (
+                        <span>Select time</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <div className="grid grid-cols-3 gap-1 p-3 max-h-[300px] overflow-y-auto pointer-events-auto">
+                      {timeSlots.map((slot) => (
+                        <Button
+                          key={slot.value}
+                          variant={form.watch("appointmentTime") === slot.value ? "default" : "ghost"}
+                          className="h-11 font-medium"
+                          onClick={() => form.setValue("appointmentTime", slot.value)}
+                        >
+                          {slot.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 {form.formState.errors.appointmentTime && (
                   <p className="text-sm text-destructive">{form.formState.errors.appointmentTime.message}</p>
                 )}
