@@ -4,20 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LogOut, User, Calendar, Clock } from 'lucide-react';
 import clinicLogo from '@/assets/sayal-clinic-logo.png';
-
 interface DashboardLayoutProps {
   children: ReactNode;
 }
-
-export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  const { profile, signOut } = useAuth();
-
+export const DashboardLayout = ({
+  children
+}: DashboardLayoutProps) => {
+  const {
+    profile,
+    signOut
+  } = useAuth();
   const handleSignOut = async () => {
     await signOut();
   };
-
-  return (
-    <div className="min-h-screen clinic-gradient">
+  return <div className="min-h-screen clinic-gradient">
       {/* Header */}
       <header className="bg-card/90 backdrop-blur-md border-b border-border shadow-card sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
@@ -25,11 +25,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             {/* Logo Section */}
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="w-12 h-12 sm:w-14 sm:h-14 smooth-hover flex-shrink-0">
-                <img 
-                  src={clinicLogo} 
-                  alt="Sayal Clinic Logo" 
-                  className="w-full h-full object-contain"
-                />
+                <img src={clinicLogo} alt="Sayal Clinic Logo" className="w-full h-full object-contain" />
               </div>
               <div className="hidden sm:block">
                 <h1 className="text-lg sm:text-xl font-bold text-primary">Sayal Clinic</h1>
@@ -57,12 +53,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               </div>
               
               {/* Sign Out Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-                className="smooth-button border-border hover:bg-secondary text-primary"
-              >
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="smooth-button border-border hover:bg-secondary text-primary">
                 <LogOut className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Sign Out</span>
               </Button>
@@ -78,22 +69,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
       {/* Footer - Hidden on mobile */}
       <footer className="hidden sm:block bg-card/70 backdrop-blur-sm border-t border-border/50 mt-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
-            <div className="flex items-center gap-4 sm:gap-6">
-              <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4 text-primary" />
-                <span className="text-xs sm:text-sm">Today's Schedule</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-primary" />
-                <span className="text-xs sm:text-sm">Real-time Updates</span>
-              </div>
-            </div>
-            <p className="text-xs sm:text-sm">&copy; 2024 Sayal Clinic. Professional healthcare management.</p>
-          </div>
-        </div>
+        
       </footer>
-    </div>
-  );
+    </div>;
 };
