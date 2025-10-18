@@ -25,7 +25,7 @@ export const TimeWheelPicker = ({ value, onChange }: TimeWheelPickerProps) => {
   const periodRef = useRef<HTMLDivElement>(null);
 
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
-  const minutes = Array.from({ length: 60 }, (_, i) => i);
+  const minutes = [0, 15, 30, 45];
   const periods = ["AM", "PM"];
 
   useEffect(() => {
@@ -38,19 +38,30 @@ export const TimeWheelPicker = ({ value, onChange }: TimeWheelPickerProps) => {
     onChange(timeString);
   }, [selectedHour, selectedMinute, selectedPeriod, onChange]);
 
+  const scrollTimeouts = useRef<{ [key: string]: NodeJS.Timeout }>({});
+
   const handleScroll = (
     ref: React.RefObject<HTMLDivElement>,
     items: (number | string)[],
-    setter: (value: any) => void
+    setter: (value: any) => void,
+    key: string
   ) => {
     if (!ref.current) return;
-    const container = ref.current;
-    const itemHeight = 40;
-    const scrollTop = container.scrollTop;
-    const index = Math.round(scrollTop / itemHeight);
-    const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
-    setter(items[clampedIndex]);
-    container.scrollTo({ top: clampedIndex * itemHeight, behavior: "smooth" });
+    
+    if (scrollTimeouts.current[key]) {
+      clearTimeout(scrollTimeouts.current[key]);
+    }
+    
+    scrollTimeouts.current[key] = setTimeout(() => {
+      if (!ref.current) return;
+      const container = ref.current;
+      const itemHeight = 40;
+      const scrollTop = container.scrollTop;
+      const index = Math.round(scrollTop / itemHeight);
+      const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
+      setter(items[clampedIndex]);
+      container.scrollTo({ top: clampedIndex * itemHeight, behavior: "smooth" });
+    }, 100);
   };
 
   const scrollToValue = (
@@ -85,7 +96,7 @@ export const TimeWheelPicker = ({ value, onChange }: TimeWheelPickerProps) => {
       <div
         ref={ref}
         className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory"
-        onScroll={() => handleScroll(ref, items, setter)}
+        onScroll={() => handleScroll(ref, items, setter, `wheel-${items[0]}`)}
       >
         <div className="h-[80px]" />
         {items.map((item) => (
