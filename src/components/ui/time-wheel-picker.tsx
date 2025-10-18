@@ -23,10 +23,16 @@ export const TimeWheelPicker = ({ value, onChange }: TimeWheelPickerProps) => {
   const hourRef = useRef<HTMLDivElement>(null);
   const minuteRef = useRef<HTMLDivElement>(null);
   const periodRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef<{ [key: string]: boolean }>({});
 
-  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
-  const minutes = [0, 15, 30, 45];
-  const periods = ["AM", "PM"];
+  const baseHours = Array.from({ length: 12 }, (_, i) => i + 1);
+  const baseMinutes = [0, 15, 30, 45];
+  const basePeriods = ["AM", "PM"];
+
+  // Create infinite arrays by tripling the items
+  const hours = [...baseHours, ...baseHours, ...baseHours];
+  const minutes = [...baseMinutes, ...baseMinutes, ...baseMinutes];
+  const periods = [...basePeriods, ...basePeriods, ...basePeriods];
 
   useEffect(() => {
     const hour24 = selectedPeriod === "PM" && selectedHour !== 12 
@@ -43,10 +49,11 @@ export const TimeWheelPicker = ({ value, onChange }: TimeWheelPickerProps) => {
   const handleScroll = (
     ref: React.RefObject<HTMLDivElement>,
     items: (number | string)[],
+    baseItems: (number | string)[],
     setter: (value: any) => void,
     key: string
   ) => {
-    if (!ref.current) return;
+    if (!ref.current || isScrollingRef.current[key]) return;
     
     if (scrollTimeouts.current[key]) {
       clearTimeout(scrollTimeouts.current[key]);
@@ -58,35 +65,58 @@ export const TimeWheelPicker = ({ value, onChange }: TimeWheelPickerProps) => {
       const itemHeight = 40;
       const scrollTop = container.scrollTop;
       const index = Math.round(scrollTop / itemHeight);
-      const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
-      setter(items[clampedIndex]);
-      container.scrollTo({ top: clampedIndex * itemHeight, behavior: "smooth" });
+      const itemsPerSet = baseItems.length;
+      
+      // Get the actual value from the middle set
+      const actualIndex = index % itemsPerSet;
+      setter(baseItems[actualIndex]);
+      
+      // Snap to position
+      container.scrollTo({ top: index * itemHeight, behavior: "smooth" });
+      
+      // Handle infinite loop by resetting to middle set when needed
+      if (index < itemsPerSet || index >= itemsPerSet * 2) {
+        setTimeout(() => {
+          if (!ref.current) return;
+          isScrollingRef.current[key] = true;
+          const middleSetIndex = itemsPerSet + actualIndex;
+          container.scrollTo({ top: middleSetIndex * itemHeight, behavior: "auto" });
+          setTimeout(() => {
+            isScrollingRef.current[key] = false;
+          }, 50);
+        }, 300);
+      }
     }, 100);
   };
 
   const scrollToValue = (
     ref: React.RefObject<HTMLDivElement>,
     value: number | string,
-    items: (number | string)[]
+    items: (number | string)[],
+    baseItems: (number | string)[]
   ) => {
     if (!ref.current) return;
-    const index = items.indexOf(value);
-    if (index !== -1) {
-      ref.current.scrollTo({ top: index * 40, behavior: "auto" });
+    // Scroll to the middle set
+    const baseIndex = baseItems.indexOf(value);
+    if (baseIndex !== -1) {
+      const middleSetIndex = baseItems.length + baseIndex;
+      ref.current.scrollTo({ top: middleSetIndex * 40, behavior: "auto" });
     }
   };
 
   useEffect(() => {
-    scrollToValue(hourRef, selectedHour, hours);
-    scrollToValue(minuteRef, selectedMinute, minutes);
-    scrollToValue(periodRef, selectedPeriod, periods);
+    scrollToValue(hourRef, selectedHour, hours, baseHours);
+    scrollToValue(minuteRef, selectedMinute, minutes, baseMinutes);
+    scrollToValue(periodRef, selectedPeriod, periods, basePeriods);
   }, []);
 
   const renderWheel = (
     items: (number | string)[],
+    baseItems: (number | string)[],
     selected: number | string,
     ref: React.RefObject<HTMLDivElement>,
     setter: (value: any) => void,
+    key: string,
     formatter?: (val: number | string) => string
   ) => (
     <div className="relative h-[200px] w-20 overflow-hidden">
@@ -96,7 +126,7 @@ export const TimeWheelPicker = ({ value, onChange }: TimeWheelPickerProps) => {
       <div
         ref={ref}
         className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory"
-        onScroll={() => handleScroll(ref, items, setter, `wheel-${items[0]}`)}
+        onScroll={() => handleScroll(ref, items, baseItems, setter, key)}
       >
         <div className="h-[80px]" />
         {items.map((item) => (
@@ -109,8 +139,9 @@ export const TimeWheelPicker = ({ value, onChange }: TimeWheelPickerProps) => {
                 : "text-muted-foreground text-sm"
             )}
             onClick={() => {
-              setter(item);
-              scrollToValue(ref, item, items);
+              const actualValue = baseItems[baseItems.indexOf(item as any)] || item;
+              setter(actualValue);
+              scrollToValue(ref, actualValue, items, baseItems);
             }}
           >
             {formatter ? formatter(item) : item}
@@ -123,14 +154,14 @@ export const TimeWheelPicker = ({ value, onChange }: TimeWheelPickerProps) => {
 
   return (
     <div className="flex items-center justify-center gap-2 p-4 bg-background rounded-lg pointer-events-auto">
-      {renderWheel(hours, selectedHour, hourRef, setSelectedHour, (val) =>
+      {renderWheel(hours, baseHours, selectedHour, hourRef, setSelectedHour, "hour", (val) =>
         String(val).padStart(2, "0")
       )}
       <div className="text-2xl font-bold text-muted-foreground">:</div>
-      {renderWheel(minutes, selectedMinute, minuteRef, setSelectedMinute, (val) =>
+      {renderWheel(minutes, baseMinutes, selectedMinute, minuteRef, setSelectedMinute, "minute", (val) =>
         String(val).padStart(2, "0")
       )}
-      {renderWheel(periods, selectedPeriod, periodRef, setSelectedPeriod)}
+      {renderWheel(periods, basePeriods, selectedPeriod, periodRef, setSelectedPeriod, "period")}
     </div>
   );
 };
