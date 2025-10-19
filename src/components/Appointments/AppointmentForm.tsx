@@ -254,7 +254,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                     <SelectItem key={doctor.user_id} value={doctor.user_id}>
                       <div className="flex items-center space-x-2">
                         <Stethoscope className="w-4 h-4" />
-                        <span>Dr. {doctor.name}</span>
+                        <span>{doctor.name}</span>
                       </div>
                     </SelectItem>
                   ))}

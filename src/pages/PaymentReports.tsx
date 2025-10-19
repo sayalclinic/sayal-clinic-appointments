@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import { ArrowLeft, Download, DollarSign, Search, Eye, EyeOff, TrendingUp } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { ArrowLeft, Download, DollarSign, Search, Eye, EyeOff, TrendingUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PaymentData {
   payment_id: string;
@@ -26,9 +26,9 @@ export const PaymentReports = () => {
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showAmounts, setShowAmounts] = useState(false);
-  const [accessCode, setAccessCode] = useState('');
+  const [accessCode, setAccessCode] = useState("");
 
   useEffect(() => {
     fetchPaymentData();
@@ -41,10 +41,11 @@ export const PaymentReports = () => {
   const fetchPaymentData = async () => {
     try {
       setLoading(true);
-      
+
       const { data: payments, error } = await supabase
-        .from('payments')
-        .select(`
+        .from("payments")
+        .select(
+          `
           id,
           amount,
           payment_method,
@@ -60,40 +61,43 @@ export const PaymentReports = () => {
               name
             )
           )
-        `)
-        .order('created_at', { ascending: false });
+        `,
+        )
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      const formattedData = payments?.map(payment => ({
-        payment_id: payment.id,
-        patient_name: payment.appointments?.patients?.name || 'Unknown',
-        doctor_name: payment.appointments?.profiles?.name || 'Unknown',
-        appointment_date: payment.appointments?.appointment_date || '',
-        appointment_time: payment.appointments?.appointment_time || '',
-        amount: payment.amount,
-        payment_method: payment.payment_method,
-        tests_done: payment.tests_done || 'None',
-        created_at: payment.created_at,
-      })) || [];
+      const formattedData =
+        payments?.map((payment) => ({
+          payment_id: payment.id,
+          patient_name: payment.appointments?.patients?.name || "Unknown",
+          doctor_name: payment.appointments?.profiles?.name || "Unknown",
+          appointment_date: payment.appointments?.appointment_date || "",
+          appointment_time: payment.appointments?.appointment_time || "",
+          amount: payment.amount,
+          payment_method: payment.payment_method,
+          tests_done: payment.tests_done || "None",
+          created_at: payment.created_at,
+        })) || [];
 
       setPaymentData(formattedData);
     } catch (error) {
-      console.error('Error fetching payment data:', error);
+      console.error("Error fetching payment data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const filterData = () => {
-    let filtered = paymentData.filter(item => {
+    let filtered = paymentData.filter((item) => {
       const itemDate = new Date(item.created_at);
       const matchesDate = itemDate.getMonth() === selectedMonth && itemDate.getFullYear() === selectedYear;
-      const matchesSearch = searchTerm === '' || 
+      const matchesSearch =
+        searchTerm === "" ||
         item.patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.doctor_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.payment_method.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       return matchesDate && matchesSearch;
     });
 
@@ -101,12 +105,12 @@ export const PaymentReports = () => {
   };
 
   const checkAccessCode = () => {
-    if (accessCode === 'creative10') {
+    if (accessCode === "creative10") {
       setShowAmounts(true);
-      setAccessCode('');
+      setAccessCode("");
     } else {
-      alert('Invalid access code');
-      setAccessCode('');
+      alert("Invalid access code");
+      setAccessCode("");
     }
   };
 
@@ -115,42 +119,47 @@ export const PaymentReports = () => {
   };
 
   const getPaymentMethodBreakdown = () => {
-    const breakdown = filteredData.reduce((acc, payment) => {
-      acc[payment.payment_method] = (acc[payment.payment_method] || 0) + payment.amount;
-      return acc;
-    }, {} as Record<string, number>);
+    const breakdown = filteredData.reduce(
+      (acc, payment) => {
+        acc[payment.payment_method] = (acc[payment.payment_method] || 0) + payment.amount;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
     return breakdown;
   };
 
   const exportToCSV = () => {
     const headers = [
-      'Payment ID',
-      'Patient Name',
-      'Doctor Name',
-      'Appointment Date',
-      'Appointment Time',
-      ...(showAmounts ? ['Amount', 'Payment Method'] : ['Payment Method']),
-      'Tests Done',
-      'Payment Date'
+      "Payment ID",
+      "Patient Name",
+      "Doctor Name",
+      "Appointment Date",
+      "Appointment Time",
+      ...(showAmounts ? ["Amount", "Payment Method"] : ["Payment Method"]),
+      "Tests Done",
+      "Payment Date",
     ];
 
     const csvContent = [
-      headers.join(','),
-      ...filteredData.map(row => [
-        row.payment_id,
-        row.patient_name,
-        row.doctor_name,
-        row.appointment_date,
-        row.appointment_time,
-        ...(showAmounts ? [row.amount, row.payment_method] : [row.payment_method]),
-        `"${row.tests_done}"`,
-        format(new Date(row.created_at), 'yyyy-MM-dd HH:mm:ss')
-      ].join(','))
-    ].join('\n');
+      headers.join(","),
+      ...filteredData.map((row) =>
+        [
+          row.payment_id,
+          row.patient_name,
+          row.doctor_name,
+          row.appointment_date,
+          row.appointment_time,
+          ...(showAmounts ? [row.amount, row.payment_method] : [row.payment_method]),
+          `"${row.tests_done}"`,
+          format(new Date(row.created_at), "yyyy-MM-dd HH:mm:ss"),
+        ].join(","),
+      ),
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `payment-reports-${selectedYear}-${selectedMonth + 1}.csv`;
     a.click();
@@ -158,8 +167,18 @@ export const PaymentReports = () => {
   };
 
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
@@ -170,11 +189,7 @@ export const PaymentReports = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.close()}
-            >
+            <Button variant="outline" size="sm" onClick={() => window.close()}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
@@ -198,9 +213,7 @@ export const PaymentReports = () => {
                 <DollarSign className="h-4 w-4 text-success" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-success">
-                  ${getTotalRevenue().toFixed(2)}
-                </div>
+                <div className="text-2xl font-bold text-success">${getTotalRevenue().toFixed(2)}</div>
                 <p className="text-xs text-muted-foreground">
                   {months[selectedMonth]} {selectedYear}
                 </p>
@@ -213,12 +226,8 @@ export const PaymentReports = () => {
                 <TrendingUp className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-primary">
-                  {filteredData.length}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Payment transactions
-                </p>
+                <div className="text-2xl font-bold text-primary">{filteredData.length}</div>
+                <p className="text-xs text-muted-foreground">Payment transactions</p>
               </CardContent>
             </Card>
 
@@ -229,11 +238,9 @@ export const PaymentReports = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-warning">
-                  ${filteredData.length > 0 ? (getTotalRevenue() / filteredData.length).toFixed(2) : '0.00'}
+                  ${filteredData.length > 0 ? (getTotalRevenue() / filteredData.length).toFixed(2) : "0.00"}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Per transaction
-                </p>
+                <p className="text-xs text-muted-foreground">Per transaction</p>
               </CardContent>
             </Card>
           </div>
@@ -271,7 +278,7 @@ export const PaymentReports = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {years.map(year => (
+                    {years.map((year) => (
                       <SelectItem key={year} value={year.toString()}>
                         {year}
                       </SelectItem>
@@ -296,7 +303,7 @@ export const PaymentReports = () => {
                       placeholder="Enter code"
                       value={accessCode}
                       onChange={(e) => setAccessCode(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && checkAccessCode()}
+                      onKeyPress={(e) => e.key === "Enter" && checkAccessCode()}
                     />
                     <Button size="sm" onClick={checkAccessCode}>
                       <Eye className="w-4 h-4" />
@@ -372,27 +379,21 @@ export const PaymentReports = () => {
                       <tr key={index} className="border-t hover:bg-muted/30 transition-colors">
                         <td className="p-4 font-mono text-sm">{row.payment_id.slice(-8)}</td>
                         <td className="p-4 font-medium">{row.patient_name}</td>
-                        <td className="p-4 text-sm">Dr. {row.doctor_name}</td>
+                        <td className="p-4 text-sm">{row.doctor_name}</td>
                         <td className="p-4 text-sm">
                           <div>
-                            <div>{format(new Date(row.appointment_date), 'MMM dd, yyyy')}</div>
+                            <div>{format(new Date(row.appointment_date), "MMM dd, yyyy")}</div>
                             <div className="text-muted-foreground">{row.appointment_time}</div>
                           </div>
                         </td>
-                        {showAmounts && (
-                          <td className="p-4 font-bold text-success">
-                            ${row.amount.toFixed(2)}
-                          </td>
-                        )}
+                        {showAmounts && <td className="p-4 font-bold text-success">${row.amount.toFixed(2)}</td>}
                         <td className="p-4">
                           <Badge variant="outline" className="capitalize">
                             {row.payment_method}
                           </Badge>
                         </td>
                         <td className="p-4 text-sm">{row.tests_done}</td>
-                        <td className="p-4 text-sm">
-                          {format(new Date(row.created_at), 'MMM dd, yyyy HH:mm')}
-                        </td>
+                        <td className="p-4 text-sm">{format(new Date(row.created_at), "MMM dd, yyyy HH:mm")}</td>
                       </tr>
                     ))}
                   </tbody>

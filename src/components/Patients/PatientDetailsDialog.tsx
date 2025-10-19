@@ -468,7 +468,8 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                     </CardHeader>
                     <CardContent className="space-y-2">
                       <div>
-                        <span className="font-medium">Doctor:</span> Dr. {appointment.doctor_profile?.name}
+                        <span className="font-medium">Doctor:</span>
+                        {appointment.doctor_profile?.name}
                       </div>
                       {appointment.reason_for_visit && (
                         <div>
