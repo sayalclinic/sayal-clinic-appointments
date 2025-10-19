@@ -1,17 +1,36 @@
-import { useState } from 'react';
-import { format } from 'date-fns';
-import { Calendar, Clock, User, FileText, Phone, Stethoscope, AlertCircle, Edit, CreditCard, UserX, Trash2 } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
-import { Appointment } from '@/hooks/useAppointments';
-import { PatientDetailsDialog } from '@/components/Patients/PatientDetailsDialog';
-import { EditAppointmentDialog } from '@/components/Appointments/EditAppointmentDialog';
-import { PaymentDialog } from '@/components/Payments/PaymentDialog';
+import { useState } from "react";
+import { format } from "date-fns";
+import {
+  Calendar,
+  Clock,
+  User,
+  FileText,
+  Phone,
+  Stethoscope,
+  AlertCircle,
+  Edit,
+  CreditCard,
+  UserX,
+  Trash2,
+} from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/useAuth";
+import { Appointment } from "@/hooks/useAppointments";
+import { PatientDetailsDialog } from "@/components/Patients/PatientDetailsDialog";
+import { EditAppointmentDialog } from "@/components/Appointments/EditAppointmentDialog";
+import { PaymentDialog } from "@/components/Payments/PaymentDialog";
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -38,7 +57,7 @@ export const AppointmentCard = ({
   showActions = true,
   isTranslucent = false,
 }: AppointmentCardProps) => {
-  const [denyReason, setDenyReason] = useState('');
+  const [denyReason, setDenyReason] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -47,25 +66,25 @@ export const AppointmentCard = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'bg-warning/10 text-warning border-warning/20';
-      case 'approved':
-        return 'bg-success/10 text-success border-success/20';
-      case 'denied':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      case 'completed':
-        return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      case 'missed':
-        return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+      case "pending":
+        return "bg-warning/10 text-warning border-warning/20";
+      case "approved":
+        return "bg-success/10 text-success border-success/20";
+      case "denied":
+        return "bg-destructive/10 text-destructive border-destructive/20";
+      case "completed":
+        return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      case "missed":
+        return "bg-gray-500/10 text-gray-500 border-gray-500/20";
       default:
-        return 'bg-gray-100 text-gray-600';
+        return "bg-gray-100 text-gray-600";
     }
   };
 
   const handleDeny = () => {
     if (denyReason.trim() && onDeny) {
       onDeny(appointment.id, denyReason);
-      setDenyReason('');
+      setDenyReason("");
       setIsDialogOpen(false);
     }
   };
@@ -97,17 +116,19 @@ export const AppointmentCard = ({
     <>
       <Dialog>
         <DialogTrigger asChild>
-          <Card className={`smooth-hover hover:shadow-elevated border-l-4 ${
-            appointment.status === 'approved' ? 'border-l-success' : 
-            appointment.status === 'denied' ? 'border-l-destructive' : 
-            'border-l-primary'
-          } cursor-pointer animate-fade-in transition-all duration-300 ${
-            isTranslucent ? 'opacity-50' : ''
-          }`}>
+          <Card
+            className={`smooth-hover hover:shadow-elevated border-l-4 ${
+              appointment.status === "approved"
+                ? "border-l-success"
+                : appointment.status === "denied"
+                  ? "border-l-destructive"
+                  : "border-l-primary"
+            } cursor-pointer animate-fade-in transition-all duration-300 ${isTranslucent ? "opacity-50" : ""}`}
+          >
             <CardHeader className="pb-3 px-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 
+                  <h3
                     className="font-bold text-foreground text-lg truncate cursor-pointer hover:text-primary smooth-transition"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -116,32 +137,40 @@ export const AppointmentCard = ({
                   >
                     {appointment.patients?.name}
                   </h3>
-                  <Badge variant="outline" className={`${getStatusColor(appointment.status)} text-xs smooth-transition px-2 py-0.5 font-semibold`}>
+                  <Badge
+                    variant="outline"
+                    className={`${getStatusColor(appointment.status)} text-xs smooth-transition px-2 py-0.5 font-semibold`}
+                  >
                     {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                   </Badge>
                 </div>
-                
+
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5" />
-                      <span className="font-medium">{format(new Date(appointment.appointment_date), 'MMM dd, yyyy')}</span>
+                      <span className="font-medium">
+                        {format(new Date(appointment.appointment_date), "MMM dd, yyyy")}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" />
                       <span className="font-medium">{appointment.appointment_time}</span>
                     </div>
                   </div>
-                  
+
                   <div className="text-sm font-semibold text-foreground bg-secondary/50 px-2.5 py-1 rounded-md">
                     Age: {appointment.patients?.age}
                   </div>
                 </div>
 
                 {showActions && (
-                  <div className="flex items-center space-x-1 pt-2 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex items-center space-x-1 pt-2 animate-fade-in"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {/* Doctor Actions */}
-                    {profile?.role === 'doctor' && appointment.status === 'pending' && (
+                    {profile?.role === "doctor" && appointment.status === "pending" && (
                       <div className="flex space-x-1">
                         <Button
                           size="sm"
@@ -153,8 +182,8 @@ export const AppointmentCard = ({
                         >
                           Approve
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="destructive"
                           className="text-xs px-2 py-1 h-6 smooth-button"
                           onClick={(e) => {
@@ -168,9 +197,9 @@ export const AppointmentCard = ({
                     )}
 
                     {/* Receptionist Actions */}
-                    {profile?.role === 'receptionist' && (
+                    {profile?.role === "receptionist" && (
                       <div className="flex flex-col space-y-1">
-                        {(appointment.status === 'pending' || appointment.status === 'approved') && (
+                        {(appointment.status === "pending" || appointment.status === "approved") && (
                           <div className="flex space-x-1">
                             <Button
                               size="sm"
@@ -190,7 +219,7 @@ export const AppointmentCard = ({
                               className="text-xs px-2 py-1 h-6 smooth-button flex-1"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (window.confirm('Are you sure you want to delete this appointment?')) {
+                                if (window.confirm("Are you sure you want to delete this appointment?")) {
                                   onDelete?.(appointment.id);
                                 }
                               }}
@@ -200,7 +229,7 @@ export const AppointmentCard = ({
                             </Button>
                           </div>
                         )}
-                        {appointment.status === 'approved' && (
+                        {appointment.status === "approved" && (
                           <div className="flex space-x-1">
                             <Button
                               size="sm"
@@ -235,16 +264,14 @@ export const AppointmentCard = ({
             </CardHeader>
           </Card>
         </DialogTrigger>
-        
+
         <DialogContent className="max-w-2xl animate-scale-in">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
               <User className="w-5 h-5 text-primary" />
               <span>Appointment Details</span>
             </DialogTitle>
-            <DialogDescription>
-              Complete information about this appointment
-            </DialogDescription>
+            <DialogDescription>Complete information about this appointment</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {/* Patient Information */}
@@ -278,7 +305,8 @@ export const AppointmentCard = ({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center space-x-1">
                   <Stethoscope className="w-4 h-4" />
-                  <span className="font-medium">Doctor:</span> Dr. {appointment.doctor_profile?.name}
+                  <span className="font-medium">Doctor:</span>
+                  {appointment.doctor_profile?.name}
                 </div>
                 <div className="flex items-center space-x-1">
                   <User className="w-4 h-4" />
@@ -318,35 +346,25 @@ export const AppointmentCard = ({
         <DialogContent className="animate-scale-in">
           <DialogHeader>
             <DialogTitle>Deny Appointment</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for denying this appointment.
-            </DialogDescription>
+            <DialogDescription>Please provide a reason for denying this appointment.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="denyReason">Reason for denial</Label>
-              <Textarea
-                id="denyReason"
-                value={denyReason}
-                onChange={(e) => setDenyReason(e.target.value)}
-              />
+              <Textarea id="denyReason" value={denyReason} onChange={(e) => setDenyReason(e.target.value)} />
             </div>
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeny}
-                disabled={!denyReason.trim()}
-              >
+              <Button variant="destructive" onClick={handleDeny} disabled={!denyReason.trim()}>
                 Deny Appointment
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Patient Details Dialog */}
       <PatientDetailsDialog
         patient={appointment.patients || null}
@@ -357,7 +375,7 @@ export const AppointmentCard = ({
           window.location.reload();
         }}
       />
-      
+
       {/* Edit Appointment Dialog */}
       <EditAppointmentDialog
         appointment={appointment}
@@ -369,7 +387,7 @@ export const AppointmentCard = ({
       {/* Payment Dialog */}
       <PaymentDialog
         appointmentId={appointment.id}
-        patientName={appointment.patients?.name || 'Patient'}
+        patientName={appointment.patients?.name || "Patient"}
         open={paymentDialogOpen}
         onOpenChange={setPaymentDialogOpen}
         onSuccess={handlePaymentSuccess}
