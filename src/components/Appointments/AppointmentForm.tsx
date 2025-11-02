@@ -5,6 +5,7 @@ import * as z from "zod";
 import { format } from "date-fns";
 import { CalendarIcon, Clock, User, FileText, Stethoscope } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +39,9 @@ interface AppointmentFormProps {
 export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(false);
+  const [appointmentType, setAppointmentType] = useState<'new' | 'repeat'>('new');
+  const [previousAppointments, setPreviousAppointments] = useState<any[]>([]);
+  const [selectedPreviousAppointment, setSelectedPreviousAppointment] = useState<string>('');
   const [formData, setFormData] = useState({
     patientName: "",
     patientAge: "",
@@ -69,10 +73,22 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
             contactNo: existingPatient.contact_no,
             medicalHistory: existingPatient.medical_history || "",
           }));
+
+          // If repeat appointment, fetch previous appointments
+          if (appointmentType === 'repeat') {
+            const { data } = await supabase
+              .from("appointments")
+              .select("*, patients(name)")
+              .eq("patient_id", existingPatient.id)
+              .eq("status", "completed")
+              .order("appointment_date", { ascending: false });
+            
+            if (data) setPreviousAppointments(data);
+          }
         }
       }
     },
-    [form, searchPatientByName],
+    [form, searchPatientByName, appointmentType],
   );
 
   const timeSlots = [
@@ -115,7 +131,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       const appointmentTime = data.appointmentTime;
 
       // Then create the appointment, passing isWalkIn flag
-      await createAppointment({
+      const appointmentData: any = {
         patient_id: patient.id,
         patient_name: data.patientName,
         doctor_id: data.doctorId,
@@ -124,7 +140,11 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         reason_for_visit: data.reasonForVisit,
         symptoms: data.symptoms,
         isWalkIn: isWalkIn,
-      });
+        is_repeat: appointmentType === 'repeat',
+        previous_appointment_id: appointmentType === 'repeat' ? selectedPreviousAppointment : null,
+      };
+
+      await createAppointment(appointmentData);
 
       // Show local notification as confirmation
       if ("Notification" in window && Notification.permission === "granted") {
@@ -146,6 +166,9 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       });
       form.reset();
       setIsWalkIn(false);
+      setAppointmentType('new');
+      setPreviousAppointments([]);
+      setSelectedPreviousAppointment('');
       onSuccess?.();
     } catch (error) {
       console.error("Error creating appointment:", error);
@@ -165,14 +188,49 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Walk-In Toggle at Top */}
-          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+          {/* Appointment Type Selection */}
+          <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
             <div className="flex items-center space-x-2">
               <Checkbox id="walkIn" checked={isWalkIn} onCheckedChange={(checked) => setIsWalkIn(checked as boolean)} />
               <Label htmlFor="walkIn" className="cursor-pointer font-medium">
                 Walk-In Appointment
               </Label>
             </div>
+            
+            <div className="space-y-2">
+              <Label>Appointment Type</Label>
+              <Select value={appointmentType} onValueChange={(v: 'new' | 'repeat') => {
+                setAppointmentType(v);
+                setPreviousAppointments([]);
+                setSelectedPreviousAppointment('');
+              }}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">New Appointment</SelectItem>
+                  <SelectItem value="repeat">Repeat Appointment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {appointmentType === 'repeat' && previousAppointments.length > 0 && (
+              <div className="space-y-2">
+                <Label>Previous Appointment</Label>
+                <Select value={selectedPreviousAppointment} onValueChange={setSelectedPreviousAppointment}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select previous appointment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {previousAppointments.map((apt) => (
+                      <SelectItem key={apt.id} value={apt.id}>
+                        {apt.appointment_date} - {apt.reason_for_visit || 'No reason specified'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {/* Patient Information */}

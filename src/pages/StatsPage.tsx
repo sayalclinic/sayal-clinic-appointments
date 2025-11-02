@@ -8,6 +8,7 @@ import { ArrowLeft, Download, IndianRupee, Maximize2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AppointmentHistoryRow {
   patient_name: string;
@@ -38,6 +39,9 @@ export const StatsPage = () => {
   const [patientHistory, setPatientHistory] = useState<PatientHistoryRow[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryRow[]>([]);
   const [openModal, setOpenModal] = useState<'appointments' | 'patients' | 'payments' | null>(null);
+  const [ageFilter, setAgeFilter] = useState<'all' | 'monthly'>('all');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -141,13 +145,39 @@ export const StatsPage = () => {
   }, [isAuthenticated, toast]);
 
 
-  // Calculate age distribution (age groups)
-  const ageData = patientHistory.reduce((acc, patient) => {
+  // Calculate age distribution (age groups) based on patient_visits
+  const [patientVisits, setPatientVisits] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const fetchPatientVisits = async () => {
+      if (isAuthenticated) {
+        const { data } = await supabase
+          .from("patient_visits")
+          .select(`
+            visit_date,
+            patients (age)
+          `);
+        if (data) setPatientVisits(data);
+      }
+    };
+    fetchPatientVisits();
+  }, [isAuthenticated]);
+
+  const filteredVisits = patientVisits.filter((visit) => {
+    if (ageFilter === 'all') return true;
+    const visitDate = new Date(visit.visit_date);
+    return visitDate.getMonth() === selectedMonth && visitDate.getFullYear() === selectedYear;
+  });
+
+  const ageData = filteredVisits.reduce((acc, visit) => {
+    const age = visit.patients?.age;
+    if (!age) return acc;
+    
     let ageGroup = '';
-    if (patient.age < 18) ageGroup = '0-17';
-    else if (patient.age < 30) ageGroup = '18-29';
-    else if (patient.age < 45) ageGroup = '30-44';
-    else if (patient.age < 60) ageGroup = '45-59';
+    if (age < 18) ageGroup = '0-17';
+    else if (age < 30) ageGroup = '18-29';
+    else if (age < 45) ageGroup = '30-44';
+    else if (age < 60) ageGroup = '45-59';
     else ageGroup = '60+';
     
     const existing = acc.find(item => item.name === ageGroup);
@@ -162,6 +192,12 @@ export const StatsPage = () => {
   // Sort age data by age group
   const ageGroupOrder = ['0-17', '18-29', '30-44', '45-59', '60+'];
   ageData.sort((a, b) => ageGroupOrder.indexOf(a.name) - ageGroupOrder.indexOf(b.name));
+
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
 
 
   
@@ -254,7 +290,44 @@ export const StatsPage = () => {
           <CardContent className="space-y-6">
             {/* Age Distribution Only */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Age Distribution</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Age Distribution</h3>
+                <div className="flex gap-2">
+                  <Select value={ageFilter} onValueChange={(v: 'all' | 'monthly') => setAgeFilter(v)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {ageFilter === 'monthly' && (
+                    <>
+                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month, idx) => (
+                            <SelectItem key={idx} value={idx.toString()}>{month}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                </div>
+              </div>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={ageData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -262,7 +335,7 @@ export const StatsPage = () => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="value" fill="#8884d8" name="Patients" />
+                  <Bar dataKey="value" fill="#8884d8" name="Visits" />
                 </BarChart>
               </ResponsiveContainer>
             </div>

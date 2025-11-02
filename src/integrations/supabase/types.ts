@@ -22,8 +22,10 @@ export type Database = {
           denial_reason: string | null
           doctor_id: string
           id: string
+          is_repeat: boolean | null
           patient_id: string
           patient_name: string | null
+          previous_appointment_id: string | null
           reason_for_visit: string | null
           receptionist_id: string
           status: string
@@ -37,8 +39,10 @@ export type Database = {
           denial_reason?: string | null
           doctor_id: string
           id?: string
+          is_repeat?: boolean | null
           patient_id: string
           patient_name?: string | null
+          previous_appointment_id?: string | null
           reason_for_visit?: string | null
           receptionist_id: string
           status?: string
@@ -52,8 +56,10 @@ export type Database = {
           denial_reason?: string | null
           doctor_id?: string
           id?: string
+          is_repeat?: boolean | null
           patient_id?: string
           patient_name?: string | null
+          previous_appointment_id?: string | null
           reason_for_visit?: string | null
           receptionist_id?: string
           status?: string
@@ -73,6 +79,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_previous_appointment_id_fkey"
+            columns: ["previous_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
             referencedColumns: ["id"]
           },
           {
@@ -295,10 +308,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      delete_old_denied_appointments: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      delete_old_denied_appointments: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

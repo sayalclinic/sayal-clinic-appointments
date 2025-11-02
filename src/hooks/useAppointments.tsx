@@ -419,6 +419,13 @@ export const useAppointments = () => {
   // Delete appointment
   const deleteAppointment = async (appointmentId: string) => {
     try {
+      // Delete associated payments first
+      await supabase
+        .from("payments")
+        .delete()
+        .eq("appointment_id", appointmentId);
+
+      // Delete the appointment
       const { error } = await supabase
         .from('appointments')
         .delete()
@@ -432,6 +439,7 @@ export const useAppointments = () => {
       });
 
       await fetchAppointments();
+      await fetchPayments();
     } catch (error) {
       console.error('Error deleting appointment:', error);
       toast({
