@@ -196,6 +196,8 @@ export const useAppointments = () => {
     reason_for_visit?: string;
     symptoms?: string;
     isWalkIn?: boolean;
+    is_repeat?: boolean;
+    previous_appointment_id?: string | null;
   }) => {
     try {
       if (!profile?.user_id) throw new Error('User not authenticated');
@@ -215,6 +217,8 @@ export const useAppointments = () => {
           symptoms: appointmentData.symptoms,
           receptionist_id: profile.user_id,
           status: appointmentStatus,
+          is_repeat: appointmentData.is_repeat || false,
+          previous_appointment_id: appointmentData.previous_appointment_id,
         })
         .select()
         .single();

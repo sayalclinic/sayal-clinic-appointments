@@ -75,20 +75,32 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
             medicalHistory: existingPatient.medical_history || "",
           }));
 
-          // If repeat appointment, fetch previous appointments with same name or number
+          // If repeat appointment, fetch previous appointments using exact match
           if (appointmentType === 'repeat') {
             const { data, error } = await supabase
               .from("appointments")
               .select("id, appointment_date, appointment_time, reason_for_visit, symptoms, patient_id")
               .eq("patient_id", existingPatient.id)
-              .eq("status", "completed")
               .order("appointment_date", { ascending: false });
             
-            console.log("Previous appointments:", data, error);
+            console.log("Searching for patient ID:", existingPatient.id);
+            console.log("Previous appointments found:", data, error);
+            
             if (data && data.length > 0) {
               setPreviousAppointments(data);
             } else {
-              setPreviousAppointments([]);
+              // Also check by contact number in case patient_id doesn't match
+              const { data: alternativeData } = await supabase
+                .from("appointments")
+                .select(`
+                  id, appointment_date, appointment_time, reason_for_visit, symptoms, patient_id,
+                  patients!inner(id, name, contact_no)
+                `)
+                .eq("patients.contact_no", existingPatient.contact_no)
+                .order("appointment_date", { ascending: false });
+              
+              console.log("Alternative search by contact:", alternativeData);
+              setPreviousAppointments(alternativeData || []);
             }
           }
         }
@@ -137,8 +149,19 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       const appointmentTime = data.appointmentTime;
 
       // Then create the appointment, passing isWalkIn flag
+      // Ensure repeat appointments use the SAME patient_id as previous ones
+      let finalPatientId = patient.id;
+      if (appointmentType === 'repeat') {
+        const selected = previousAppointments.find((a) => a.id === selectedPreviousAppointment);
+        if (selected?.patient_id) {
+          finalPatientId = selected.patient_id;
+        } else if (previousAppointments.length > 0 && previousAppointments[0]?.patient_id) {
+          finalPatientId = previousAppointments[0].patient_id;
+        }
+      }
+
       const appointmentData: any = {
-        patient_id: patient.id,
+        patient_id: finalPatientId,
         patient_name: data.patientName,
         doctor_id: data.doctorId,
         appointment_date: appointmentDate,
@@ -147,7 +170,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         symptoms: data.symptoms,
         isWalkIn: isWalkIn,
         is_repeat: appointmentType === 'repeat',
-        previous_appointment_id: appointmentType === 'repeat' ? selectedPreviousAppointment : null,
+        previous_appointment_id: appointmentType === 'repeat' ? selectedPreviousAppointment || null : null,
       };
 
       await createAppointment(appointmentData);
