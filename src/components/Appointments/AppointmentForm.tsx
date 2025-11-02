@@ -77,14 +77,19 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
 
           // If repeat appointment, fetch previous appointments with same name or number
           if (appointmentType === 'repeat') {
-            const { data } = await supabase
+            const { data, error } = await supabase
               .from("appointments")
-              .select("*, patients(name, contact_no)")
-              .or(`patient_id.eq.${existingPatient.id},patients.contact_no.eq.${existingPatient.contact_no}`)
+              .select("id, appointment_date, appointment_time, reason_for_visit, symptoms, patient_id")
+              .eq("patient_id", existingPatient.id)
               .eq("status", "completed")
               .order("appointment_date", { ascending: false });
             
-            if (data) setPreviousAppointments(data);
+            console.log("Previous appointments:", data, error);
+            if (data && data.length > 0) {
+              setPreviousAppointments(data);
+            } else {
+              setPreviousAppointments([]);
+            }
           }
         }
       }
@@ -189,80 +194,6 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Appointment Type Selection */}
-          <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <Checkbox id="walkIn" checked={isWalkIn} onCheckedChange={(checked) => setIsWalkIn(checked as boolean)} />
-              <Label htmlFor="walkIn" className="cursor-pointer font-medium">
-                Walk-In Appointment
-              </Label>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Appointment Type</Label>
-              <Select value={appointmentType} onValueChange={(v: 'new' | 'repeat') => {
-                setAppointmentType(v);
-                setPreviousAppointments([]);
-                setSelectedPreviousAppointment('');
-              }}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">New Appointment</SelectItem>
-                  <SelectItem value="repeat">Repeat Appointment</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {appointmentType === 'repeat' && previousAppointments.length > 0 && (
-              <div className="space-y-2">
-                <Label>Previous Appointments</Label>
-                <div className="max-h-32 overflow-y-auto border rounded-md">
-                  {previousAppointments.map((apt) => (
-                    <div
-                      key={apt.id}
-                      className={cn(
-                        "p-2 cursor-pointer hover:bg-accent/50 transition-colors border-b last:border-b-0",
-                        selectedPreviousAppointment === apt.id && "bg-primary/10 border-l-4 border-l-primary"
-                      )}
-                      onClick={() => {
-                        setSelectedPreviousAppointment(apt.id);
-                        // Auto-fill details from previous appointment
-                        form.setValue("reasonForVisit", apt.reason_for_visit || "");
-                        form.setValue("symptoms", apt.symptoms || "");
-                      }}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{apt.appointment_date}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {apt.reason_for_visit || 'No reason specified'}
-                          </div>
-                          {apt.symptoms && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Symptoms: {apt.symptoms.substring(0, 50)}...
-                            </div>
-                          )}
-                        </div>
-                        {selectedPreviousAppointment === apt.id && (
-                          <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                            <svg className="w-3 h-3 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Select a previous appointment to auto-fill details
-                </p>
-              </div>
-            )}
-          </div>
-
           {/* Patient Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center space-x-2">
@@ -322,6 +253,94 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                 {...form.register("medicalHistory")}
               />
             </div>
+          </div>
+
+          {/* Appointment Type Selection - Moved here */}
+          <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Checkbox id="walkIn" checked={isWalkIn} onCheckedChange={(checked) => setIsWalkIn(checked as boolean)} />
+              <Label htmlFor="walkIn" className="cursor-pointer font-medium">
+                Walk-In Appointment
+              </Label>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Appointment Type</Label>
+              <Select value={appointmentType} onValueChange={(v: 'new' | 'repeat') => {
+                setAppointmentType(v);
+                setPreviousAppointments([]);
+                setSelectedPreviousAppointment('');
+                // Trigger search if patient name is already filled
+                if (v === 'repeat' && form.watch("patientName")) {
+                  handlePatientNameBlur(form.watch("patientName"));
+                }
+              }}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">New Appointment</SelectItem>
+                  <SelectItem value="repeat">Repeat Appointment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {appointmentType === 'repeat' && previousAppointments.length > 0 && (
+              <div className="space-y-2 animate-fade-in">
+                <Label>Previous Appointments</Label>
+                <div className="max-h-48 overflow-y-auto border rounded-md bg-background">
+                  {previousAppointments.map((apt) => (
+                    <div
+                      key={apt.id}
+                      className={cn(
+                        "p-3 cursor-pointer hover:bg-accent/50 transition-colors border-b last:border-b-0",
+                        selectedPreviousAppointment === apt.id && "bg-primary/10 border-l-4 border-l-primary"
+                      )}
+                      onClick={() => {
+                        setSelectedPreviousAppointment(apt.id);
+                        // Auto-fill details from previous appointment
+                        form.setValue("reasonForVisit", apt.reason_for_visit || "");
+                        form.setValue("symptoms", apt.symptoms || "");
+                      }}
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold flex items-center gap-2">
+                            <CalendarIcon className="w-3 h-3" />
+                            {apt.appointment_date}
+                            <span className="text-xs text-muted-foreground">at {apt.appointment_time}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {apt.reason_for_visit || 'No reason specified'}
+                          </div>
+                          {apt.symptoms && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Symptoms: {apt.symptoms.length > 60 ? apt.symptoms.substring(0, 60) + '...' : apt.symptoms}
+                            </div>
+                          )}
+                        </div>
+                        {selectedPreviousAppointment === apt.id && (
+                          <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg className="w-3 h-3 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Click on a previous appointment to auto-fill reason and symptoms
+                </p>
+              </div>
+            )}
+
+            {appointmentType === 'repeat' && form.watch("patientName") && previousAppointments.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                No previous completed appointments found for this patient.
+              </p>
+            )}
           </div>
 
           {/* Appointment Details */}
