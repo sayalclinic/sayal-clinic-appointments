@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TimeWheelPicker } from "@/components/ui/time-wheel-picker";
+import { ClockTimePicker } from "@/components/ui/clock-time-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -74,12 +75,12 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
             medicalHistory: existingPatient.medical_history || "",
           }));
 
-          // If repeat appointment, fetch previous appointments
+          // If repeat appointment, fetch previous appointments with same name or number
           if (appointmentType === 'repeat') {
             const { data } = await supabase
               .from("appointments")
-              .select("*, patients(name)")
-              .eq("patient_id", existingPatient.id)
+              .select("*, patients(name, contact_no)")
+              .or(`patient_id.eq.${existingPatient.id},patients.contact_no.eq.${existingPatient.contact_no}`)
               .eq("status", "completed")
               .order("appointment_date", { ascending: false });
             
@@ -216,19 +217,48 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
 
             {appointmentType === 'repeat' && previousAppointments.length > 0 && (
               <div className="space-y-2">
-                <Label>Previous Appointment</Label>
-                <Select value={selectedPreviousAppointment} onValueChange={setSelectedPreviousAppointment}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select previous appointment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {previousAppointments.map((apt) => (
-                      <SelectItem key={apt.id} value={apt.id}>
-                        {apt.appointment_date} - {apt.reason_for_visit || 'No reason specified'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Previous Appointments</Label>
+                <div className="max-h-32 overflow-y-auto border rounded-md">
+                  {previousAppointments.map((apt) => (
+                    <div
+                      key={apt.id}
+                      className={cn(
+                        "p-2 cursor-pointer hover:bg-accent/50 transition-colors border-b last:border-b-0",
+                        selectedPreviousAppointment === apt.id && "bg-primary/10 border-l-4 border-l-primary"
+                      )}
+                      onClick={() => {
+                        setSelectedPreviousAppointment(apt.id);
+                        // Auto-fill details from previous appointment
+                        form.setValue("reasonForVisit", apt.reason_for_visit || "");
+                        form.setValue("symptoms", apt.symptoms || "");
+                      }}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{apt.appointment_date}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {apt.reason_for_visit || 'No reason specified'}
+                          </div>
+                          {apt.symptoms && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Symptoms: {apt.symptoms.substring(0, 50)}...
+                            </div>
+                          )}
+                        </div>
+                        {selectedPreviousAppointment === apt.id && (
+                          <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                            <svg className="w-3 h-3 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Select a previous appointment to auto-fill details
+                </p>
               </div>
             )}
           </div>
@@ -384,7 +414,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <TimeWheelPicker
+                    <ClockTimePicker
                       value={form.watch("appointmentTime")}
                       onChange={(time) => form.setValue("appointmentTime", time)}
                     />
