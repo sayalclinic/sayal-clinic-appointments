@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, User, FileText, IndianRupee } from 'lucide-react';
+import { Calendar, Clock, User, FileText, IndianRupee, RefreshCw } from 'lucide-react';
 import { DashboardLayout } from '@/components/Layout/DashboardLayout';
 import { AppointmentCard } from '@/components/Appointments/AppointmentCard';
 import { AppointmentCalendar } from '@/components/Calendar/AppointmentCalendar';
@@ -81,10 +81,20 @@ export const DoctorDashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6">
-        {/* Welcome Section */}
+        {/* Welcome Section with Refresh */}
         <div className="text-center px-2">
-          <h2 className="text-2xl sm:text-3xl font-bold text-primary mb-2">Doctor Dashboard</h2>
-          <p className="text-sm sm:text-base text-muted-foreground">Manage your appointments and patient care</p>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <h2 className="text-xl sm:text-3xl font-bold text-primary">Doctor Dashboard</h2>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 rounded-full hover:bg-primary/10"
+              onClick={() => window.location.reload()}
+            >
+              <RefreshCw className="h-4 w-4 text-primary" />
+            </Button>
+          </div>
+          <p className="text-xs sm:text-base text-muted-foreground">Manage your appointments and patient care</p>
         </div>
 
         {/* Main Tabs */}

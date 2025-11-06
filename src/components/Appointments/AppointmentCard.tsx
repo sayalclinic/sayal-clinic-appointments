@@ -163,11 +163,11 @@ export const AppointmentCard = ({
                   : "border-l-primary"
             } cursor-pointer animate-fade-in transition-all duration-300 ${isTranslucent ? "opacity-50" : ""}`}
           >
-            <CardHeader className="pb-3 px-4">
-              <div className="space-y-3">
+            <CardHeader className="pb-3 px-3 sm:px-4">
+              <div className="space-y-2 sm:space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <h3
-                    className="font-bold text-foreground text-lg truncate cursor-pointer hover:text-primary smooth-transition"
+                    className="font-bold text-foreground text-base sm:text-lg truncate cursor-pointer hover:text-primary smooth-transition max-w-[60%] sm:max-w-none"
                     onClick={(e) => {
                       e.stopPropagation();
                       setPatientDialogOpen(true);
@@ -177,42 +177,42 @@ export const AppointmentCard = ({
                   </h3>
                   <Badge
                     variant="outline"
-                    className={`${getStatusColor(appointment.status)} text-xs smooth-transition px-2 py-0.5 font-semibold`}
+                    className={`${getStatusColor(appointment.status)} text-[10px] sm:text-xs smooth-transition px-1.5 sm:px-2 py-0.5 font-semibold whitespace-nowrap`}
                   >
                     {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span className="font-medium">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground flex-wrap">
+                    <div className="flex items-center gap-1 sm:gap-1.5">
+                      <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                      <span className="font-medium whitespace-nowrap">
                         {format(new Date(appointment.appointment_date), "MMM dd, yyyy")}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span className="font-medium">{appointment.appointment_time}</span>
+                    <div className="flex items-center gap-1 sm:gap-1.5">
+                      <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                      <span className="font-medium whitespace-nowrap">{appointment.appointment_time}</span>
                     </div>
                   </div>
 
-                  <div className="text-sm font-semibold text-foreground bg-secondary/50 px-2.5 py-1 rounded-md">
+                  <div className="text-xs sm:text-sm font-semibold text-foreground bg-secondary/50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md whitespace-nowrap">
                     Age: {appointment.patients?.age}
                   </div>
                 </div>
 
                 {showActions && (
                   <div
-                    className="flex items-center space-x-1 pt-2 animate-fade-in"
+                    className="flex items-center pt-2 animate-fade-in"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {/* Doctor Actions */}
                     {profile?.role === "doctor" && appointment.status === "pending" && (
-                      <div className="flex space-x-1">
+                      <div className="flex gap-1 w-full">
                         <Button
                           size="sm"
-                          className="bg-success hover:bg-success/90 text-white text-xs px-2 py-1 h-6 smooth-button"
+                          className="bg-success hover:bg-success/90 text-white text-[10px] sm:text-xs px-2 py-1 h-7 sm:h-8 smooth-button flex-1"
                           onClick={(e) => {
                             e.stopPropagation();
                             onApprove?.(appointment.id);
@@ -223,7 +223,7 @@ export const AppointmentCard = ({
                         <Button
                           size="sm"
                           variant="destructive"
-                          className="text-xs px-2 py-1 h-6 smooth-button"
+                          className="text-[10px] sm:text-xs px-2 py-1 h-7 sm:h-8 smooth-button flex-1"
                           onClick={(e) => {
                             e.stopPropagation();
                             setIsDialogOpen(true);
@@ -236,59 +236,59 @@ export const AppointmentCard = ({
 
                     {/* Receptionist Actions */}
                     {profile?.role === "receptionist" && (
-                      <div className="flex flex-col space-y-1">
+                      <div className="flex flex-col gap-1 w-full">
                         {(appointment.status === "pending" || appointment.status === "approved") && (
-                          <div className="flex space-x-1">
+                          <div className="flex gap-1 w-full">
                             <Button
                               size="sm"
                               variant="outline"
-                              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground text-xs px-2 py-1 h-6 smooth-button flex-1"
+                              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 h-7 sm:h-8 smooth-button flex-1 min-w-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleEdit();
                               }}
                             >
-                              <Edit className="w-3 h-3 mr-1" />
-                              Edit
+                              <Edit className="w-3 h-3 sm:mr-1" />
+                              <span className="hidden sm:inline">Edit</span>
                             </Button>
                             <Button
                               size="sm"
                               variant="destructive"
-                              className="text-xs px-2 py-1 h-6 smooth-button flex-1"
+                              className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 h-7 sm:h-8 smooth-button flex-1 min-w-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onDelete?.(appointment.id);
                               }}
                             >
-                              <Trash2 className="w-3 h-3 mr-1" />
-                              Delete
+                              <Trash2 className="w-3 h-3 sm:mr-1" />
+                              <span className="hidden sm:inline">Delete</span>
                             </Button>
                           </div>
                         )}
                         {appointment.status === "approved" && (
-                          <div className="flex space-x-1">
+                          <div className="flex gap-1 w-full">
                             <Button
                               size="sm"
-                              className="bg-success hover:bg-success/90 text-white text-xs px-2 py-1 h-6 smooth-button flex-1"
+                              className="bg-success hover:bg-success/90 text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 h-7 sm:h-8 smooth-button flex-1 min-w-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleComplete();
                               }}
                             >
-                              <CreditCard className="w-3 h-3 mr-1" />
-                              Complete
+                              <CreditCard className="w-3 h-3 sm:mr-1" />
+                              <span className="hidden sm:inline">Complete</span>
                             </Button>
                             <Button
                               size="sm"
                               variant="destructive"
-                              className="text-xs px-2 py-1 h-6 smooth-button flex-1"
+                              className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 h-7 sm:h-8 smooth-button flex-1 min-w-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleMissed();
                               }}
                             >
-                              <UserX className="w-3 h-3 mr-1" />
-                              Missed
+                              <UserX className="w-3 h-3 sm:mr-1" />
+                              <span className="hidden sm:inline">Missed</span>
                             </Button>
                           </div>
                         )}
