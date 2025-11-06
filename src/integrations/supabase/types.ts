@@ -28,6 +28,7 @@ export type Database = {
           previous_appointment_id: string | null
           reason_for_visit: string | null
           receptionist_id: string
+          requires_payment: boolean | null
           status: string
           symptoms: string | null
           updated_at: string
@@ -45,6 +46,7 @@ export type Database = {
           previous_appointment_id?: string | null
           reason_for_visit?: string | null
           receptionist_id: string
+          requires_payment?: boolean | null
           status?: string
           symptoms?: string | null
           updated_at?: string
@@ -62,6 +64,7 @@ export type Database = {
           previous_appointment_id?: string | null
           reason_for_visit?: string | null
           receptionist_id?: string
+          requires_payment?: boolean | null
           status?: string
           symptoms?: string | null
           updated_at?: string

@@ -50,22 +50,21 @@ export const StatsPage = () => {
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
 
-      // Fetch monthly earnings
-      const { data: payments } = await supabase
+      // Fetch monthly earnings for current month
+      const firstDayOfMonth = new Date(currentYear, currentMonth, 1).toISOString();
+      const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59).toISOString();
+      
+      const { data: payments, error: paymentsError } = await supabase
         .from("payments")
-        .select("amount, created_at");
+        .select("amount")
+        .gte("created_at", firstDayOfMonth)
+        .lte("created_at", lastDayOfMonth);
 
-      const monthlyTotal =
-        payments
-          ?.filter((p) => {
-            const paymentDate = new Date(p.created_at);
-            return (
-              paymentDate.getMonth() === currentMonth &&
-              paymentDate.getFullYear() === currentYear
-            );
-          })
-          .reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
+      if (paymentsError) {
+        console.error("Error fetching payments:", paymentsError);
+      }
 
+      const monthlyTotal = payments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
       setMonthlyEarnings(monthlyTotal);
 
       // Fetch appointment history
@@ -145,19 +144,30 @@ export const StatsPage = () => {
   }, [isAuthenticated, toast]);
 
 
-  // Calculate age distribution (age groups) based on patient_visits
+  // Calculate age distribution from appointments
   const [patientVisits, setPatientVisits] = useState<any[]>([]);
   
   useEffect(() => {
     const fetchPatientVisits = async () => {
       if (isAuthenticated) {
-        const { data } = await supabase
-          .from("patient_visits")
+        const { data, error } = await supabase
+          .from("appointments")
           .select(`
-            visit_date,
-            patients (age)
-          `);
-        if (data) setPatientVisits(data);
+            appointment_date,
+            patients!inner (age)
+          `)
+          .not("patients.age", "is", null);
+        
+        if (error) {
+          console.error("Error fetching appointment data:", error);
+        }
+        if (data) {
+          const formattedData = data.map(apt => ({
+            visit_date: apt.appointment_date,
+            patients: { age: apt.patients.age }
+          }));
+          setPatientVisits(formattedData);
+        }
       }
     };
     fetchPatientVisits();

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Calendar,
   Clock,
@@ -63,6 +65,7 @@ export const AppointmentCard = ({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const { profile } = useAuth();
+  const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -94,7 +97,42 @@ export const AppointmentCard = ({
   };
 
   const handleComplete = () => {
-    setPaymentDialogOpen(true);
+    // If appointment doesn't require payment, complete directly
+    if (appointment.requires_payment === false) {
+      // Update appointment status to completed directly
+      const completeWithoutPayment = async () => {
+        try {
+          const { error } = await supabase
+            .from('appointments')
+            .update({ status: 'completed' })
+            .eq('id', appointment.id);
+
+          if (error) throw error;
+
+          toast({
+            title: 'Success',
+            description: 'Appointment completed without payment',
+          });
+
+          if (onComplete) {
+            onComplete(appointment.id);
+          }
+          if (onPaymentSuccess) {
+            onPaymentSuccess();
+          }
+        } catch (error) {
+          console.error('Error completing appointment:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to complete appointment',
+            variant: 'destructive',
+          });
+        }
+      };
+      completeWithoutPayment();
+    } else {
+      setPaymentDialogOpen(true);
+    }
   };
 
   const handleMissed = () => {
@@ -219,9 +257,7 @@ export const AppointmentCard = ({
                               className="text-xs px-2 py-1 h-6 smooth-button flex-1"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (window.confirm("Are you sure you want to delete this appointment?")) {
-                                  onDelete?.(appointment.id);
-                                }
+                                onDelete?.(appointment.id);
                               }}
                             >
                               <Trash2 className="w-3 h-3 mr-1" />

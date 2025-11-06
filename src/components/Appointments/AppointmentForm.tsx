@@ -43,6 +43,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
   const [appointmentType, setAppointmentType] = useState<'new' | 'repeat'>('new');
   const [previousAppointments, setPreviousAppointments] = useState<any[]>([]);
   const [selectedPreviousAppointment, setSelectedPreviousAppointment] = useState<string>('');
+  const [requiresPayment, setRequiresPayment] = useState(true);
   const [formData, setFormData] = useState({
     patientName: "",
     patientAge: "",
@@ -75,33 +76,45 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
             medicalHistory: existingPatient.medical_history || "",
           }));
 
-          // If repeat appointment, fetch previous appointments using exact match
+          // If repeat appointment, fetch previous appointments by patient_id, name+age, or contact
           if (appointmentType === 'repeat') {
-            const { data, error } = await supabase
+            // First try by patient_id
+            let { data, error } = await supabase
               .from("appointments")
               .select("id, appointment_date, appointment_time, reason_for_visit, symptoms, patient_id")
               .eq("patient_id", existingPatient.id)
               .order("appointment_date", { ascending: false });
             
-            console.log("Searching for patient ID:", existingPatient.id);
-            console.log("Previous appointments found:", data, error);
-            
-            if (data && data.length > 0) {
-              setPreviousAppointments(data);
-            } else {
-              // Also check by contact number in case patient_id doesn't match
-              const { data: alternativeData } = await supabase
+            // If no results, search by name and age combination
+            if (!data || data.length === 0) {
+              const { data: byNameAge } = await supabase
                 .from("appointments")
                 .select(`
                   id, appointment_date, appointment_time, reason_for_visit, symptoms, patient_id,
-                  patients!inner(id, name, contact_no)
+                  patients!inner(id, name, age)
+                `)
+                .eq("patients.name", existingPatient.name)
+                .eq("patients.age", existingPatient.age)
+                .order("appointment_date", { ascending: false });
+              
+              data = byNameAge;
+            }
+            
+            // If still no results, search by contact number
+            if (!data || data.length === 0) {
+              const { data: byContact } = await supabase
+                .from("appointments")
+                .select(`
+                  id, appointment_date, appointment_time, reason_for_visit, symptoms, patient_id,
+                  patients!inner(id, contact_no)
                 `)
                 .eq("patients.contact_no", existingPatient.contact_no)
                 .order("appointment_date", { ascending: false });
               
-              console.log("Alternative search by contact:", alternativeData);
-              setPreviousAppointments(alternativeData || []);
+              data = byContact;
             }
+            
+            setPreviousAppointments(data || []);
           }
         }
       }
@@ -171,6 +184,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         isWalkIn: isWalkIn,
         is_repeat: appointmentType === 'repeat',
         previous_appointment_id: appointmentType === 'repeat' ? selectedPreviousAppointment || null : null,
+        requires_payment: requiresPayment,
       };
 
       await createAppointment(appointmentData);
@@ -307,6 +321,19 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                 </SelectContent>
               </Select>
             </div>
+
+            {appointmentType === 'repeat' && (
+              <div className="flex items-center space-x-2 p-3 bg-accent/50 rounded-lg">
+                <Checkbox 
+                  id="requires-payment" 
+                  checked={requiresPayment}
+                  onCheckedChange={(checked) => setRequiresPayment(checked === true)}
+                />
+                <Label htmlFor="requires-payment" className="font-normal cursor-pointer">
+                  Requires Payment (uncheck for follow-up visits without payment)
+                </Label>
+              </div>
+            )}
 
             {appointmentType === 'repeat' && previousAppointments.length > 0 && (
               <div className="space-y-2 animate-fade-in">

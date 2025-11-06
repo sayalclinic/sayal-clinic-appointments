@@ -28,6 +28,7 @@ export interface Appointment {
   denial_reason?: string;
   created_at: string;
   updated_at: string;
+  requires_payment?: boolean;
   patients?: Patient;
   doctor_profile?: { name: string };
   receptionist_profile?: { name: string };
@@ -198,6 +199,7 @@ export const useAppointments = () => {
     isWalkIn?: boolean;
     is_repeat?: boolean;
     previous_appointment_id?: string | null;
+    requires_payment?: boolean;
   }) => {
     try {
       if (!profile?.user_id) throw new Error('User not authenticated');
@@ -219,6 +221,7 @@ export const useAppointments = () => {
           status: appointmentStatus,
           is_repeat: appointmentData.is_repeat || false,
           previous_appointment_id: appointmentData.previous_appointment_id,
+          requires_payment: appointmentData.requires_payment ?? true,
         })
         .select()
         .single();
