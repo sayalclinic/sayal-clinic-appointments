@@ -40,9 +40,9 @@ interface AppointmentFormProps {
 export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(false);
-  const [appointmentType, setAppointmentType] = useState<'new' | 'repeat'>('new');
+  const [appointmentType, setAppointmentType] = useState<"new" | "repeat">("new");
   const [previousAppointments, setPreviousAppointments] = useState<any[]>([]);
-  const [selectedPreviousAppointment, setSelectedPreviousAppointment] = useState<string>('');
+  const [selectedPreviousAppointment, setSelectedPreviousAppointment] = useState<string>("");
   const [requiresPayment, setRequiresPayment] = useState(true);
   const [formData, setFormData] = useState({
     patientName: "",
@@ -77,43 +77,47 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
           }));
 
           // If repeat appointment, fetch previous appointments by patient_id, name+age, or contact
-          if (appointmentType === 'repeat') {
+          if (appointmentType === "repeat") {
             // First try by patient_id
             let { data, error } = await supabase
               .from("appointments")
               .select("id, appointment_date, appointment_time, reason_for_visit, symptoms, patient_id")
               .eq("patient_id", existingPatient.id)
               .order("appointment_date", { ascending: false });
-            
+
             // If no results, search by name and age combination
             if (!data || data.length === 0) {
               const { data: byNameAge } = await supabase
                 .from("appointments")
-                .select(`
+                .select(
+                  `
                   id, appointment_date, appointment_time, reason_for_visit, symptoms, patient_id,
                   patients!inner(id, name, age)
-                `)
+                `,
+                )
                 .eq("patients.name", existingPatient.name)
                 .eq("patients.age", existingPatient.age)
                 .order("appointment_date", { ascending: false });
-              
+
               data = byNameAge;
             }
-            
+
             // If still no results, search by contact number
             if (!data || data.length === 0) {
               const { data: byContact } = await supabase
                 .from("appointments")
-                .select(`
+                .select(
+                  `
                   id, appointment_date, appointment_time, reason_for_visit, symptoms, patient_id,
                   patients!inner(id, contact_no)
-                `)
+                `,
+                )
                 .eq("patients.contact_no", existingPatient.contact_no)
                 .order("appointment_date", { ascending: false });
-              
+
               data = byContact;
             }
-            
+
             setPreviousAppointments(data || []);
           }
         }
@@ -164,7 +168,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       // Then create the appointment, passing isWalkIn flag
       // Ensure repeat appointments use the SAME patient_id as previous ones
       let finalPatientId = patient.id;
-      if (appointmentType === 'repeat') {
+      if (appointmentType === "repeat") {
         const selected = previousAppointments.find((a) => a.id === selectedPreviousAppointment);
         if (selected?.patient_id) {
           finalPatientId = selected.patient_id;
@@ -182,8 +186,8 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         reason_for_visit: data.reasonForVisit,
         symptoms: data.symptoms,
         isWalkIn: isWalkIn,
-        is_repeat: appointmentType === 'repeat',
-        previous_appointment_id: appointmentType === 'repeat' ? selectedPreviousAppointment || null : null,
+        is_repeat: appointmentType === "repeat",
+        previous_appointment_id: appointmentType === "repeat" ? selectedPreviousAppointment || null : null,
         requires_payment: requiresPayment,
       };
 
@@ -209,9 +213,9 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       });
       form.reset();
       setIsWalkIn(false);
-      setAppointmentType('new');
+      setAppointmentType("new");
       setPreviousAppointments([]);
-      setSelectedPreviousAppointment('');
+      setSelectedPreviousAppointment("");
       onSuccess?.();
     } catch (error) {
       console.error("Error creating appointment:", error);
@@ -300,18 +304,21 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                 Walk-In Appointment
               </Label>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Appointment Type</Label>
-              <Select value={appointmentType} onValueChange={(v: 'new' | 'repeat') => {
-                setAppointmentType(v);
-                setPreviousAppointments([]);
-                setSelectedPreviousAppointment('');
-                // Trigger search if patient name is already filled
-                if (v === 'repeat' && form.watch("patientName")) {
-                  handlePatientNameBlur(form.watch("patientName"));
-                }
-              }}>
+              <Select
+                value={appointmentType}
+                onValueChange={(v: "new" | "repeat") => {
+                  setAppointmentType(v);
+                  setPreviousAppointments([]);
+                  setSelectedPreviousAppointment("");
+                  // Trigger search if patient name is already filled
+                  if (v === "repeat" && form.watch("patientName")) {
+                    handlePatientNameBlur(form.watch("patientName"));
+                  }
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -322,20 +329,20 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               </Select>
             </div>
 
-            {appointmentType === 'repeat' && (
+            {appointmentType === "repeat" && (
               <div className="flex items-center space-x-2 p-3 bg-accent/50 rounded-lg">
-                <Checkbox 
-                  id="requires-payment" 
+                <Checkbox
+                  id="requires-payment"
                   checked={requiresPayment}
                   onCheckedChange={(checked) => setRequiresPayment(checked === true)}
                 />
                 <Label htmlFor="requires-payment" className="font-normal cursor-pointer">
-                  Requires Payment (uncheck for follow-up visits without payment)
+                  Paying
                 </Label>
               </div>
             )}
 
-            {appointmentType === 'repeat' && previousAppointments.length > 0 && (
+            {appointmentType === "repeat" && previousAppointments.length > 0 && (
               <div className="space-y-2 animate-fade-in">
                 <Label>Previous Appointments</Label>
                 <div className="max-h-48 overflow-y-auto border rounded-md bg-background">
@@ -344,7 +351,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                       key={apt.id}
                       className={cn(
                         "p-3 cursor-pointer hover:bg-accent/50 transition-colors border-b last:border-b-0",
-                        selectedPreviousAppointment === apt.id && "bg-primary/10 border-l-4 border-l-primary"
+                        selectedPreviousAppointment === apt.id && "bg-primary/10 border-l-4 border-l-primary",
                       )}
                       onClick={() => {
                         setSelectedPreviousAppointment(apt.id);
@@ -361,18 +368,23 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                             <span className="text-xs text-muted-foreground">at {apt.appointment_time}</span>
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            {apt.reason_for_visit || 'No reason specified'}
+                            {apt.reason_for_visit || "No reason specified"}
                           </div>
                           {apt.symptoms && (
                             <div className="text-xs text-muted-foreground mt-1">
-                              Symptoms: {apt.symptoms.length > 60 ? apt.symptoms.substring(0, 60) + '...' : apt.symptoms}
+                              Symptoms:{" "}
+                              {apt.symptoms.length > 60 ? apt.symptoms.substring(0, 60) + "..." : apt.symptoms}
                             </div>
                           )}
                         </div>
                         {selectedPreviousAppointment === apt.id && (
                           <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                             <svg className="w-3 h-3 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
                             </svg>
                           </div>
                         )}
@@ -386,7 +398,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               </div>
             )}
 
-            {appointmentType === 'repeat' && form.watch("patientName") && previousAppointments.length === 0 && (
+            {appointmentType === "repeat" && form.watch("patientName") && previousAppointments.length === 0 && (
               <p className="text-xs text-muted-foreground">
                 No previous completed appointments found for this patient.
               </p>
