@@ -12,6 +12,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useAppointments, Appointment } from '@/hooks/useAppointments';
 
 const editAppointmentSchema = z.object({
+  patientName: z.string().min(1, 'Please enter patient name'),
+  patientAge: z.number().min(1, 'Please enter patient age').max(150, 'Invalid age'),
+  contactNo: z.string().min(10, 'Please enter a valid contact number'),
   doctorId: z.string().min(1, 'Please select a doctor'),
   appointmentDate: z.string().min(1, 'Please select a date'),
   appointmentTime: z.string().min(1, 'Please select a time'),
@@ -44,6 +47,9 @@ export const EditAppointmentDialog = ({
   useEffect(() => {
     if (appointment) {
       form.reset({
+        patientName: appointment.patients?.name || '',
+        patientAge: appointment.patients?.age || 0,
+        contactNo: appointment.patients?.contact_no || '',
         doctorId: appointment.doctor_id,
         appointmentDate: appointment.appointment_date,
         appointmentTime: appointment.appointment_time,
@@ -65,13 +71,26 @@ export const EditAppointmentDialog = ({
     setIsLoading(true);
     
     try {
-      await updateAppointment(appointment.id, {
-        doctor_id: data.doctorId,
-        appointment_date: data.appointmentDate,
-        appointment_time: data.appointmentTime,
-        reason_for_visit: data.reasonForVisit,
-        symptoms: data.symptoms,
-      });
+      // Check if timing changed
+      const timingChanged = 
+        data.appointmentDate !== appointment.appointment_date ||
+        data.appointmentTime !== appointment.appointment_time;
+
+      await updateAppointment(
+        appointment.id,
+        {
+          patient_id: appointment.patient_id,
+          patient_name: data.patientName,
+          patient_age: data.patientAge,
+          contact_no: data.contactNo,
+          doctor_id: data.doctorId,
+          appointment_date: data.appointmentDate,
+          appointment_time: data.appointmentTime,
+          reason_for_visit: data.reasonForVisit,
+          symptoms: data.symptoms,
+        },
+        timingChanged
+      );
 
       onOpenChange(false);
       onSuccess?.();
@@ -98,6 +117,58 @@ export const EditAppointmentDialog = ({
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="patientName">Patient Name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="patientName"
+                  className="pl-10"
+                  autoComplete="off"
+                  {...form.register('patientName')}
+                />
+              </div>
+              {form.formState.errors.patientName && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.patientName.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="patientAge">Age</Label>
+                <Input
+                  id="patientAge"
+                  type="number"
+                  autoComplete="off"
+                  {...form.register('patientAge', { valueAsNumber: true })}
+                />
+                {form.formState.errors.patientAge && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.patientAge.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contactNo">Contact Number</Label>
+                <Input
+                  id="contactNo"
+                  type="tel"
+                  autoComplete="off"
+                  {...form.register('contactNo')}
+                />
+                {form.formState.errors.contactNo && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.contactNo.message}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Doctor</Label>

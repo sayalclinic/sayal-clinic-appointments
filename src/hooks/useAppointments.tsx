@@ -341,30 +341,60 @@ export const useAppointments = () => {
   const updateAppointment = async (
     appointmentId: string,
     updateData: {
+      patient_id: string;
+      patient_name?: string;
+      patient_age?: number;
+      contact_no?: string;
       doctor_id?: string;
       appointment_date?: string;
       appointment_time?: string;
       reason_for_visit?: string;
       symptoms?: string;
-    }
+    },
+    timingChanged: boolean = false
   ) => {
     try {
-      // When appointment is edited, reset status to pending for doctor approval
-      const finalUpdateData = {
-        ...updateData,
-        status: 'pending'
+      // Update patient information if provided
+      if (updateData.patient_name || updateData.patient_age || updateData.contact_no) {
+        const patientUpdateData: any = {};
+        if (updateData.patient_name) patientUpdateData.name = updateData.patient_name;
+        if (updateData.patient_age) patientUpdateData.age = updateData.patient_age;
+        if (updateData.contact_no) patientUpdateData.contact_no = updateData.contact_no;
+
+        const { error: patientError } = await supabase
+          .from('patients')
+          .update(patientUpdateData)
+          .eq('id', updateData.patient_id);
+
+        if (patientError) throw patientError;
+      }
+
+      // Prepare appointment update data
+      const appointmentUpdateData: any = {
+        doctor_id: updateData.doctor_id,
+        appointment_date: updateData.appointment_date,
+        appointment_time: updateData.appointment_time,
+        reason_for_visit: updateData.reason_for_visit,
+        symptoms: updateData.symptoms,
       };
+
+      // Only set status to pending if timing changed
+      if (timingChanged) {
+        appointmentUpdateData.status = 'pending';
+      }
 
       const { error } = await supabase
         .from('appointments')
-        .update(finalUpdateData)
+        .update(appointmentUpdateData)
         .eq('id', appointmentId);
 
       if (error) throw error;
 
       toast({
         title: 'Success',
-        description: 'Appointment updated and sent back to doctor for approval',
+        description: timingChanged 
+          ? 'Appointment updated and sent to doctor for approval'
+          : 'Appointment updated successfully',
       });
 
       await fetchAppointments();
