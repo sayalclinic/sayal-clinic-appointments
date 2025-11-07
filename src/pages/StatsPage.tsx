@@ -51,20 +51,25 @@ export const StatsPage = () => {
       const currentYear = new Date().getFullYear();
 
       // Fetch monthly earnings for current month
-      const firstDayOfMonth = new Date(currentYear, currentMonth, 1).toISOString();
-      const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59).toISOString();
+      const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+      firstDayOfMonth.setHours(0, 0, 0, 0);
+      
+      const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+      lastDayOfMonth.setHours(23, 59, 59, 999);
       
       const { data: payments, error: paymentsError } = await supabase
         .from("payments")
-        .select("amount")
-        .gte("created_at", firstDayOfMonth)
-        .lte("created_at", lastDayOfMonth);
+        .select("amount, created_at")
+        .gte("created_at", firstDayOfMonth.toISOString())
+        .lte("created_at", lastDayOfMonth.toISOString());
 
       if (paymentsError) {
         console.error("Error fetching payments:", paymentsError);
+      } else {
+        console.log("Payments fetched:", payments?.length, "Total:", payments?.reduce((sum, p) => sum + Number(p.amount), 0));
       }
 
-      const monthlyTotal = payments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
+      const monthlyTotal = payments?.reduce((sum, payment) => sum + Number(payment.amount || 0), 0) || 0;
       setMonthlyEarnings(monthlyTotal);
 
       // Fetch appointment history
