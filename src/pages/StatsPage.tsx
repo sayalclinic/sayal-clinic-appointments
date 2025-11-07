@@ -248,26 +248,27 @@ export const StatsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/10 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-primary">Statistics & Reports</h1>
-          <Button onClick={() => navigate('/dashboard')} variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/10 p-3 sm:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <h1 className="text-xl sm:text-3xl font-bold text-primary">Statistics & Reports</h1>
+          <Button onClick={() => navigate('/dashboard')} variant="outline" size="sm">
+            <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Back to Dashboard</span>
+            <span className="sm:hidden">Back</span>
           </Button>
         </div>
 
         {/* Monthly Earnings Card */}
         <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <IndianRupee className="w-6 h-6 text-primary" />
-              Total Earnings This Month
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-2xl">
+              <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+              <span className="truncate">Total Earnings This Month</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-primary">
+          <CardContent className="p-4 sm:p-6 pt-0">
+            <div className="text-2xl sm:text-4xl font-bold text-primary">
               ₹{monthlyEarnings.toFixed(2)}
             </div>
           </CardContent>
@@ -278,10 +279,10 @@ export const StatsPage = () => {
           className="cursor-pointer hover:shadow-lg transition-shadow"
           onClick={() => setOpenModal('appointments')}
         >
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center justify-between text-base sm:text-lg">
               <span>Appointment History</span>
-              <Maximize2 className="w-5 h-5 text-muted-foreground" />
+              <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
             </CardTitle>
           </CardHeader>
         </Card>
@@ -291,20 +292,20 @@ export const StatsPage = () => {
           className="cursor-pointer hover:shadow-lg transition-shadow"
           onClick={() => setOpenModal('patients')}
         >
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Patient History & Analytics</span>
-              <Maximize2 className="w-5 h-5 text-muted-foreground" />
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center justify-between text-base sm:text-lg">
+              <span className="truncate">Patient History & Analytics</span>
+              <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground shrink-0" />
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-6 pt-0">
             {/* Age Distribution Only */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Age Distribution</h3>
-                <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <h3 className="text-sm sm:text-lg font-semibold">Age Distribution</h3>
+                <div className="flex gap-2 overflow-x-auto">
                   <Select value={ageFilter} onValueChange={(v: 'all' | 'monthly') => setAgeFilter(v)}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -315,7 +316,7 @@ export const StatsPage = () => {
                   {ageFilter === 'monthly' && (
                     <>
                       <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -325,7 +326,7 @@ export const StatsPage = () => {
                         </SelectContent>
                       </Select>
                       <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                        <SelectTrigger className="w-24">
+                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -338,13 +339,13 @@ export const StatsPage = () => {
                   )}
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={ageData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
                   <Bar dataKey="value" fill="#8884d8" name="Visits" />
                 </BarChart>
               </ResponsiveContainer>
@@ -357,49 +358,50 @@ export const StatsPage = () => {
           className="cursor-pointer hover:shadow-lg transition-shadow"
           onClick={() => setOpenModal('payments')}
         >
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center justify-between text-base sm:text-lg">
               <span>Payment History</span>
-              <Maximize2 className="w-5 h-5 text-muted-foreground" />
+              <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
             </CardTitle>
           </CardHeader>
         </Card>
 
         {/* Appointment History Modal */}
         <Dialog open={openModal === 'appointments'} onOpenChange={() => setOpenModal(null)}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center justify-between">
-                <span>Appointment History</span>
+          <DialogContent className="max-w-[95vw] sm:max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="p-3 sm:p-6 pb-3">
+              <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <span className="text-base sm:text-lg">Appointment History</span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => downloadCSV(appointmentHistory, 'appointment-history')}
+                  className="w-full sm:w-auto text-xs sm:text-sm"
                 >
-                  <Download className="w-4 h-4 mr-2" />
+                  <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   Download CSV
                 </Button>
               </DialogTitle>
             </DialogHeader>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto px-3 sm:px-6">
+              <table className="w-full text-xs sm:text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-2">Patient Name</th>
-                    <th className="text-left p-2">Age</th>
-                    <th className="text-left p-2">Phone</th>
-                    <th className="text-left p-2">Date</th>
-                    <th className="text-left p-2">Doctor</th>
+                    <th className="text-left p-1 sm:p-2 whitespace-nowrap">Patient</th>
+                    <th className="text-left p-1 sm:p-2 whitespace-nowrap">Age</th>
+                    <th className="text-left p-1 sm:p-2 whitespace-nowrap hidden sm:table-cell">Phone</th>
+                    <th className="text-left p-1 sm:p-2 whitespace-nowrap">Date</th>
+                    <th className="text-left p-1 sm:p-2 whitespace-nowrap hidden md:table-cell">Doctor</th>
                   </tr>
                 </thead>
                 <tbody>
                   {appointmentHistory.map((apt, idx) => (
                     <tr key={idx} className="border-b hover:bg-accent/5">
-                      <td className="p-2">{apt.patient_name}</td>
-                      <td className="p-2">{apt.patient_age}</td>
-                      <td className="p-2">{apt.patient_contact}</td>
-                      <td className="p-2">{apt.appointment_date}</td>
-                      <td className="p-2">{apt.doctor_name}</td>
+                      <td className="p-1 sm:p-2 max-w-[100px] truncate">{apt.patient_name}</td>
+                      <td className="p-1 sm:p-2">{apt.patient_age}</td>
+                      <td className="p-1 sm:p-2 hidden sm:table-cell">{apt.patient_contact}</td>
+                      <td className="p-1 sm:p-2 whitespace-nowrap">{apt.appointment_date}</td>
+                      <td className="p-1 sm:p-2 hidden md:table-cell max-w-[120px] truncate">{apt.doctor_name}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -410,35 +412,36 @@ export const StatsPage = () => {
 
         {/* Patient History Modal */}
         <Dialog open={openModal === 'patients'} onOpenChange={() => setOpenModal(null)}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center justify-between">
-                <span>Patient History</span>
+          <DialogContent className="max-w-[95vw] sm:max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="p-3 sm:p-6 pb-3">
+              <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <span className="text-base sm:text-lg">Patient History</span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => downloadCSV(patientHistory, 'patient-history')}
+                  className="w-full sm:w-auto text-xs sm:text-sm"
                 >
-                  <Download className="w-4 h-4 mr-2" />
+                  <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   Download CSV
                 </Button>
               </DialogTitle>
             </DialogHeader>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto px-3 sm:px-6">
+              <table className="w-full text-xs sm:text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-2">Name</th>
-                    <th className="text-left p-2">Age</th>
-                    <th className="text-left p-2">Phone</th>
+                    <th className="text-left p-1 sm:p-2">Name</th>
+                    <th className="text-left p-1 sm:p-2">Age</th>
+                    <th className="text-left p-1 sm:p-2">Phone</th>
                   </tr>
                 </thead>
                 <tbody>
                   {patientHistory.map((patient, idx) => (
                     <tr key={idx} className="border-b hover:bg-accent/5">
-                      <td className="p-2">{patient.name}</td>
-                      <td className="p-2">{patient.age}</td>
-                      <td className="p-2">{patient.contact_no}</td>
+                      <td className="p-1 sm:p-2 max-w-[150px] truncate">{patient.name}</td>
+                      <td className="p-1 sm:p-2">{patient.age}</td>
+                      <td className="p-1 sm:p-2">{patient.contact_no}</td>
                     </tr>
                   ))}
                 </tbody>

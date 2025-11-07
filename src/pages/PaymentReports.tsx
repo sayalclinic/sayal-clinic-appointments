@@ -184,63 +184,63 @@ export const PaymentReports = () => {
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm" onClick={() => window.close()}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start sm:items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
+            <Button variant="outline" size="sm" onClick={() => window.close()} className="shrink-0">
+              <ArrowLeft className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Back</span>
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-medical-dark">Payment Reports</h1>
-              <p className="text-muted-foreground">Financial transactions and payment history</p>
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-3xl font-bold text-medical-dark truncate">Payment Reports</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">Financial transactions</p>
             </div>
           </div>
-          <Button onClick={exportToCSV} className="bg-primary hover:bg-primary/90">
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
+          <Button onClick={exportToCSV} className="bg-primary hover:bg-primary/90 w-full sm:w-auto shrink-0" size="sm">
+            <Download className="w-4 h-4 sm:mr-2" />
+            <span className="sm:inline">Export</span>
           </Button>
         </div>
 
         {/* Summary Cards */}
         {showAmounts && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                <DollarSign className="h-4 w-4 text-success" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-success" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-success">${getTotalRevenue().toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground">
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-lg sm:text-2xl font-bold text-success">${getTotalRevenue().toFixed(2)}</div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
                   {months[selectedMonth]} {selectedYear}
                 </p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
-                <TrendingUp className="h-4 w-4 text-primary" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">Transactions</CardTitle>
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-primary">{filteredData.length}</div>
-                <p className="text-xs text-muted-foreground">Payment transactions</p>
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-lg sm:text-2xl font-bold text-primary">{filteredData.length}</div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Payments</p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Payment</CardTitle>
-                <DollarSign className="h-4 w-4 text-warning" />
+            <Card className="col-span-2 lg:col-span-1">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">Average</CardTitle>
+                <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-warning" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-warning">
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-lg sm:text-2xl font-bold text-warning">
                   ${filteredData.length > 0 ? (getTotalRevenue() / filteredData.length).toFixed(2) : "0.00"}
                 </div>
-                <p className="text-xs text-muted-foreground">Per transaction</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Per transaction</p>
               </CardContent>
             </Card>
           </div>
@@ -248,18 +248,18 @@ export const PaymentReports = () => {
 
         {/* Filters */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Search className="w-5 h-5" />
+          <CardHeader className="p-3 sm:p-6">
+            <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+              <Search className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Filters</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Month</label>
+                <label className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 block">Month</label>
                 <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9 sm:h-10 text-xs sm:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -272,9 +272,9 @@ export const PaymentReports = () => {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Year</label>
+                <label className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 block">Year</label>
                 <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9 sm:h-10 text-xs sm:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -287,32 +287,35 @@ export const PaymentReports = () => {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Search</label>
+                <label className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 block">Search</label>
                 <Input
-                  placeholder="Search by patient, doctor, or method..."
+                  className="h-9 sm:h-10 text-xs sm:text-sm"
+                  placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">View Amounts</label>
+                <label className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 block">View Amounts</label>
                 {!showAmounts ? (
                   <div className="flex space-x-2">
                     <Input
+                      className="h-9 sm:h-10 text-xs sm:text-sm"
                       type="password"
-                      placeholder="Enter code"
+                      placeholder="Code"
                       value={accessCode}
                       onChange={(e) => setAccessCode(e.target.value)}
                       onKeyPress={(e) => e.key === "Enter" && checkAccessCode()}
                     />
-                    <Button size="sm" onClick={checkAccessCode}>
-                      <Eye className="w-4 h-4" />
+                    <Button size="sm" onClick={checkAccessCode} className="h-9 sm:h-10 px-2 sm:px-4">
+                      <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
                   </div>
                 ) : (
-                  <Button variant="outline" onClick={() => setShowAmounts(false)}>
-                    <EyeOff className="w-4 h-4 mr-2" />
-                    Hide Amounts
+                  <Button variant="outline" size="sm" onClick={() => setShowAmounts(false)} className="h-9 sm:h-10 w-full text-xs sm:text-sm">
+                    <EyeOff className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Hide Amounts</span>
+                    <span className="sm:hidden">Hide</span>
                   </Button>
                 )}
               </div>
@@ -323,15 +326,15 @@ export const PaymentReports = () => {
         {/* Payment Method Breakdown */}
         {showAmounts && (
           <Card>
-            <CardHeader>
-              <CardTitle>Payment Method Breakdown</CardTitle>
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Payment Method Breakdown</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <CardContent className="p-3 sm:p-6 pt-0">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 {Object.entries(getPaymentMethodBreakdown()).map(([method, amount]) => (
-                  <div key={method} className="text-center p-4 bg-muted/30 rounded-lg">
-                    <div className="text-lg font-bold">${amount.toFixed(2)}</div>
-                    <div className="text-sm text-muted-foreground capitalize">{method}</div>
+                  <div key={method} className="text-center p-3 sm:p-4 bg-muted/30 rounded-lg">
+                    <div className="text-base sm:text-lg font-bold">${amount.toFixed(2)}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground capitalize truncate">{method}</div>
                   </div>
                 ))}
               </div>
@@ -340,9 +343,9 @@ export const PaymentReports = () => {
         )}
 
         {/* Results Summary */}
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {filteredData.length} payments for {months[selectedMonth]} {selectedYear}
+        <div className="flex items-center justify-between px-1">
+          <div className="text-xs sm:text-sm text-muted-foreground truncate">
+            {filteredData.length} payment{filteredData.length !== 1 ? 's' : ''} • {months[selectedMonth]} {selectedYear}
           </div>
         </div>
 
@@ -350,50 +353,50 @@ export const PaymentReports = () => {
         <Card>
           <CardContent className="p-0">
             {loading ? (
-              <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading payment reports...</p>
+              <div className="p-6 sm:p-8 text-center">
+                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary mx-auto mb-3 sm:mb-4"></div>
+                <p className="text-xs sm:text-sm text-muted-foreground">Loading payment reports...</p>
               </div>
             ) : filteredData.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                <DollarSign className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No payments found for the selected period</p>
+              <div className="p-6 sm:p-8 text-center text-muted-foreground">
+                <DollarSign className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                <p className="text-xs sm:text-sm">No payments found for the selected period</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-xs sm:text-sm">
                   <thead className="bg-muted/50">
                     <tr>
-                      <th className="text-left p-4 font-medium">Payment ID</th>
-                      <th className="text-left p-4 font-medium">Patient</th>
-                      <th className="text-left p-4 font-medium">Doctor</th>
-                      <th className="text-left p-4 font-medium">Appointment</th>
-                      {showAmounts && <th className="text-left p-4 font-medium">Amount</th>}
-                      <th className="text-left p-4 font-medium">Method</th>
-                      <th className="text-left p-4 font-medium">Tests Done</th>
-                      <th className="text-left p-4 font-medium">Payment Date</th>
+                      <th className="text-left p-2 sm:p-4 font-medium whitespace-nowrap">ID</th>
+                      <th className="text-left p-2 sm:p-4 font-medium whitespace-nowrap">Patient</th>
+                      <th className="text-left p-2 sm:p-4 font-medium whitespace-nowrap hidden md:table-cell">Doctor</th>
+                      <th className="text-left p-2 sm:p-4 font-medium whitespace-nowrap hidden lg:table-cell">Date</th>
+                      {showAmounts && <th className="text-left p-2 sm:p-4 font-medium whitespace-nowrap">Amount</th>}
+                      <th className="text-left p-2 sm:p-4 font-medium whitespace-nowrap">Method</th>
+                      <th className="text-left p-2 sm:p-4 font-medium whitespace-nowrap hidden xl:table-cell">Tests</th>
+                      <th className="text-left p-2 sm:p-4 font-medium whitespace-nowrap hidden sm:table-cell">Paid</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredData.map((row, index) => (
                       <tr key={index} className="border-t hover:bg-muted/30 transition-colors">
-                        <td className="p-4 font-mono text-sm">{row.payment_id.slice(-8)}</td>
-                        <td className="p-4 font-medium">{row.patient_name}</td>
-                        <td className="p-4 text-sm">{row.doctor_name}</td>
-                        <td className="p-4 text-sm">
-                          <div>
-                            <div>{format(new Date(row.appointment_date), "MMM dd, yyyy")}</div>
+                        <td className="p-2 sm:p-4 font-mono text-[10px] sm:text-xs">{row.payment_id.slice(-6)}</td>
+                        <td className="p-2 sm:p-4 font-medium max-w-[120px] truncate">{row.patient_name}</td>
+                        <td className="p-2 sm:p-4 hidden md:table-cell max-w-[120px] truncate">{row.doctor_name}</td>
+                        <td className="p-2 sm:p-4 hidden lg:table-cell whitespace-nowrap">
+                          <div className="text-[10px] sm:text-xs">
+                            <div>{format(new Date(row.appointment_date), "MMM dd")}</div>
                             <div className="text-muted-foreground">{row.appointment_time}</div>
                           </div>
                         </td>
-                        {showAmounts && <td className="p-4 font-bold text-success">${row.amount.toFixed(2)}</td>}
-                        <td className="p-4">
-                          <Badge variant="outline" className="capitalize">
+                        {showAmounts && <td className="p-2 sm:p-4 font-bold text-success whitespace-nowrap">${row.amount.toFixed(2)}</td>}
+                        <td className="p-2 sm:p-4">
+                          <Badge variant="outline" className="capitalize text-[9px] sm:text-xs px-1.5 sm:px-2">
                             {row.payment_method}
                           </Badge>
                         </td>
-                        <td className="p-4 text-sm">{row.tests_done}</td>
-                        <td className="p-4 text-sm">{format(new Date(row.created_at), "MMM dd, yyyy HH:mm")}</td>
+                        <td className="p-2 sm:p-4 hidden xl:table-cell max-w-[150px] truncate">{row.tests_done}</td>
+                        <td className="p-2 sm:p-4 hidden sm:table-cell whitespace-nowrap text-[10px] sm:text-xs">{format(new Date(row.created_at), "MMM dd, HH:mm")}</td>
                       </tr>
                     ))}
                   </tbody>
