@@ -217,21 +217,17 @@ export const StatsPage = () => {
     return aptDate.getMonth() === selectedMonth && aptDate.getFullYear() === selectedYear;
   });
   const patientTypeData = [{
-    name: 'New Patients (Paying)',
+    name: 'New Patient',
     value: filteredAppointments.filter(a => !a.is_repeat && a.requires_payment).length,
-    color: '#8b5cf6'
+    color: 'hsl(165, 50%, 75%)'
   }, {
-    name: 'New Patients (Non-Paying)',
-    value: filteredAppointments.filter(a => !a.is_repeat && !a.requires_payment).length,
-    color: '#c084fc'
-  }, {
-    name: 'Repeat Patients (Paying)',
+    name: 'Repeat Paying',
     value: filteredAppointments.filter(a => a.is_repeat && a.requires_payment).length,
-    color: '#06b6d4'
+    color: 'hsl(165, 50%, 55%)'
   }, {
-    name: 'Repeat Patients (Non-Paying)',
+    name: 'Repeat Non Paying',
     value: filteredAppointments.filter(a => a.is_repeat && !a.requires_payment).length,
-    color: '#67e8f9'
+    color: 'hsl(0, 84%, 75%)'
   }].filter(item => item.value > 0);
 
   // Payment method data
@@ -267,7 +263,7 @@ export const StatsPage = () => {
       acc.push({
         name: method,
         value: Number(payment.amount || 0),
-        color: method === 'cash' ? '#10b981' : '#3b82f6'
+        color: method === 'cash' ? 'hsl(142, 76%, 40%)' : 'hsl(220, 95%, 32%)'
       });
     }
     return acc;
@@ -276,6 +272,49 @@ export const StatsPage = () => {
     value: number;
     color: string;
   }[]);
+
+  const totalPayments = paymentMethodData.reduce((sum, item) => sum + item.value, 0);
+
+  // Monthly earnings bar chart data
+  const [monthlyEarningsData, setMonthlyEarningsData] = useState<any[]>([]);
+  useEffect(() => {
+    const fetchMonthlyEarnings = async () => {
+      if (isAuthenticated) {
+        const { data, error } = await supabase
+          .from("payments")
+          .select("amount, created_at");
+        
+        if (error) {
+          console.error("Error fetching monthly earnings:", error);
+          return;
+        }
+        
+        if (data) {
+          const monthlyData = data.reduce((acc, payment) => {
+            const date = new Date(payment.created_at);
+            const monthYear = `${months[date.getMonth()]} ${date.getFullYear()}`;
+            const existing = acc.find(item => item.month === monthYear);
+            
+            if (existing) {
+              existing.earnings += Number(payment.amount || 0);
+            } else {
+              acc.push({
+                month: monthYear,
+                earnings: Number(payment.amount || 0),
+                sortKey: date.getTime()
+              });
+            }
+            return acc;
+          }, [] as { month: string; earnings: number; sortKey: number }[]);
+          
+          // Sort by date and take last 6 months
+          monthlyData.sort((a, b) => a.sortKey - b.sortKey);
+          setMonthlyEarningsData(monthlyData.slice(-6));
+        }
+      }
+    };
+    fetchMonthlyEarnings();
+  }, [isAuthenticated]);
   const COLORS = ['#8b5cf6', '#c084fc', '#06b6d4', '#67e8f9', '#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
   const downloadCSV = (data: any[], filename: string) => {
     if (data.length === 0) return;
@@ -308,33 +347,61 @@ export const StatsPage = () => {
           </Button>
         </div>
 
-        {/* Monthly Earnings Card */}
-        
-
-        {/* Appointment History */}
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setOpenModal('appointments')}>
+        {/* Monthly Earnings Summary Card */}
+        <Card className="shadow-lg border-primary/20">
           <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="flex items-center justify-between text-base sm:text-lg">
-              <span>Appointment History</span>
-              <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <IndianRupee className="w-5 h-5 text-primary" />
+              Monthly Earnings Summary
             </CardTitle>
           </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0">
+            <p className="text-2xl sm:text-4xl font-bold text-primary">₹{monthlyEarnings.toFixed(2)}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              Current month: {months[new Date().getMonth()]} {new Date().getFullYear()}
+            </p>
+          </CardContent>
         </Card>
 
-        {/* Patient History with Charts */}
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setOpenModal('patients')}>
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="flex items-center justify-between text-base sm:text-lg">
-              <span className="truncate">Patient History & Analytics</span>
-              <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground shrink-0" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-6 pt-0">
-            {/* Age Distribution Only */}
-            <div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                <h3 className="text-sm sm:text-lg font-semibold">Age Distribution</h3>
-                <div className="flex gap-2 overflow-x-auto">
+        {/* Analytics Section */}
+        <div className="space-y-4 sm:space-y-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-primary">Analytics & Insights</h2>
+          
+          {/* Monthly Earnings Bar Chart */}
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Monthly Earnings Trend</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              {monthlyEarningsData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={monthlyEarningsData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fontSize: 10 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(value: number) => `₹${value.toFixed(2)}`} />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar dataKey="earnings" fill="hsl(220, 95%, 32%)" name="Earnings (₹)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No data available</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Age Distribution */}
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <CardTitle className="text-base sm:text-lg">Age Distribution</CardTitle>
+                <div className="flex flex-wrap gap-2">
                   <Select value={ageFilter} onValueChange={(v: 'all' | 'monthly') => setAgeFilter(v)}>
                     <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
                       <SelectValue />
@@ -344,13 +411,16 @@ export const StatsPage = () => {
                       <SelectItem value="monthly">Monthly</SelectItem>
                     </SelectContent>
                   </Select>
-                  {ageFilter === 'monthly' && <>
+                  {ageFilter === 'monthly' && (
+                    <>
                       <Select value={selectedMonth.toString()} onValueChange={v => setSelectedMonth(parseInt(v))}>
                         <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {months.map((month, idx) => <SelectItem key={idx} value={idx.toString()}>{month}</SelectItem>)}
+                          {months.map((month, idx) => (
+                            <SelectItem key={idx} value={idx.toString()}>{month}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <Select value={selectedYear.toString()} onValueChange={v => setSelectedYear(parseInt(v))}>
@@ -358,92 +428,193 @@ export const StatsPage = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                          {years.map(year => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                    </>}
+                    </>
+                  )}
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={200}>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={ageData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{
-                  fontSize: 12
-                }} />
-                  <YAxis tick={{
-                  fontSize: 12
-                }} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
-                  <Legend wrapperStyle={{
-                  fontSize: '12px'
-                }} />
-                  <Bar dataKey="value" fill="#8884d8" name="Visits" />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
+                  <Bar dataKey="value" fill="hsl(165, 50%, 75%)" name="Visits" />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-          </CardContent>
+            </CardContent>
+          </Card>
+
+          {/* Patient Type Distribution */}
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <CardTitle className="text-base sm:text-lg">Patient Type Distribution</CardTitle>
+                <div className="flex flex-wrap gap-2">
+                  <Select value={patientTypeFilter} onValueChange={(v: 'all' | 'monthly') => setPatientTypeFilter(v)}>
+                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {patientTypeFilter === 'monthly' && (
+                    <>
+                      <Select value={selectedMonth.toString()} onValueChange={v => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month, idx) => (
+                            <SelectItem key={idx} value={idx.toString()}>{month}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedYear.toString()} onValueChange={v => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map(year => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              {patientTypeData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie 
+                      data={patientTypeData} 
+                      cx="50%" 
+                      cy="50%" 
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}\n${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80} 
+                      fill="#8884d8" 
+                      dataKey="value"
+                    >
+                      {patientTypeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No data available</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Payment Method Distribution */}
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <CardTitle className="text-base sm:text-lg">Payment Method Distribution</CardTitle>
+                <div className="flex flex-wrap gap-2">
+                  <Select value={paymentMethodFilter} onValueChange={(v: 'all' | 'monthly') => setPaymentMethodFilter(v)}>
+                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {paymentMethodFilter === 'monthly' && (
+                    <>
+                      <Select value={selectedMonth.toString()} onValueChange={v => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month, idx) => (
+                            <SelectItem key={idx} value={idx.toString()}>{month}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedYear.toString()} onValueChange={v => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map(year => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              {paymentMethodData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie 
+                      data={paymentMethodData} 
+                      cx="50%" 
+                      cy="50%" 
+                      labelLine={false}
+                      label={({ name, value, percent }) => 
+                        `${name}\n₹${value.toFixed(0)} (${(percent * 100).toFixed(0)}%)`
+                      }
+                      outerRadius={80} 
+                      fill="#8884d8" 
+                      dataKey="value"
+                    >
+                      {paymentMethodData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => `₹${value.toFixed(2)} (${((value / totalPayments) * 100).toFixed(1)}%)`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No data available</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* CSV Downloads Section */}
+        <div className="space-y-4 sm:space-y-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-primary">Download Reports</h2>
+          
+          {/* Appointment History */}
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setOpenModal('appointments')}>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center justify-between text-base sm:text-lg">
+              <span>Appointment History</span>
+              <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+            </CardTitle>
+          </CardHeader>
         </Card>
 
-        {/* Patient Type Distribution */}
-        <Card>
+        {/* Patient History */}
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setOpenModal('patients')}>
           <CardHeader className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <CardTitle className="text-base sm:text-lg">Patient Type Distribution</CardTitle>
-              <Select value={patientTypeFilter} onValueChange={(v: 'all' | 'monthly') => setPatientTypeFilter(v)}>
-                <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <CardTitle className="flex items-center justify-between text-base sm:text-lg">
+              <span>Patient History</span>
+              <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+            </CardTitle>
           </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-            {patientTypeData.length > 0 ? <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie data={patientTypeData} cx="50%" cy="50%" labelLine={false} label={({
-                name,
-                percent
-              }) => `${name}: ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
-                    {patientTypeData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer> : <p className="text-center text-muted-foreground py-8">No data available</p>}
-          </CardContent>
-        </Card>
-
-        {/* Payment Method Distribution */}
-        <Card>
-          <CardHeader className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <CardTitle className="text-base sm:text-lg">Payment Method Distribution</CardTitle>
-              <Select value={paymentMethodFilter} onValueChange={(v: 'all' | 'monthly') => setPaymentMethodFilter(v)}>
-                <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-            {paymentMethodData.length > 0 ? <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie data={paymentMethodData} cx="50%" cy="50%" labelLine={false} label={({
-                name,
-                value
-              }) => `${name}: ₹${value.toFixed(0)}`} outerRadius={80} fill="#8884d8" dataKey="value">
-                    {paymentMethodData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => `₹${value.toFixed(2)}`} />
-                </PieChart>
-              </ResponsiveContainer> : <p className="text-center text-muted-foreground py-8">No data available</p>}
-          </CardContent>
         </Card>
 
         {/* Payment History */}
@@ -455,6 +626,7 @@ export const StatsPage = () => {
             </CardTitle>
           </CardHeader>
         </Card>
+        </div>
 
         {/* Appointment History Modal */}
         <Dialog open={openModal === 'appointments'} onOpenChange={() => setOpenModal(null)}>

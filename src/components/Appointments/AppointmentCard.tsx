@@ -96,6 +96,15 @@ export const AppointmentCard = ({
     setEditDialogOpen(true);
   };
 
+  // Check if appointment date is in the past
+  const isAppointmentPast = () => {
+    const appointmentDate = new Date(appointment.appointment_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    appointmentDate.setHours(0, 0, 0, 0);
+    return appointmentDate < today;
+  };
+
   const handleComplete = () => {
     // If appointment doesn't require payment, complete directly
     if (appointment.requires_payment === false) {
@@ -237,7 +246,7 @@ export const AppointmentCard = ({
                     {/* Receptionist Actions */}
                     {profile?.role === "receptionist" && (
                       <div className="flex flex-col gap-1 w-full">
-                        {(appointment.status === "pending" || appointment.status === "approved") && (
+                        {(appointment.status === "pending" || appointment.status === "approved") && !isAppointmentPast() && (
                           <div className="flex gap-1 w-full">
                             <Button
                               size="sm"
@@ -265,7 +274,7 @@ export const AppointmentCard = ({
                             </Button>
                           </div>
                         )}
-                        {appointment.status === "approved" && (
+                        {appointment.status === "approved" && !isAppointmentPast() && (
                           <div className="flex gap-1 w-full">
                             <Button
                               size="sm"
