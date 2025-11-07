@@ -6,7 +6,7 @@ import { PinDialog } from "@/components/Auth/PinDialog";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Download, IndianRupee, Maximize2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -42,6 +42,8 @@ export const StatsPage = () => {
   const [ageFilter, setAgeFilter] = useState<'all' | 'monthly'>('all');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [patientTypeFilter, setPatientTypeFilter] = useState<'all' | 'monthly'>('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'monthly'>('all');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -51,11 +53,8 @@ export const StatsPage = () => {
       const currentYear = new Date().getFullYear();
 
       // Fetch monthly earnings for current month
-      const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-      firstDayOfMonth.setHours(0, 0, 0, 0);
-      
-      const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
-      lastDayOfMonth.setHours(23, 59, 59, 999);
+      const firstDayOfMonth = new Date(currentYear, currentMonth, 1, 0, 0, 0, 0);
+      const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
       
       const { data: payments, error: paymentsError } = await supabase
         .from("payments")
@@ -65,11 +64,10 @@ export const StatsPage = () => {
 
       if (paymentsError) {
         console.error("Error fetching payments:", paymentsError);
-      } else {
-        console.log("Payments fetched:", payments?.length, "Total:", payments?.reduce((sum, p) => sum + Number(p.amount), 0));
       }
 
       const monthlyTotal = payments?.reduce((sum, payment) => sum + Number(payment.amount || 0), 0) || 0;
+      console.log("Monthly earnings calculated:", monthlyTotal, "from", payments?.length, "payments");
       setMonthlyEarnings(monthlyTotal);
 
       // Fetch appointment history
@@ -214,6 +212,100 @@ export const StatsPage = () => {
   ];
   const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
 
+  // Patient type data (new vs repeat, paying vs non-paying)
+  const [appointmentsData, setAppointmentsData] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const fetchAppointmentsData = async () => {
+      if (isAuthenticated) {
+        const { data, error } = await supabase
+          .from("appointments")
+          .select("appointment_date, is_repeat, requires_payment");
+        
+        if (error) {
+          console.error("Error fetching appointments data:", error);
+        }
+        if (data) {
+          setAppointmentsData(data);
+        }
+      }
+    };
+    fetchAppointmentsData();
+  }, [isAuthenticated]);
+
+  const filteredAppointments = appointmentsData.filter((apt) => {
+    if (patientTypeFilter === 'all') return true;
+    const aptDate = new Date(apt.appointment_date);
+    return aptDate.getMonth() === selectedMonth && aptDate.getFullYear() === selectedYear;
+  });
+
+  const patientTypeData = [
+    { 
+      name: 'New Patients (Paying)', 
+      value: filteredAppointments.filter(a => !a.is_repeat && a.requires_payment).length,
+      color: '#8b5cf6'
+    },
+    { 
+      name: 'New Patients (Non-Paying)', 
+      value: filteredAppointments.filter(a => !a.is_repeat && !a.requires_payment).length,
+      color: '#c084fc'
+    },
+    { 
+      name: 'Repeat Patients (Paying)', 
+      value: filteredAppointments.filter(a => a.is_repeat && a.requires_payment).length,
+      color: '#06b6d4'
+    },
+    { 
+      name: 'Repeat Patients (Non-Paying)', 
+      value: filteredAppointments.filter(a => a.is_repeat && !a.requires_payment).length,
+      color: '#67e8f9'
+    },
+  ].filter(item => item.value > 0);
+
+  // Payment method data
+  const [allPayments, setAllPayments] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const fetchAllPayments = async () => {
+      if (isAuthenticated) {
+        const { data, error } = await supabase
+          .from("payments")
+          .select("payment_method, amount, created_at");
+        
+        if (error) {
+          console.error("Error fetching all payments:", error);
+        }
+        if (data) {
+          setAllPayments(data);
+        }
+      }
+    };
+    fetchAllPayments();
+  }, [isAuthenticated]);
+
+  const filteredPayments = allPayments.filter((payment) => {
+    if (paymentMethodFilter === 'all') return true;
+    const paymentDate = new Date(payment.created_at);
+    return paymentDate.getMonth() === selectedMonth && paymentDate.getFullYear() === selectedYear;
+  });
+
+  const paymentMethodData = filteredPayments.reduce((acc, payment) => {
+    const method = payment.payment_method;
+    const existing = acc.find(item => item.name === method);
+    if (existing) {
+      existing.value += Number(payment.amount || 0);
+    } else {
+      acc.push({ 
+        name: method, 
+        value: Number(payment.amount || 0),
+        color: method === 'cash' ? '#10b981' : '#3b82f6'
+      });
+    }
+    return acc;
+  }, [] as { name: string; value: number; color: string }[]);
+
+  const COLORS = ['#8b5cf6', '#c084fc', '#06b6d4', '#67e8f9', '#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
+
 
   
 
@@ -355,6 +447,92 @@ export const StatsPage = () => {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Patient Type Distribution */}
+        <Card>
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <CardTitle className="text-base sm:text-lg">Patient Type Distribution</CardTitle>
+              <Select value={patientTypeFilter} onValueChange={(v: 'all' | 'monthly') => setPatientTypeFilter(v)}>
+                <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            {patientTypeData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={patientTypeData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {patientTypeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No data available</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Payment Method Distribution */}
+        <Card>
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <CardTitle className="text-base sm:text-lg">Payment Method Distribution</CardTitle>
+              <Select value={paymentMethodFilter} onValueChange={(v: 'all' | 'monthly') => setPaymentMethodFilter(v)}>
+                <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            {paymentMethodData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={paymentMethodData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value }) => `${name}: ₹${value.toFixed(0)}`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {paymentMethodData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => `₹${value.toFixed(2)}`} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No data available</p>
+            )}
           </CardContent>
         </Card>
 
