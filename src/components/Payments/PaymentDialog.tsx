@@ -58,26 +58,12 @@ export const PaymentDialog = ({
   ];
 
   const labTestOptions = [
-    'Blood Test',
-    'Urine Test',
-    'X-Ray',
-    'ECG',
-    'Ultrasound',
-    'CT Scan',
-    'MRI',
-    'Blood Pressure Check',
-    'Blood Sugar Test',
-    'Cholesterol Test',
-    'Thyroid Test',
-    'Liver Function Test',
-    'Kidney Function Test',
-    'Complete Blood Count (CBC)',
-    'Hemoglobin Test',
-    'ESR Test',
-    'CRP Test',
-    'Vitamin D Test',
-    'Vitamin B12 Test',
-    'Iron Test',
+    'ECG'
+    'PFT'
+    'Sputum Test'
+    'Body Fluids'
+    'Blood Test'
+    'Urine Test'
   ];
 
   const onSubmit = async (data: PaymentFormData) => {
