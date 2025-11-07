@@ -58,12 +58,12 @@ export const PaymentDialog = ({
   ];
 
   const labTestOptions = [
-    'ECG'
-    'PFT'
-    'Sputum Test'
-    'Body Fluids'
-    'Blood Test'
-    'Urine Test'
+    'ECG',
+    'PFT',
+    'Sputum Test',
+    'Body Fluids',
+    'Blood Test',
+    'Urine Test',
   ];
 
   const onSubmit = async (data: PaymentFormData) => {
