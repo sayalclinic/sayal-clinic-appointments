@@ -244,7 +244,7 @@ export const AppointmentCard = ({
                     {/* Receptionist Actions */}
                     {profile?.role === "receptionist" && (
                       <div className="flex flex-col gap-1 w-full">
-                        {(appointment.status === "pending" || appointment.status === "approved") && !isAppointmentPast() && (
+                        {(appointment.status === "pending" || appointment.status === "approved") && (
                           <div className="flex gap-1 w-full">
                             <Button
                               size="sm"
@@ -272,7 +272,7 @@ export const AppointmentCard = ({
                             </Button>
                           </div>
                         )}
-                        {appointment.status === "approved" && !isAppointmentPast() && (
+                        {appointment.status === "approved" && (
                           <div className="flex gap-1 w-full">
                             <Button
                               size="sm"

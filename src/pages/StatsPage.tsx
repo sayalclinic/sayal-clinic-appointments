@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PinDialog } from "@/components/Auth/PinDialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Download, IndianRupee, Maximize2 } from "lucide-react";
+import { ArrowLeft, Download, Maximize2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -44,6 +44,13 @@ export const StatsPage = () => {
     toast
   } = useToast();
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 640);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
   const fetchData = async () => {
     try {
       const currentMonth = new Date().getMonth();
@@ -59,7 +66,7 @@ export const StatsPage = () => {
       if (paymentsError) {
         console.error("Error fetching payments:", paymentsError);
       }
-      const monthlyTotal = payments?.reduce((sum, payment) => sum + Number(payment.amount || 0), 0) || 0;
+      const monthlyTotal = payments?.reduce((sum, payment) => sum + parseFloat(String(payment.amount ?? 0).toString().replace(/,/g, '')), 0) || 0;
       console.log("Monthly earnings calculated:", monthlyTotal, "from", payments?.length, "payments");
       setMonthlyEarnings(monthlyTotal);
 
@@ -257,12 +264,13 @@ export const StatsPage = () => {
   const paymentMethodData = filteredPayments.reduce((acc, payment) => {
     const method = payment.payment_method;
     const existing = acc.find(item => item.name === method);
+    const amt = parseFloat(String(payment.amount ?? 0).toString().replace(/,/g, ''));
     if (existing) {
-      existing.value += Number(payment.amount || 0);
+      existing.value += amt;
     } else {
       acc.push({
         name: method,
-        value: Number(payment.amount || 0),
+        value: amt,
         color: method === 'cash' ? 'hsl(200, 70%, 70%)' : 'hsl(200, 70%, 55%)'
       });
     }
@@ -283,9 +291,14 @@ export const StatsPage = () => {
   useEffect(() => {
     const fetchMonthlyEarnings = async () => {
       if (isAuthenticated) {
+        const currentYear = new Date().getFullYear();
+        const startOfYear = new Date(currentYear, 0, 1, 0, 0, 0, 0).toISOString();
+        const startOfNextYear = new Date(currentYear + 1, 0, 1, 0, 0, 0, 0).toISOString();
         const { data, error } = await supabase
           .from("payments")
-          .select("amount, created_at");
+          .select("amount, created_at")
+          .gte('created_at', startOfYear)
+          .lt('created_at', startOfNextYear);
         
         if (error) {
           console.error("Error fetching monthly earnings:", error);
@@ -560,8 +573,8 @@ export const StatsPage = () => {
                       cx="50%" 
                       cy="50%" 
                       labelLine={false}
-                      label={({ name, percent }) => `${name}\n${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80} 
+                      label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                      outerRadius={isMobile ? 70 : 90} 
                       fill="#8884d8" 
                       dataKey="value"
                     >
@@ -622,27 +635,36 @@ export const StatsPage = () => {
             </CardHeader>
             <CardContent className="p-3 sm:p-6 pt-0">
               {paymentMethodData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie 
-                      data={paymentMethodData} 
-                      cx="50%" 
-                      cy="50%" 
-                      labelLine={false}
-                      label={({ name, value, percent }) => 
-                        `${name}\n₹${value.toFixed(0)} (${(percent * 100).toFixed(0)}%)`
-                      }
-                      outerRadius={80} 
-                      fill="#8884d8" 
-                      dataKey="value"
-                    >
-                      {paymentMethodData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number) => `₹${value.toFixed(2)} (${((value / totalPayments) * 100).toFixed(1)}%)`} />
-                  </PieChart>
-                </ResponsiveContainer>
+                <>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie 
+                        data={paymentMethodData} 
+                        cx="50%" 
+                        cy="50%" 
+                        labelLine={false}
+                        label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                        outerRadius={isMobile ? 70 : 90} 
+                        fill="#8884d8" 
+                        dataKey="value"
+                      >
+                        {paymentMethodData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => `${((value / totalPayments) * 100).toFixed(1)}%`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
+                    {paymentMethodData.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: item.color || COLORS[idx % COLORS.length] }} />
+                        <span className="truncate">{item.name}</span>
+                        <span className="ml-auto font-medium">{((item.value / totalPayments) * 100).toFixed(1)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <p className="text-center text-muted-foreground py-8">No data available</p>
               )}
