@@ -538,7 +538,7 @@ export const StatsPage = () => {
                     />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip
-                      formatter={(value: number) => `₹${doctorEarnings.toFixed(2)}`}
+                      formatter={(value: number) => `₹${value.toFixed(2)}`}
                       cursor={{ fill: "hsl(200, 70%, 90%)" }}
                     />
                     <Legend wrapperStyle={{ fontSize: "12px" }} />
