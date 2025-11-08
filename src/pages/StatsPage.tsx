@@ -287,18 +287,19 @@ export const StatsPage = () => {
   const [monthlyEarningsData, setMonthlyEarningsData] = useState<any[]>([]);
   const [earningsView, setEarningsView] = useState<'monthly' | 'weekly'>('monthly');
   const [selectedEarningsMonth, setSelectedEarningsMonth] = useState<number | null>(null);
+  const [selectedEarningsYear, setSelectedEarningsYear] = useState<number | null>(null);
   
   useEffect(() => {
     const fetchMonthlyEarnings = async () => {
       if (isAuthenticated) {
-        const currentYear = new Date().getFullYear();
-        const startOfYear = new Date(currentYear, 0, 1, 0, 0, 0, 0).toISOString();
-        const startOfNextYear = new Date(currentYear + 1, 0, 1, 0, 0, 0, 0).toISOString();
+        const now = new Date();
+        const startOfWindow = new Date(now.getFullYear(), now.getMonth() - 11, 1, 0, 0, 0, 0).toISOString();
+        const endOfWindow = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0).toISOString();
         const { data, error } = await supabase
           .from("payments")
           .select("amount, created_at")
-          .gte('created_at', startOfYear)
-          .lt('created_at', startOfNextYear);
+          .gte('created_at', startOfWindow)
+          .lt('created_at', endOfWindow);
         
         if (error) {
           console.error("Error fetching monthly earnings:", error);
@@ -306,44 +307,45 @@ export const StatsPage = () => {
         }
         
         if (data) {
-          const currentYear = new Date().getFullYear();
+          console.log('Payments fetched for earnings:', data.length, data.slice(0,3).map((p:any)=>p.created_at));
+          const now = new Date();
+          const monthsWindow = Array.from({ length: 12 }, (_, i) => {
+            const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+            return {
+              label: `${months[d.getMonth()]} ${d.getFullYear()}`,
+              earnings: 0,
+              monthIndex: d.getMonth(),
+              year: d.getFullYear()
+            };
+          });
           
           if (earningsView === 'monthly') {
-            // Create array for all 12 months of current year
-            const monthlyData = months.map((monthName, idx) => ({
-              month: monthName,
-              earnings: 0,
-              monthIndex: idx
-            }));
-            
-            // Add earnings data
-            data.forEach(payment => {
+            data.forEach((payment: any) => {
               const date = new Date(payment.created_at);
-              if (date.getFullYear() === currentYear) {
-                const monthIdx = date.getMonth();
-                monthlyData[monthIdx].earnings += Number(payment.amount || 0);
-              }
+              const key = `${months[date.getMonth()]} ${date.getFullYear()}`;
+              const amt = parseFloat(String(payment.amount ?? 0).toString().replace(/,/g, ''));
+              const bucket = monthsWindow.find(m => m.label === key);
+              if (bucket) bucket.earnings += amt;
             });
-            
-            setMonthlyEarningsData(monthlyData);
-          } else if (earningsView === 'weekly' && selectedEarningsMonth !== null) {
-            // Create weekly data for selected month
+            setMonthlyEarningsData(monthsWindow);
+          } else if (earningsView === 'weekly' && selectedEarningsMonth !== null && selectedEarningsYear !== null) {
+            const start = new Date(selectedEarningsYear, selectedEarningsMonth, 1, 0,0,0,0);
+            const end = new Date(selectedEarningsYear, selectedEarningsMonth + 1, 0, 23,59,59,999);
             const weeklyData = [
               { week: 'Week 1', earnings: 0 },
               { week: 'Week 2', earnings: 0 },
               { week: 'Week 3', earnings: 0 },
               { week: 'Week 4', earnings: 0 }
             ];
-            
-            data.forEach(payment => {
+            data.forEach((payment: any) => {
               const date = new Date(payment.created_at);
-              if (date.getFullYear() === currentYear && date.getMonth() === selectedEarningsMonth) {
+              if (date >= start && date <= end) {
                 const day = date.getDate();
                 const weekIndex = Math.min(Math.floor((day - 1) / 7), 3);
-                weeklyData[weekIndex].earnings += Number(payment.amount || 0);
+                const amt = parseFloat(String(payment.amount ?? 0).toString().replace(/,/g, ''));
+                weeklyData[weekIndex].earnings += amt;
               }
             });
-            
             setMonthlyEarningsData(weeklyData);
           }
         }
@@ -403,7 +405,9 @@ export const StatsPage = () => {
             <CardHeader className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <CardTitle className="text-base sm:text-lg">
-                  {earningsView === 'monthly' ? `Monthly Earnings - ${new Date().getFullYear()}` : `Weekly Earnings - ${months[selectedEarningsMonth || 0]}`}
+                  {earningsView === 'monthly' 
+                    ? `Monthly Earnings - Last 12 Months`
+                    : `Weekly Earnings - ${selectedEarningsMonth !== null && selectedEarningsYear !== null ? months[selectedEarningsMonth] + ' ' + selectedEarningsYear : ''}`}
                 </CardTitle>
                 {earningsView === 'weekly' && (
                   <Button
@@ -412,6 +416,7 @@ export const StatsPage = () => {
                     onClick={() => {
                       setEarningsView('monthly');
                       setSelectedEarningsMonth(null);
+                      setSelectedEarningsYear(null);
                     }}
                     className="text-xs"
                   >
@@ -427,15 +432,18 @@ export const StatsPage = () => {
                     data={monthlyEarningsData}
                     onClick={(data) => {
                       if (earningsView === 'monthly' && data && data.activePayload) {
-                        const monthIndex = data.activePayload[0].payload.monthIndex;
+                        const payload = data.activePayload[0].payload as any;
+                        const monthIndex = payload.monthIndex;
+                        const year = payload.year;
                         setSelectedEarningsMonth(monthIndex);
+                        setSelectedEarningsYear(year);
                         setEarningsView('weekly');
                       }
                     }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
-                      dataKey={earningsView === 'monthly' ? 'month' : 'week'}
+                      dataKey={earningsView === 'monthly' ? 'label' : 'week'}
                       tick={{ fontSize: 10 }}
                       angle={-45}
                       textAnchor="end"
@@ -566,25 +574,39 @@ export const StatsPage = () => {
             </CardHeader>
             <CardContent className="p-3 sm:p-6 pt-0">
               {patientTypeData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie 
-                      data={patientTypeData} 
-                      cx="50%" 
-                      cy="50%" 
-                      labelLine={false}
-                      label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
-                      outerRadius={isMobile ? 70 : 90} 
-                      fill="#8884d8" 
-                      dataKey="value"
-                    >
-                      {patientTypeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie 
+                        data={patientTypeData} 
+                        cx="50%" 
+                        cy="50%" 
+                        labelLine={false}
+                        label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                        outerRadius={isMobile ? 70 : 90} 
+                        fill="#8884d8" 
+                        dataKey="value"
+                      >
+                        {patientTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
+                    {(() => {
+                      const total = patientTypeData.reduce((s, i) => s + i.value, 0);
+                      return patientTypeData.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="truncate">{item.name}</span>
+                          <span className="ml-auto font-medium">{((item.value / total) * 100).toFixed(1)}%</span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </>
               ) : (
                 <p className="text-center text-muted-foreground py-8">No data available</p>
               )}
