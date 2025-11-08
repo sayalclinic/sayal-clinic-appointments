@@ -219,15 +219,15 @@ export const StatsPage = () => {
   const patientTypeData = [{
     name: 'New Patient',
     value: filteredAppointments.filter(a => !a.is_repeat && a.requires_payment).length,
-    color: 'hsl(165, 50%, 75%)'
+    color: 'hsl(200, 70%, 75%)'
   }, {
     name: 'Repeat Paying',
     value: filteredAppointments.filter(a => a.is_repeat && a.requires_payment).length,
-    color: 'hsl(165, 50%, 55%)'
+    color: 'hsl(200, 70%, 60%)'
   }, {
     name: 'Repeat Non Paying',
     value: filteredAppointments.filter(a => a.is_repeat && !a.requires_payment).length,
-    color: 'hsl(0, 84%, 75%)'
+    color: 'hsl(0, 70%, 75%)'
   }].filter(item => item.value > 0);
 
   // Payment method data
@@ -263,7 +263,7 @@ export const StatsPage = () => {
       acc.push({
         name: method,
         value: Number(payment.amount || 0),
-        color: method === 'cash' ? 'hsl(142, 76%, 40%)' : 'hsl(220, 95%, 32%)'
+        color: method === 'cash' ? 'hsl(200, 70%, 70%)' : 'hsl(200, 70%, 55%)'
       });
     }
     return acc;
@@ -277,6 +277,9 @@ export const StatsPage = () => {
 
   // Monthly earnings bar chart data
   const [monthlyEarningsData, setMonthlyEarningsData] = useState<any[]>([]);
+  const [earningsView, setEarningsView] = useState<'monthly' | 'weekly'>('monthly');
+  const [selectedEarningsMonth, setSelectedEarningsMonth] = useState<number | null>(null);
+  
   useEffect(() => {
     const fetchMonthlyEarnings = async () => {
       if (isAuthenticated) {
@@ -290,32 +293,63 @@ export const StatsPage = () => {
         }
         
         if (data) {
-          const monthlyData = data.reduce((acc, payment) => {
-            const date = new Date(payment.created_at);
-            const monthYear = `${months[date.getMonth()]} ${date.getFullYear()}`;
-            const existing = acc.find(item => item.month === monthYear);
-            
-            if (existing) {
-              existing.earnings += Number(payment.amount || 0);
-            } else {
-              acc.push({
-                month: monthYear,
-                earnings: Number(payment.amount || 0),
-                sortKey: date.getTime()
-              });
-            }
-            return acc;
-          }, [] as { month: string; earnings: number; sortKey: number }[]);
+          const currentYear = new Date().getFullYear();
           
-          // Sort by date and take last 6 months
-          monthlyData.sort((a, b) => a.sortKey - b.sortKey);
-          setMonthlyEarningsData(monthlyData.slice(-6));
+          if (earningsView === 'monthly') {
+            // Create array for all 12 months of current year
+            const monthlyData = months.map((monthName, idx) => ({
+              month: monthName,
+              earnings: 0,
+              monthIndex: idx
+            }));
+            
+            // Add earnings data
+            data.forEach(payment => {
+              const date = new Date(payment.created_at);
+              if (date.getFullYear() === currentYear) {
+                const monthIdx = date.getMonth();
+                monthlyData[monthIdx].earnings += Number(payment.amount || 0);
+              }
+            });
+            
+            setMonthlyEarningsData(monthlyData);
+          } else if (earningsView === 'weekly' && selectedEarningsMonth !== null) {
+            // Create weekly data for selected month
+            const weeklyData = [
+              { week: 'Week 1', earnings: 0 },
+              { week: 'Week 2', earnings: 0 },
+              { week: 'Week 3', earnings: 0 },
+              { week: 'Week 4', earnings: 0 }
+            ];
+            
+            data.forEach(payment => {
+              const date = new Date(payment.created_at);
+              if (date.getFullYear() === currentYear && date.getMonth() === selectedEarningsMonth) {
+                const day = date.getDate();
+                const weekIndex = Math.min(Math.floor((day - 1) / 7), 3);
+                weeklyData[weekIndex].earnings += Number(payment.amount || 0);
+              }
+            });
+            
+            setMonthlyEarningsData(weeklyData);
+          }
         }
       }
     };
     fetchMonthlyEarnings();
-  }, [isAuthenticated]);
-  const COLORS = ['#8b5cf6', '#c084fc', '#06b6d4', '#67e8f9', '#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
+  }, [isAuthenticated, earningsView, selectedEarningsMonth]);
+  // Pastel blue shades for charts
+  const PASTEL_BLUE_SHADES = [
+    'hsl(200, 70%, 75%)',
+    'hsl(200, 70%, 65%)',
+    'hsl(200, 70%, 55%)',
+    'hsl(210, 75%, 70%)',
+    'hsl(210, 75%, 60%)',
+    'hsl(220, 80%, 70%)',
+  ];
+  
+  const PASTEL_RED = 'hsl(0, 70%, 75%)';
+  const COLORS = PASTEL_BLUE_SHADES;
   const downloadCSV = (data: any[], filename: string) => {
     if (data.length === 0) return;
     const headers = Object.keys(data[0]);
@@ -347,22 +381,6 @@ export const StatsPage = () => {
           </Button>
         </div>
 
-        {/* Monthly Earnings Summary Card */}
-        <Card className="shadow-lg border-primary/20">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <IndianRupee className="w-5 h-5 text-primary" />
-              Monthly Earnings Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6 pt-0">
-            <p className="text-2xl sm:text-4xl font-bold text-primary">₹{monthlyEarnings.toFixed(2)}</p>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Current month: {months[new Date().getMonth()]} {new Date().getFullYear()}
-            </p>
-          </CardContent>
-        </Card>
-
         {/* Analytics Section */}
         <div className="space-y-4 sm:space-y-6">
           <h2 className="text-xl sm:text-2xl font-bold text-primary">Analytics & Insights</h2>
@@ -370,28 +388,67 @@ export const StatsPage = () => {
           {/* Monthly Earnings Bar Chart */}
           <Card>
             <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="text-base sm:text-lg">Monthly Earnings Trend</CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <CardTitle className="text-base sm:text-lg">
+                  {earningsView === 'monthly' ? `Monthly Earnings - ${new Date().getFullYear()}` : `Weekly Earnings - ${months[selectedEarningsMonth || 0]}`}
+                </CardTitle>
+                {earningsView === 'weekly' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEarningsView('monthly');
+                      setSelectedEarningsMonth(null);
+                    }}
+                    className="text-xs"
+                  >
+                    ← Back to Monthly
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-3 sm:p-6 pt-0">
               {monthlyEarningsData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={monthlyEarningsData}>
+                  <BarChart 
+                    data={monthlyEarningsData}
+                    onClick={(data) => {
+                      if (earningsView === 'monthly' && data && data.activePayload) {
+                        const monthIndex = data.activePayload[0].payload.monthIndex;
+                        setSelectedEarningsMonth(monthIndex);
+                        setEarningsView('weekly');
+                      }
+                    }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
-                      dataKey="month" 
+                      dataKey={earningsView === 'monthly' ? 'month' : 'week'}
                       tick={{ fontSize: 10 }}
                       angle={-45}
                       textAnchor="end"
                       height={80}
                     />
                     <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(value: number) => `₹${value.toFixed(2)}`} />
+                    <Tooltip 
+                      formatter={(value: number) => `₹${value.toFixed(2)}`}
+                      cursor={{ fill: 'hsl(200, 70%, 90%)' }}
+                    />
                     <Legend wrapperStyle={{ fontSize: '12px' }} />
-                    <Bar dataKey="earnings" fill="hsl(220, 95%, 32%)" name="Earnings (₹)" />
+                    <Bar 
+                      dataKey="earnings" 
+                      fill="hsl(200, 70%, 65%)" 
+                      name="Earnings (₹)"
+                      cursor="pointer"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
                 <p className="text-center text-muted-foreground py-8">No data available</p>
+              )}
+              {earningsView === 'monthly' && (
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Click on a month to view weekly earnings
+                </p>
               )}
             </CardContent>
           </Card>
@@ -446,7 +503,7 @@ export const StatsPage = () => {
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar dataKey="value" fill="hsl(165, 50%, 75%)" name="Visits" />
+                  <Bar dataKey="value" fill="hsl(200, 70%, 65%)" name="Visits" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

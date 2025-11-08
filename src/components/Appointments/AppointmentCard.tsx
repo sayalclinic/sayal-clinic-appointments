@@ -98,11 +98,9 @@ export const AppointmentCard = ({
 
   // Check if appointment date is in the past
   const isAppointmentPast = () => {
-    const appointmentDate = new Date(appointment.appointment_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    appointmentDate.setHours(0, 0, 0, 0);
-    return appointmentDate < today;
+    const appointmentDateTime = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
+    const now = new Date();
+    return appointmentDateTime < now;
   };
 
   const handleComplete = () => {
