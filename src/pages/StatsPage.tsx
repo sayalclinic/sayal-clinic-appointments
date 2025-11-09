@@ -56,6 +56,10 @@ export const StatsPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
+  const [openEarnings, setOpenEarnings] = useState(false);
+  const [openPatientType, setOpenPatientType] = useState(false);
+  const [openPaymentMethod, setOpenPaymentMethod] = useState(false);
+  const [openIncome, setOpenIncome] = useState(false);
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 640);
     update();
@@ -271,7 +275,7 @@ export const StatsPage = () => {
       if (isAuthenticated) {
         const { data, error } = await supabase
           .from("appointments")
-          .select("appointment_date, is_repeat, requires_payment");
+          .select("id, appointment_date, is_repeat, requires_payment");
         if (error) {
           console.error("Error fetching appointments data:", error);
         }
@@ -305,12 +309,27 @@ export const StatsPage = () => {
     },
   ].filter((item) => item.value > 0);
 
+  // Build appointment maps for month grouping
+  const appointmentMonthMap = new Map<string, { month: number; year: number; date: Date }>();
+  appointmentsData.forEach((a: any) => {
+    const d = new Date(a.appointment_date);
+    appointmentMonthMap.set(a.id, { month: d.getMonth(), year: d.getFullYear(), date: d });
+  });
+  const monthlyAppointmentIdSet = new Set<string>(
+    appointmentsData
+      .filter((a: any) => {
+        const d = new Date(a.appointment_date);
+        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+      })
+      .map((a: any) => a.id)
+  );
+
   // Payment method data
   const [allPayments, setAllPayments] = useState<any[]>([]);
   useEffect(() => {
     const fetchAllPayments = async () => {
       if (isAuthenticated) {
-        const { data, error } = await supabase.from("payments").select("payment_method, amount, created_at, appointment_fee, test_payments");
+        const { data, error } = await supabase.from("payments").select("appointment_id, payment_method, amount, created_at, appointment_fee, test_payments");
         if (error) {
           console.error("Error fetching all payments:", error);
         }
@@ -323,8 +342,7 @@ export const StatsPage = () => {
   }, [isAuthenticated]);
   const filteredPayments = allPayments.filter((payment) => {
     if (paymentMethodFilter === "all") return true;
-    const paymentDate = new Date(payment.created_at);
-    return paymentDate.getMonth() === selectedMonth && paymentDate.getFullYear() === selectedYear;
+    return monthlyAppointmentIdSet.has(payment.appointment_id);
   });
   const paymentMethodData = filteredPayments.reduce(
     (acc, payment) => {
@@ -358,8 +376,7 @@ export const StatsPage = () => {
   // Income distribution data (appointments vs tests)
   const filteredIncomePayments = allPayments.filter((payment) => {
     if (incomeDistributionFilter === "all") return true;
-    const paymentDate = new Date(payment.created_at);
-    return paymentDate.getMonth() === selectedMonth && paymentDate.getFullYear() === selectedYear;
+    return monthlyAppointmentIdSet.has(payment.appointment_id);
   });
 
   const incomeDistributionData = (() => {
@@ -413,81 +430,51 @@ export const StatsPage = () => {
   const [selectedEarningsYear, setSelectedEarningsYear] = useState<number | null>(null);
 
   useEffect(() => {
-    const fetchMonthlyEarnings = async () => {
-      if (isAuthenticated) {
-        const now = new Date();
-        const startOfWindow = new Date(now.getFullYear(), now.getMonth() - 11, 1, 0, 0, 0, 0).toISOString();
-        const endOfWindow = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0).toISOString();
-        const { data, error } = await supabase
-          .from("payments")
-          .select("amount, created_at")
-          .gte("created_at", startOfWindow)
-          .lt("created_at", endOfWindow);
+    if (!isAuthenticated) return;
 
-        if (error) {
-          console.error("Error fetching monthly earnings:", error);
-          return;
+    const now = new Date();
+    const monthsWindow = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+      return {
+        label: `${months[d.getMonth()]} ${d.getFullYear()}`,
+        earnings: 0,
+        monthIndex: d.getMonth(),
+        year: d.getFullYear(),
+      };
+    });
+
+    if (earningsView === "monthly") {
+      allPayments.forEach((payment: any) => {
+        const m = appointmentMonthMap.get(payment.appointment_id);
+        if (!m) return;
+        const idx = monthsWindow.findIndex((x) => x.monthIndex === m.month && x.year === m.year);
+        if (idx !== -1) {
+          const amt = parseFloat(String(payment.amount ?? 0).toString().replace(/,/g, ""));
+          monthsWindow[idx].earnings += amt;
         }
+      });
+      setMonthlyEarningsData(monthsWindow);
+    } else if (earningsView === "weekly" && selectedEarningsMonth !== null && selectedEarningsYear !== null) {
+      const weeklyData = [
+        { week: "Week 1", earnings: 0 },
+        { week: "Week 2", earnings: 0 },
+        { week: "Week 3", earnings: 0 },
+        { week: "Week 4", earnings: 0 },
+      ];
 
-        if (data) {
-          console.log(
-            "Payments fetched for earnings:",
-            data.length,
-            data.slice(0, 3).map((p: any) => p.created_at),
-          );
-          const now = new Date();
-          const monthsWindow = Array.from({ length: 12 }, (_, i) => {
-            const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
-            return {
-              label: `${months[d.getMonth()]} ${d.getFullYear()}`,
-              earnings: 0,
-              monthIndex: d.getMonth(),
-              year: d.getFullYear(),
-            };
-          });
-
-          if (earningsView === "monthly") {
-            data.forEach((payment: any) => {
-              const date = new Date(payment.created_at);
-              const key = `${months[date.getMonth()]} ${date.getFullYear()}`;
-              const amt = parseFloat(
-                String(payment.amount ?? 0)
-                  .toString()
-                  .replace(/,/g, ""),
-              );
-              const bucket = monthsWindow.find((m) => m.label === key);
-              if (bucket) bucket.earnings += amt;
-            });
-            setMonthlyEarningsData(monthsWindow);
-          } else if (earningsView === "weekly" && selectedEarningsMonth !== null && selectedEarningsYear !== null) {
-            const start = new Date(selectedEarningsYear, selectedEarningsMonth, 1, 0, 0, 0, 0);
-            const end = new Date(selectedEarningsYear, selectedEarningsMonth + 1, 0, 23, 59, 59, 999);
-            const weeklyData = [
-              { week: "Week 1", earnings: 0 },
-              { week: "Week 2", earnings: 0 },
-              { week: "Week 3", earnings: 0 },
-              { week: "Week 4", earnings: 0 },
-            ];
-            data.forEach((payment: any) => {
-              const date = new Date(payment.created_at);
-              if (date >= start && date <= end) {
-                const day = date.getDate();
-                const weekIndex = Math.min(Math.floor((day - 1) / 7), 3);
-                const amt = parseFloat(
-                  String(payment.amount ?? 0)
-                    .toString()
-                    .replace(/,/g, ""),
-                );
-                weeklyData[weekIndex].earnings += amt;
-              }
-            });
-            setMonthlyEarningsData(weeklyData);
-          }
+      allPayments.forEach((payment: any) => {
+        const m = appointmentMonthMap.get(payment.appointment_id);
+        if (!m) return;
+        if (m.month === selectedEarningsMonth && m.year === selectedEarningsYear) {
+          const day = m.date.getDate();
+          const weekIndex = Math.min(Math.floor((day - 1) / 7), 3);
+          const amt = parseFloat(String(payment.amount ?? 0).toString().replace(/,/g, ""));
+          weeklyData[weekIndex].earnings += amt;
         }
-      }
-    };
-    fetchMonthlyEarnings();
-  }, [isAuthenticated, earningsView, selectedEarningsMonth]);
+      });
+      setMonthlyEarningsData(weeklyData);
+    }
+  }, [isAuthenticated, earningsView, selectedEarningsMonth, selectedEarningsYear, allPayments, appointmentsData]);
   const downloadCSV = (data: any[], filename: string) => {
     if (data.length === 0) return;
     const headers = Object.keys(data[0]);
@@ -548,20 +535,25 @@ export const StatsPage = () => {
                     ? `Monthly Earnings - Last 12 Months`
                     : `Weekly Earnings - ${selectedEarningsMonth !== null && selectedEarningsYear !== null ? months[selectedEarningsMonth] + " " + selectedEarningsYear : ""}`}
                 </CardTitle>
-                {earningsView === "weekly" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setEarningsView("monthly");
-                      setSelectedEarningsMonth(null);
-                      setSelectedEarningsYear(null);
-                    }}
-                    className="text-xs"
-                  >
-                    ← Back to Monthly
+                <div className="flex items-center gap-2">
+                  {earningsView === "weekly" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEarningsView("monthly");
+                        setSelectedEarningsMonth(null);
+                        setSelectedEarningsYear(null);
+                      }}
+                      className="text-xs"
+                    >
+                      ← Back to Monthly
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => setOpenEarnings((v) => !v)} className="text-xs">
+                    {openEarnings ? "Collapse" : "Expand"}
                   </Button>
-                )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-3 sm:p-6 pt-0">
