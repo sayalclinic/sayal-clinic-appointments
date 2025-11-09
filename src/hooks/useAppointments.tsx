@@ -38,6 +38,8 @@ export interface Payment {
   id: string;
   appointment_id: string;
   amount: number;
+  appointment_fee?: number;
+  test_payments?: Array<{ test_name: string; amount: number }>;
   payment_method: string;
   tests_done?: string;
   created_at: string;
@@ -125,7 +127,14 @@ export const useAppointments = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPayments(data || []);
+      
+      // Cast test_payments from Json to the proper type
+      const typedPayments = (data || []).map(payment => ({
+        ...payment,
+        test_payments: payment.test_payments as Array<{ test_name: string; amount: number }> | undefined
+      }));
+      
+      setPayments(typedPayments);
     } catch (error) {
       console.error('Error fetching payments:', error);
     }
@@ -413,6 +422,8 @@ export const useAppointments = () => {
   const createPayment = async (paymentData: {
     appointment_id: string;
     amount: number;
+    appointment_fee?: number;
+    test_payments?: Array<{ test_name: string; amount: number }>;
     payment_method: string;
     tests_done?: string;
   }) => {

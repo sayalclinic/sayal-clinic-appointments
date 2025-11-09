@@ -52,6 +52,7 @@ export const StatsPage = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [patientTypeFilter, setPatientTypeFilter] = useState<"all" | "monthly">("all");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<"all" | "monthly">("all");
+  const [incomeDistributionFilter, setIncomeDistributionFilter] = useState<"all" | "monthly">("all");
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
@@ -297,7 +298,7 @@ export const StatsPage = () => {
   useEffect(() => {
     const fetchAllPayments = async () => {
       if (isAuthenticated) {
-        const { data, error } = await supabase.from("payments").select("payment_method, amount, created_at");
+        const { data, error } = await supabase.from("payments").select("payment_method, amount, created_at, appointment_fee, test_payments");
         if (error) {
           console.error("Error fetching all payments:", error);
         }
@@ -341,6 +342,57 @@ export const StatsPage = () => {
   );
 
   const totalPayments = paymentMethodData.reduce((sum, item) => sum + item.value, 0);
+
+  // Income distribution data (appointments vs tests)
+  const filteredIncomePayments = allPayments.filter((payment) => {
+    if (incomeDistributionFilter === "all") return true;
+    const paymentDate = new Date(payment.created_at);
+    return paymentDate.getMonth() === selectedMonth && paymentDate.getFullYear() === selectedYear;
+  });
+
+  const incomeDistributionData = (() => {
+    const distribution: { name: string; value: number; color: string }[] = [];
+    
+    filteredIncomePayments.forEach((payment) => {
+      // Add appointment fee
+      const appointmentFee = payment.appointment_fee ? parseFloat(String(payment.appointment_fee).replace(/,/g, "")) : 0;
+      if (appointmentFee > 0) {
+        const existing = distribution.find(item => item.name === "Appointment Fee");
+        if (existing) {
+          existing.value += appointmentFee;
+        } else {
+          distribution.push({
+            name: "Appointment Fee",
+            value: appointmentFee,
+            color: "hsl(200, 70%, 75%)"
+          });
+        }
+      }
+      
+      // Add individual test payments
+      if (payment.test_payments && Array.isArray(payment.test_payments)) {
+        payment.test_payments.forEach((test: any) => {
+          const testAmount = parseFloat(String(test.amount ?? 0).replace(/,/g, ""));
+          if (testAmount > 0) {
+            const existing = distribution.find(item => item.name === test.test_name);
+            if (existing) {
+              existing.value += testAmount;
+            } else {
+              distribution.push({
+                name: test.test_name,
+                value: testAmount,
+                color: PASTEL_BLUE_SHADES[distribution.length % PASTEL_BLUE_SHADES.length]
+              });
+            }
+          }
+        });
+      }
+    });
+    
+    return distribution;
+  })();
+
+  const totalIncomeDistribution = incomeDistributionData.reduce((sum, item) => sum + item.value, 0);
 
   // Monthly earnings bar chart data
   const [monthlyEarningsData, setMonthlyEarningsData] = useState<any[]>([]);
@@ -783,6 +835,96 @@ export const StatsPage = () => {
                         />
                         <span className="truncate">{item.name}</span>
                         <span className="ml-auto font-medium">{((item.value / totalPayments) * 100).toFixed(1)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No data available</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Income Distribution Chart */}
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <CardTitle className="text-base sm:text-lg">Income Distribution (Appointments vs Tests)</CardTitle>
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    value={incomeDistributionFilter}
+                    onValueChange={(v: "all" | "monthly") => setIncomeDistributionFilter(v)}
+                  >
+                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {incomeDistributionFilter === "monthly" && (
+                    <>
+                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month, idx) => (
+                            <SelectItem key={idx} value={idx.toString()}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              {incomeDistributionData.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={incomeDistributionData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                        outerRadius={isMobile ? 70 : 90}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {incomeDistributionData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => `₹${value.toFixed(2)} (${((value / totalIncomeDistribution) * 100).toFixed(1)}%)`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
+                    {incomeDistributionData.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span
+                          className="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: item.color || COLORS[idx % COLORS.length] }}
+                        />
+                        <span className="truncate">{item.name}</span>
+                        <span className="ml-auto font-medium whitespace-nowrap">{((item.value / totalIncomeDistribution) * 100).toFixed(1)}%</span>
                       </div>
                     ))}
                   </div>

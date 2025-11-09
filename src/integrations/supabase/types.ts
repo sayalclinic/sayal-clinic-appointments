@@ -217,26 +217,32 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          appointment_fee: number | null
           appointment_id: string
           created_at: string
           id: string
           payment_method: string
+          test_payments: Json | null
           tests_done: string | null
         }
         Insert: {
           amount: number
+          appointment_fee?: number | null
           appointment_id: string
           created_at?: string
           id?: string
           payment_method: string
+          test_payments?: Json | null
           tests_done?: string | null
         }
         Update: {
           amount?: number
+          appointment_fee?: number | null
           appointment_id?: string
           created_at?: string
           id?: string
           payment_method?: string
+          test_payments?: Json | null
           tests_done?: string | null
         }
         Relationships: [

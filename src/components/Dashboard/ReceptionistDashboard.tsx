@@ -21,6 +21,7 @@ export const ReceptionistDashboard = () => {
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [completedToday, setCompletedToday] = useState(0);
   const [completedThisMonth, setCompletedThisMonth] = useState(0);
+  const [totalAppointmentsThisMonth, setTotalAppointmentsThisMonth] = useState(0);
   const {
     appointments,
     loading,
@@ -59,8 +60,16 @@ export const ReceptionistDashboard = () => {
         const aptDate = new Date(apt.appointment_date);
         return apt.status === 'completed' && aptDate.getMonth() === currentMonth && aptDate.getFullYear() === currentYear;
       }).length;
+      
+      // Calculate total appointments this month
+      const totalThisMonthCount = appointments.filter(apt => {
+        const aptDate = new Date(apt.appointment_date);
+        return aptDate.getMonth() === currentMonth && aptDate.getFullYear() === currentYear;
+      }).length;
+      
       setCompletedToday(completedTodayCount);
       setCompletedThisMonth(completedThisMonthCount);
+      setTotalAppointmentsThisMonth(totalThisMonthCount);
     } catch (error) {
       console.error('Error fetching earnings data:', error);
     }
@@ -237,10 +246,10 @@ export const ReceptionistDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-success">
-                    {completedToday} / {completedThisMonth}
+                    {completedThisMonth} / {totalAppointmentsThisMonth}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Today / This Month
+                    Completed out of total for month
                   </p>
                 </CardContent>
               </Card>

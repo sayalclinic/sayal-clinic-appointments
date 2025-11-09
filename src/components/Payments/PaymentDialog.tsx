@@ -13,9 +13,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useAppointments } from '@/hooks/useAppointments';
 
 const paymentSchema = z.object({
-  amount: z.number().min(0.01, 'Amount must be greater than 0'),
+  appointmentFee: z.number().min(0, 'Appointment fee must be 0 or greater'),
   paymentMethod: z.string().min(1, 'Please select a payment method'),
   testsDone: z.string().optional(),
+  testPayments: z.record(z.number()).optional(),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -37,14 +38,16 @@ export const PaymentDialog = ({
 }: PaymentDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
+  const [testAmounts, setTestAmounts] = useState<Record<string, number>>({});
   const { createPayment } = useAppointments();
 
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      amount: 0,
+      appointmentFee: 0,
       paymentMethod: '',
       testsDone: '',
+      testPayments: {},
     },
   });
 
@@ -74,16 +77,28 @@ export const PaymentDialog = ({
         ? selectedTests.join(', ') + (data.testsDone ? `, ${data.testsDone}` : '')
         : data.testsDone || undefined;
 
+      // Build test payments array
+      const testPaymentsArray = selectedTests.map(testName => ({
+        test_name: testName,
+        amount: testAmounts[testName] || 0
+      }));
+
+      // Calculate total amount
+      const totalAmount = data.appointmentFee + Object.values(testAmounts).reduce((sum, amt) => sum + amt, 0);
+
       // Create payment record
       await createPayment({
         appointment_id: appointmentId,
-        amount: data.amount,
+        amount: totalAmount,
+        appointment_fee: data.appointmentFee,
+        test_payments: testPaymentsArray,
         payment_method: data.paymentMethod,
         tests_done: testsString,
       });
 
       form.reset();
       setSelectedTests([]);
+      setTestAmounts({});
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
@@ -108,21 +123,21 @@ export const PaymentDialog = ({
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount</Label>
+            <Label htmlFor="appointmentFee">Appointment Fee (₹)</Label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                id="amount"
+                id="appointmentFee"
                 type="number"
                 step="0.01"
                 placeholder="0.00"
                 className="pl-10"
-                {...form.register('amount', { valueAsNumber: true })}
+                {...form.register('appointmentFee', { valueAsNumber: true })}
               />
             </div>
-            {form.formState.errors.amount && (
+            {form.formState.errors.appointmentFee && (
               <p className="text-sm text-destructive">
-                {form.formState.errors.amount.message}
+                {form.formState.errors.appointmentFee.message}
               </p>
             )}
           </div>
@@ -153,23 +168,47 @@ export const PaymentDialog = ({
               <TestTube2 className="w-4 h-4" />
               <span>Lab Tests Performed</span>
             </Label>
-            <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto">
+            <div className="space-y-3 max-h-64 overflow-y-auto">
               {labTestOptions.map((test) => (
-                <div key={test} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={test}
-                    checked={selectedTests.includes(test)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelectedTests([...selectedTests, test]);
-                      } else {
-                        setSelectedTests(selectedTests.filter(t => t !== test));
-                      }
-                    }}
-                  />
-                  <Label htmlFor={test} className="text-sm font-normal">
-                    {test}
-                  </Label>
+                <div key={test} className="space-y-2 p-3 border rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={test}
+                      checked={selectedTests.includes(test)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedTests([...selectedTests, test]);
+                        } else {
+                          setSelectedTests(selectedTests.filter(t => t !== test));
+                          const newAmounts = { ...testAmounts };
+                          delete newAmounts[test];
+                          setTestAmounts(newAmounts);
+                        }
+                      }}
+                    />
+                    <Label htmlFor={test} className="text-sm font-medium flex-1">
+                      {test}
+                    </Label>
+                  </div>
+                  {selectedTests.includes(test) && (
+                    <div className="ml-6">
+                      <Label htmlFor={`${test}-amount`} className="text-xs text-muted-foreground">
+                        Amount (₹)
+                      </Label>
+                      <Input
+                        id={`${test}-amount`}
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={testAmounts[test] || ''}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          setTestAmounts({ ...testAmounts, [test]: value });
+                        }}
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
