@@ -252,6 +252,18 @@ export const StatsPage = () => {
     (_, i) => new Date().getFullYear() - i,
   );
 
+  // Pastel blue shades for charts (defined early to avoid hoisting issues)
+  const PASTEL_BLUE_SHADES = [
+    "hsl(200, 70%, 75%)",
+    "hsl(200, 70%, 65%)",
+    "hsl(200, 70%, 55%)",
+    "hsl(210, 75%, 70%)",
+    "hsl(210, 75%, 60%)",
+    "hsl(220, 80%, 70%)",
+  ];
+  const PASTEL_RED = "hsl(0, 70%, 75%)";
+  const COLORS = PASTEL_BLUE_SHADES;
+
   // Patient type data (new vs repeat, paying vs non-paying)
   const [appointmentsData, setAppointmentsData] = useState<any[]>([]);
   useEffect(() => {
@@ -476,18 +488,6 @@ export const StatsPage = () => {
     };
     fetchMonthlyEarnings();
   }, [isAuthenticated, earningsView, selectedEarningsMonth]);
-  // Pastel blue shades for charts
-  const PASTEL_BLUE_SHADES = [
-    "hsl(200, 70%, 75%)",
-    "hsl(200, 70%, 65%)",
-    "hsl(200, 70%, 55%)",
-    "hsl(210, 75%, 70%)",
-    "hsl(210, 75%, 60%)",
-    "hsl(220, 80%, 70%)",
-  ];
-
-  const PASTEL_RED = "hsl(0, 70%, 75%)";
-  const COLORS = PASTEL_BLUE_SHADES;
   const downloadCSV = (data: any[], filename: string) => {
     if (data.length === 0) return;
     const headers = Object.keys(data[0]);
