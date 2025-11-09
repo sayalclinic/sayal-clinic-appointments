@@ -60,6 +60,7 @@ export const StatsPage = () => {
   const [openPatientType, setOpenPatientType] = useState(false);
   const [openPaymentMethod, setOpenPaymentMethod] = useState(false);
   const [openIncome, setOpenIncome] = useState(false);
+  const [counterFilter, setCounterFilter] = useState<"all" | "monthly">("all");
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 640);
     update();
@@ -275,7 +276,7 @@ export const StatsPage = () => {
       if (isAuthenticated) {
         const { data, error } = await supabase
           .from("appointments")
-          .select("id, appointment_date, is_repeat, requires_payment");
+          .select("id, patient_id, patient_name, appointment_date, is_repeat, requires_payment");
         if (error) {
           console.error("Error fetching appointments data:", error);
         }
@@ -526,6 +527,71 @@ export const StatsPage = () => {
         <div className="space-y-4 sm:space-y-6">
           <h2 className="text-xl sm:text-2xl font-bold text-primary">Analytics & Insights</h2>
 
+          {/* Counters */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
+                <Select
+                  value={counterFilter}
+                  onValueChange={(v: "all" | "monthly") => setCounterFilter(v)}
+                >
+                  <SelectTrigger className="w-24 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-primary">
+                  {(() => {
+                    if (counterFilter === "all") {
+                      return new Set(appointmentsData.map((a: any) => a.patient_id || a.patient_name)).size;
+                    }
+                    const monthlyAppointments = appointmentsData.filter((a: any) => {
+                      const d = new Date(a.appointment_date);
+                      return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+                    });
+                    return new Set(monthlyAppointments.map((a: any) => a.patient_id || a.patient_name)).size;
+                  })()}
+                </div>
+                <p className="text-xs text-muted-foreground">Unique patients</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Appointments</CardTitle>
+                <Select
+                  value={counterFilter}
+                  onValueChange={(v: "all" | "monthly") => setCounterFilter(v)}
+                >
+                  <SelectTrigger className="w-24 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-primary">
+                  {counterFilter === "all"
+                    ? appointmentsData.length
+                    : appointmentsData.filter((a: any) => {
+                        const d = new Date(a.appointment_date);
+                        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+                      }).length}
+                </div>
+                <p className="text-xs text-muted-foreground">Total appointments</p>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Monthly Earnings Bar Chart */}
           <Card>
             <CardHeader className="p-4 sm:p-6">
@@ -556,9 +622,10 @@ export const StatsPage = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0">
-              {monthlyEarningsData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+            {openEarnings && (
+              <CardContent className="p-3 sm:p-6 pt-0">
+                {monthlyEarningsData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
                   <BarChart
                     data={monthlyEarningsData}
                     onClick={(data) => {
@@ -592,13 +659,14 @@ export const StatsPage = () => {
               ) : (
                 <p className="text-center text-muted-foreground py-8">No data available</p>
               )}
-              {earningsView === "monthly" && (
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  Click on a month to view weekly earnings
-                </p>
-              )}
-            </CardContent>
-          </Card>
+               {earningsView === "monthly" && (
+                 <p className="text-xs text-muted-foreground text-center mt-2">
+                   Click on a month to view weekly earnings
+                 </p>
+               )}
+             </CardContent>
+            )}
+           </Card>
 
           {/* Age Distribution */}
           <Card>
@@ -703,11 +771,15 @@ export const StatsPage = () => {
                       </Select>
                     </>
                   )}
+                  <Button size="sm" variant="outline" onClick={() => setOpenPatientType((v) => !v)} className="text-xs">
+                    {openPatientType ? "Collapse" : "Expand"}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0">
-              {patientTypeData.length > 0 ? (
+            {openPatientType && (
+              <CardContent className="p-3 sm:p-6 pt-0">
+                {patientTypeData.length > 0 ? (
                 <>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
@@ -741,11 +813,12 @@ export const StatsPage = () => {
                     })()}
                   </div>
                 </>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">No data available</p>
-              )}
-            </CardContent>
-          </Card>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No data available</p>
+                )}
+              </CardContent>
+            )}
+           </Card>
 
           {/* Payment Method Distribution */}
           <Card>
@@ -793,10 +866,14 @@ export const StatsPage = () => {
                       </Select>
                     </>
                   )}
+                  <Button size="sm" variant="outline" onClick={() => setOpenPaymentMethod((v) => !v)} className="text-xs">
+                    {openPaymentMethod ? "Collapse" : "Expand"}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0">
+            {openPaymentMethod && (
+              <CardContent className="p-3 sm:p-6 pt-0">
               {paymentMethodData.length > 0 ? (
                 <>
                   <ResponsiveContainer width="100%" height={300}>
@@ -831,11 +908,12 @@ export const StatsPage = () => {
                     ))}
                   </div>
                 </>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">No data available</p>
-              )}
-            </CardContent>
-          </Card>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No data available</p>
+                )}
+              </CardContent>
+            )}
+           </Card>
 
           {/* Income Distribution Chart */}
           <Card>
@@ -883,10 +961,14 @@ export const StatsPage = () => {
                       </Select>
                     </>
                   )}
+                  <Button size="sm" variant="outline" onClick={() => setOpenIncome((v) => !v)} className="text-xs">
+                    {openIncome ? "Collapse" : "Expand"}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0">
+            {openIncome && (
+              <CardContent className="p-3 sm:p-6 pt-0">
               {incomeDistributionData.length > 0 ? (
                 <>
                   <ResponsiveContainer width="100%" height={300}>
@@ -921,12 +1003,13 @@ export const StatsPage = () => {
                     ))}
                   </div>
                 </>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">No data available</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No data available</p>
+                )}
+              </CardContent>
+            )}
+           </Card>
+         </div>
 
         {/* CSV Downloads Section */}
         <div className="space-y-4 sm:space-y-6">
