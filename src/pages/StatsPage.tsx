@@ -18,6 +18,8 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
 } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -60,6 +62,7 @@ export const StatsPage = () => {
   const [openPatientType, setOpenPatientType] = useState(false);
   const [openPaymentMethod, setOpenPaymentMethod] = useState(false);
   const [openIncome, setOpenIncome] = useState(false);
+  const [openBusiestHours, setOpenBusiestHours] = useState(false);
   const [counterFilter, setCounterFilter] = useState<"all" | "monthly">("all");
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 640);
@@ -591,6 +594,97 @@ export const StatsPage = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Busiest Hours Line Graph */}
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <CardTitle className="text-base sm:text-lg">Busiest Hours (Average Patients Per Hour)</CardTitle>
+                <Button size="sm" variant="outline" onClick={() => setOpenBusiestHours((v) => !v)} className="text-xs">
+                  {openBusiestHours ? "Collapse" : "Expand"}
+                </Button>
+              </div>
+            </CardHeader>
+            {openBusiestHours && (
+              <CardContent className="p-3 sm:p-6 pt-0">
+                {(() => {
+                  // Calculate average patients per hour across all appointments
+                  const hourCounts: Record<number, number> = {};
+                  const hourOccurrences: Record<number, number> = {};
+                  
+                  // Group appointments by date and hour
+                  const dateHourMap: Record<string, Record<number, number>> = {};
+                  
+                  appointmentsData.forEach((apt: any) => {
+                    const time = apt.appointment_time || "00:00";
+                    const [hours] = time.split(':').map(Number);
+                    const dateKey = apt.appointment_date;
+                    
+                    if (!dateHourMap[dateKey]) {
+                      dateHourMap[dateKey] = {};
+                    }
+                    
+                    dateHourMap[dateKey][hours] = (dateHourMap[dateKey][hours] || 0) + 1;
+                  });
+                  
+                  // Calculate averages
+                  Object.values(dateHourMap).forEach((dayData) => {
+                    Object.entries(dayData).forEach(([hour, count]) => {
+                      const h = Number(hour);
+                      hourCounts[h] = (hourCounts[h] || 0) + count;
+                      hourOccurrences[h] = (hourOccurrences[h] || 0) + 1;
+                    });
+                  });
+                  
+                  // Create data array for chart
+                  const chartData = [];
+                  for (let hour = 10; hour <= 20; hour++) {
+                    const avg = hourOccurrences[hour] ? hourCounts[hour] / hourOccurrences[hour] : 0;
+                    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+                    const period = hour >= 12 ? "PM" : "AM";
+                    
+                    chartData.push({
+                      hour: `${displayHour}${period}`,
+                      hourValue: hour,
+                      patients: avg,
+                    });
+                  }
+                  
+                  return chartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="hour" 
+                          tick={{ fontSize: 10 }}
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                        />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip 
+                          formatter={(value: number) => [`${value.toFixed(1)} patients`, 'Average']}
+                          labelFormatter={(label) => `Hour: ${label}`}
+                        />
+                        <Legend wrapperStyle={{ fontSize: "12px" }} />
+                        <Line 
+                          type="monotone" 
+                          dataKey="patients" 
+                          stroke="hsl(200, 70%, 65%)" 
+                          strokeWidth={2}
+                          name="Avg Patients/Hour" 
+                          dot={{ fill: "hsl(200, 70%, 65%)", r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">No data available</p>
+                  );
+                })()}
+              </CardContent>
+            )}
+          </Card>
 
           {/* Monthly Earnings Bar Chart */}
           <Card>

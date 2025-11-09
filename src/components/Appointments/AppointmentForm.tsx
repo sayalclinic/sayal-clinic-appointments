@@ -18,6 +18,7 @@ import { ClockTimePicker } from "@/components/ui/clock-time-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAppointments } from "@/hooks/useAppointments";
+import { useToast } from "@/hooks/use-toast";
 
 const appointmentSchema = z.object({
   patientName: z.string().min(1, "Patient name is required"),
@@ -54,6 +55,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
     symptoms: "",
   });
   const { doctors, createAppointment, upsertPatient, searchPatientByName } = useAppointments();
+  const { toast } = useToast();
 
   const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
@@ -163,7 +165,55 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       });
 
       const appointmentDate = format(data.appointmentDate, "yyyy-MM-dd");
-      const appointmentTime = data.appointmentTime;
+      const selectedTime = data.appointmentTime;
+      
+      // Calculate base 15-minute slot
+      const [hours, minutes] = selectedTime.split(':').map(Number);
+      const totalMinutes = hours * 60 + minutes;
+      const slotMinutes = Math.floor(totalMinutes / 15) * 15; // Round down to nearest 15-min slot
+      const slotHours = Math.floor(slotMinutes / 60);
+      const slotMins = slotMinutes % 60;
+      const baseSlotTime = `${String(slotHours).padStart(2, '0')}:${String(slotMins).padStart(2, '0')}`;
+      
+      // Check existing appointments in this 15-minute slot for this doctor and date
+      const { data: existingAppointments, error: checkError } = await supabase
+        .from('appointments')
+        .select('appointment_time')
+        .eq('doctor_id', data.doctorId)
+        .eq('appointment_date', appointmentDate)
+        .gte('appointment_time', baseSlotTime)
+        .lt('appointment_time', `${String(slotHours).padStart(2, '0')}:${String(slotMins + 15).padStart(2, '0')}`);
+      
+      if (checkError) {
+        throw checkError;
+      }
+      
+      const slotCount = existingAppointments?.length || 0;
+      
+      // Validate slot availability (max 3 per 15-min slot)
+      if (slotCount >= 3) {
+        form.setError('appointmentTime', {
+          type: 'manual',
+          message: `This time slot is fully booked (3/3 appointments). Please select a different time.`
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Calculate actual appointment time based on slot position
+      const offsetMinutes = slotCount * 5; // 0, 5, or 10 minutes
+      const actualMinutes = slotMinutes + offsetMinutes;
+      const actualHours = Math.floor(actualMinutes / 60);
+      const actualMins = actualMinutes % 60;
+      const appointmentTime = `${String(actualHours).padStart(2, '0')}:${String(actualMins).padStart(2, '0')}`;
+      
+      console.log(`Slot: ${baseSlotTime}, Position: ${slotCount + 1}/3, Actual time: ${appointmentTime}`);
+      
+      // Show toast notification about slot position
+      toast({
+        title: `Slot Position: ${slotCount + 1}/3`,
+        description: `Appointment scheduled at ${appointmentTime} (${slotCount === 0 ? 'First' : slotCount === 1 ? 'Second' : 'Third'} in this slot)`,
+      });
 
       // Then create the appointment, passing isWalkIn flag
       // Ensure repeat appointments use the SAME patient_id as previous ones
@@ -504,7 +554,40 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
                 {form.formState.errors.appointmentTime && (
                   <p className="text-sm text-destructive">{form.formState.errors.appointmentTime.message}</p>
                 )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  Select a 15-minute time slot. Up to 3 appointments per slot (auto-scheduled at 0, 5, and 10 minutes).
+                </p>
               </div>
+            </div>
+          </div>
+
+          {/* Visit Details */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold flex items-center space-x-2">
+              <FileText className="w-4 h-4" />
+              <span>Visit Details</span>
+            </h3>
+
+            <div className="space-y-2">
+              <Label htmlFor="reasonForVisit">Reason for Visit</Label>
+              <Textarea
+                id="reasonForVisit"
+                defaultValue={formData.reasonForVisit}
+                placeholder="e.g., Regular checkup, follow-up consultation"
+                autoComplete="off"
+                {...form.register("reasonForVisit")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="symptoms">Symptoms</Label>
+              <Textarea
+                id="symptoms"
+                defaultValue={formData.symptoms}
+                placeholder="Describe any symptoms the patient is experiencing"
+                autoComplete="off"
+                {...form.register("symptoms")}
+              />
             </div>
           </div>
 
