@@ -63,6 +63,7 @@ export const StatsPage = () => {
   const [openPaymentMethod, setOpenPaymentMethod] = useState(false);
   const [openIncome, setOpenIncome] = useState(false);
   const [openBusiestHours, setOpenBusiestHours] = useState(false);
+  const [openAgeDistribution, setOpenAgeDistribution] = useState(false);
   const [counterFilter, setCounterFilter] = useState<"all" | "monthly">("all");
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 640);
@@ -279,7 +280,7 @@ export const StatsPage = () => {
       if (isAuthenticated) {
         const { data, error } = await supabase
           .from("appointments")
-          .select("id, patient_id, patient_name, appointment_date, is_repeat, requires_payment");
+          .select("id, patient_id, patient_name, appointment_date, appointment_time, is_repeat, requires_payment");
         if (error) {
           console.error("Error fetching appointments data:", error);
         }
@@ -595,106 +596,11 @@ export const StatsPage = () => {
             </Card>
           </div>
 
-          {/* Busiest Hours Line Graph */}
-          <Card>
-            <CardHeader className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <CardTitle className="text-base sm:text-lg">Busiest Hours (Average Patients Per Hour)</CardTitle>
-                <Button size="sm" variant="outline" onClick={() => setOpenBusiestHours((v) => !v)} className="text-xs">
-                  {openBusiestHours ? "Collapse" : "Expand"}
-                </Button>
-              </div>
-            </CardHeader>
-            {openBusiestHours && (
-              <CardContent className="p-3 sm:p-6 pt-0">
-                {(() => {
-                  // Calculate average patients per hour across all appointments
-                  const hourCounts: Record<number, number> = {};
-                  const hourOccurrences: Record<number, number> = {};
-                  
-                  // Group appointments by date and hour
-                  const dateHourMap: Record<string, Record<number, number>> = {};
-                  
-                  appointmentsData.forEach((apt: any) => {
-                    const time = apt.appointment_time || "00:00";
-                    const [hours] = time.split(':').map(Number);
-                    const dateKey = apt.appointment_date;
-                    
-                    if (!dateHourMap[dateKey]) {
-                      dateHourMap[dateKey] = {};
-                    }
-                    
-                    dateHourMap[dateKey][hours] = (dateHourMap[dateKey][hours] || 0) + 1;
-                  });
-                  
-                  // Calculate averages
-                  Object.values(dateHourMap).forEach((dayData) => {
-                    Object.entries(dayData).forEach(([hour, count]) => {
-                      const h = Number(hour);
-                      hourCounts[h] = (hourCounts[h] || 0) + count;
-                      hourOccurrences[h] = (hourOccurrences[h] || 0) + 1;
-                    });
-                  });
-                  
-                  // Create data array for chart
-                  const chartData = [];
-                  for (let hour = 10; hour <= 20; hour++) {
-                    const avg = hourOccurrences[hour] ? hourCounts[hour] / hourOccurrences[hour] : 0;
-                    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-                    const period = hour >= 12 ? "PM" : "AM";
-                    
-                    chartData.push({
-                      hour: `${displayHour}${period}`,
-                      hourValue: hour,
-                      patients: avg,
-                    });
-                  }
-                  
-                  return chartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="hour" 
-                          tick={{ fontSize: 10 }}
-                          angle={-45}
-                          textAnchor="end"
-                          height={80}
-                        />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip 
-                          formatter={(value: number) => [`${value.toFixed(1)} patients`, 'Average']}
-                          labelFormatter={(label) => `Hour: ${label}`}
-                        />
-                        <Legend wrapperStyle={{ fontSize: "12px" }} />
-                        <Line 
-                          type="monotone" 
-                          dataKey="patients" 
-                          stroke="hsl(200, 70%, 65%)" 
-                          strokeWidth={2}
-                          name="Avg Patients/Hour" 
-                          dot={{ fill: "hsl(200, 70%, 65%)", r: 4 }}
-                          activeDot={{ r: 6 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <p className="text-center text-muted-foreground py-8">No data available</p>
-                  );
-                })()}
-              </CardContent>
-            )}
-          </Card>
-
           {/* Monthly Earnings Bar Chart */}
           <Card>
             <CardHeader className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <CardTitle className="text-base sm:text-lg">
-                  {earningsView === "monthly"
-                    ? `Monthly Earnings - Last 12 Months`
-                    : `Weekly Earnings - ${selectedEarningsMonth !== null && selectedEarningsYear !== null ? months[selectedEarningsMonth] + " " + selectedEarningsYear : ""}`}
-                </CardTitle>
+                <CardTitle className="text-base sm:text-lg">Monthly Earnings</CardTitle>
                 <div className="flex items-center gap-2">
                   {earningsView === "weekly" && (
                     <Button
@@ -750,17 +656,84 @@ export const StatsPage = () => {
                     <Bar dataKey="earnings" fill="hsl(200, 70%, 65%)" name="Earnings (₹)" cursor="pointer" />
                   </BarChart>
                 </ResponsiveContainer>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">No data available</p>
-              )}
-               {earningsView === "monthly" && (
-                 <p className="text-xs text-muted-foreground text-center mt-2">
-                   Click on a month to view weekly earnings
-                 </p>
+               ) : (
+                 <p className="text-center text-muted-foreground py-8">No data available</p>
                )}
              </CardContent>
             )}
            </Card>
+
+          {/* Busiest Hours Line Graph */}
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <CardTitle className="text-base sm:text-lg">Busiest Hours</CardTitle>
+                <Button size="sm" variant="outline" onClick={() => setOpenBusiestHours((v) => !v)} className="text-xs">
+                  {openBusiestHours ? "Collapse" : "Expand"}
+                </Button>
+              </div>
+            </CardHeader>
+            {openBusiestHours && (
+              <CardContent className="p-3 sm:p-6 pt-0">
+                {(() => {
+                  // Count actual appointments per hour
+                  const hourCounts: Record<number, number> = {};
+                  
+                  appointmentsData.forEach((apt: any) => {
+                    const time = apt.appointment_time || "00:00";
+                    const [hours] = time.split(':').map(Number);
+                    hourCounts[hours] = (hourCounts[hours] || 0) + 1;
+                  });
+                  
+                  // Create data array for chart
+                  const chartData = [];
+                  for (let hour = 10; hour <= 20; hour++) {
+                    const count = hourCounts[hour] || 0;
+                    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+                    const period = hour >= 12 ? "PM" : "AM";
+                    
+                    chartData.push({
+                      hour: `${displayHour}${period}`,
+                      hourValue: hour,
+                      patients: count,
+                    });
+                  }
+                  
+                  return chartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="hour" 
+                          tick={{ fontSize: 10 }}
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                        />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip 
+                          formatter={(value: number) => [`${value} patients`, 'Count']}
+                          labelFormatter={(label) => `Hour: ${label}`}
+                        />
+                        <Legend wrapperStyle={{ fontSize: "12px" }} />
+                        <Line 
+                          type="monotone" 
+                          dataKey="patients" 
+                          stroke="hsl(200, 70%, 65%)" 
+                          strokeWidth={2}
+                          name="Patients" 
+                          dot={{ fill: "hsl(200, 70%, 65%)", r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">No data available</p>
+                  );
+                })()}
+              </CardContent>
+            )}
+          </Card>
 
           {/* Age Distribution */}
           <Card>
@@ -805,21 +778,26 @@ export const StatsPage = () => {
                       </Select>
                     </>
                   )}
+                  <Button size="sm" variant="outline" onClick={() => setOpenAgeDistribution((v) => !v)} className="text-xs">
+                    {openAgeDistribution ? "Collapse" : "Expand"}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={ageData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: "12px" }} />
-                  <Bar dataKey="value" fill="hsl(200, 70%, 65%)" name="Visits" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
+            {openAgeDistribution && (
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={ageData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Legend wrapperStyle={{ fontSize: "12px" }} />
+                    <Bar dataKey="value" fill="hsl(200, 70%, 65%)" name="Visits" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            )}
           </Card>
 
           {/* Patient Type Distribution */}
@@ -914,6 +892,101 @@ export const StatsPage = () => {
             )}
            </Card>
 
+          {/* Income Distribution Chart */}
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <CardTitle className="text-base sm:text-lg">Income Distribution</CardTitle>
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    value={incomeDistributionFilter}
+                    onValueChange={(v: "all" | "monthly") => setIncomeDistributionFilter(v)}
+                  >
+                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {incomeDistributionFilter === "monthly" && (
+                    <>
+                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month, idx) => (
+                            <SelectItem key={idx} value={idx.toString()}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => setOpenIncome((v) => !v)} className="text-xs">
+                    {openIncome ? "Collapse" : "Expand"}
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            {openIncome && (
+              <CardContent className="p-3 sm:p-6 pt-0">
+              {incomeDistributionData.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={incomeDistributionData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                        outerRadius={isMobile ? 70 : 90}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {incomeDistributionData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => `₹${value.toFixed(2)} (${((value / totalIncomeDistribution) * 100).toFixed(1)}%)`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
+                    {incomeDistributionData.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span
+                          className="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: item.color || COLORS[idx % COLORS.length] }}
+                        />
+                        <span className="truncate">{item.name}</span>
+                        <span className="ml-auto font-medium whitespace-nowrap">{((item.value / totalIncomeDistribution) * 100).toFixed(1)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No data available</p>
+                )}
+              </CardContent>
+            )}
+           </Card>
+
           {/* Payment Method Distribution */}
           <Card>
             <CardHeader className="p-4 sm:p-6">
@@ -998,101 +1071,6 @@ export const StatsPage = () => {
                         />
                         <span className="truncate">{item.name}</span>
                         <span className="ml-auto font-medium">{((item.value / totalPayments) * 100).toFixed(1)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">No data available</p>
-                )}
-              </CardContent>
-            )}
-           </Card>
-
-          {/* Income Distribution Chart */}
-          <Card>
-            <CardHeader className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <CardTitle className="text-base sm:text-lg">Income Distribution (Appointments vs Tests)</CardTitle>
-                <div className="flex flex-wrap gap-2">
-                  <Select
-                    value={incomeDistributionFilter}
-                    onValueChange={(v: "all" | "monthly") => setIncomeDistributionFilter(v)}
-                  >
-                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {incomeDistributionFilter === "monthly" && (
-                    <>
-                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {months.map((month, idx) => (
-                            <SelectItem key={idx} value={idx.toString()}>
-                              {month}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {years.map((year) => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </>
-                  )}
-                  <Button size="sm" variant="outline" onClick={() => setOpenIncome((v) => !v)} className="text-xs">
-                    {openIncome ? "Collapse" : "Expand"}
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            {openIncome && (
-              <CardContent className="p-3 sm:p-6 pt-0">
-              {incomeDistributionData.length > 0 ? (
-                <>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={incomeDistributionData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
-                        outerRadius={isMobile ? 70 : 90}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {incomeDistributionData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => `₹${value.toFixed(2)} (${((value / totalIncomeDistribution) * 100).toFixed(1)}%)`} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
-                    {incomeDistributionData.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <span
-                          className="inline-block w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: item.color || COLORS[idx % COLORS.length] }}
-                        />
-                        <span className="truncate">{item.name}</span>
-                        <span className="ml-auto font-medium whitespace-nowrap">{((item.value / totalIncomeDistribution) * 100).toFixed(1)}%</span>
                       </div>
                     ))}
                   </div>
