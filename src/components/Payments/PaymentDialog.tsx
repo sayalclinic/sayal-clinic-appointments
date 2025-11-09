@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { CreditCard, DollarSign, TestTube2, Check } from 'lucide-react';
+import { CreditCard, IndianRupee, TestTube2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -125,7 +125,7 @@ export const PaymentDialog = ({
           <div className="space-y-2">
             <Label htmlFor="appointmentFee">Appointment Fee (₹)</Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 id="appointmentFee"
                 type="number"

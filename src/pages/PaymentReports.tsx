@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { ArrowLeft, Download, DollarSign, Search, Eye, EyeOff, TrendingUp } from "lucide-react";
+import { ArrowLeft, Download, IndianRupee, Search, Eye, EyeOff, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -210,7 +210,7 @@ export const PaymentReports = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
                 <CardTitle className="text-xs sm:text-sm font-medium">Total Revenue</CardTitle>
-                <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-success" />
+                <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4 text-success" />
               </CardHeader>
               <CardContent className="p-3 sm:p-6 pt-0">
                 <div className="text-lg sm:text-2xl font-bold text-success">${getTotalRevenue().toFixed(2)}</div>
@@ -234,7 +234,7 @@ export const PaymentReports = () => {
             <Card className="col-span-2 lg:col-span-1">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
                 <CardTitle className="text-xs sm:text-sm font-medium">Average</CardTitle>
-                <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-warning" />
+                <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4 text-warning" />
               </CardHeader>
               <CardContent className="p-3 sm:p-6 pt-0">
                 <div className="text-lg sm:text-2xl font-bold text-warning">
@@ -359,7 +359,7 @@ export const PaymentReports = () => {
               </div>
             ) : filteredData.length === 0 ? (
               <div className="p-6 sm:p-8 text-center text-muted-foreground">
-                <DollarSign className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                <IndianRupee className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
                 <p className="text-xs sm:text-sm">No payments found for the selected period</p>
               </div>
             ) : (
