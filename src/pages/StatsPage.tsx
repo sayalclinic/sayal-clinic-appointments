@@ -81,23 +81,22 @@ export const StatsPage = () => {
       const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
       const { data: payments, error: paymentsError } = await supabase
         .from("payments")
-        .select("amount, created_at")
+        .select("appointment_fee, test_payments, created_at")
         .gte("created_at", firstDayOfMonth.toISOString())
         .lte("created_at", lastDayOfMonth.toISOString());
       if (paymentsError) {
         console.error("Error fetching payments:", paymentsError);
       }
       const monthlyTotal =
-        payments?.reduce(
-          (sum, payment) =>
-            sum +
-            parseFloat(
-              String(payment.amount ?? 0)
-                .toString()
-                .replace(/,/g, ""),
-            ),
-          0,
-        ) || 0;
+        payments?.reduce((sum, payment) => {
+          const appointmentFee = parseFloat(String(payment.appointment_fee ?? 0).replace(/,/g, ""));
+          const testPaymentsArray = payment.test_payments as any;
+          const testPayments = Array.isArray(testPaymentsArray)
+            ? testPaymentsArray.reduce((testSum: number, test: any) => 
+                testSum + parseFloat(String(test.amount ?? 0).replace(/,/g, "")), 0)
+            : 0;
+          return sum + appointmentFee + testPayments;
+        }, 0) || 0;
       console.log("Monthly earnings calculated:", monthlyTotal, "from", payments?.length, "payments");
       setMonthlyEarnings(monthlyTotal);
 
@@ -138,7 +137,8 @@ export const StatsPage = () => {
         .from("payments")
         .select(
           `
-          amount,
+          appointment_fee,
+          test_payments,
           payment_method,
           tests_done,
           created_at,
@@ -152,13 +152,20 @@ export const StatsPage = () => {
           ascending: false,
         });
       const paymentHistoryData: PaymentHistoryRow[] =
-        paymentData?.map((p) => ({
-          patient_name: p.appointments?.patients?.name || p.appointments?.patient_name || "Unknown",
-          date: new Date(p.created_at).toLocaleDateString(),
-          tests_done: p.tests_done || "N/A",
-          amount: Number(p.amount),
-          payment_method: p.payment_method,
-        })) || [];
+        paymentData?.map((p) => {
+          const appointmentFee = Number(p.appointment_fee ?? 0);
+          const testPaymentsArray = p.test_payments as any;
+          const testPaymentsTotal = Array.isArray(testPaymentsArray)
+            ? testPaymentsArray.reduce((sum: number, test: any) => sum + Number(test.amount ?? 0), 0)
+            : 0;
+          return {
+            patient_name: p.appointments?.patients?.name || p.appointments?.patient_name || "Unknown",
+            date: new Date(p.created_at).toLocaleDateString(),
+            tests_done: p.tests_done || "N/A",
+            amount: appointmentFee + testPaymentsTotal,
+            payment_method: p.payment_method,
+          };
+        }) || [];
       setPaymentHistory(paymentHistoryData);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -353,11 +360,15 @@ export const StatsPage = () => {
     (acc, payment) => {
       const method = payment.payment_method;
       const existing = acc.find((item) => item.name === method);
-      const amt = parseFloat(
-        String(payment.amount ?? 0)
-          .toString()
-          .replace(/,/g, ""),
-      );
+      
+      const appointmentFee = parseFloat(String(payment.appointment_fee ?? 0).replace(/,/g, ""));
+      const testPaymentsArray = payment.test_payments as any;
+      const testPaymentsTotal = Array.isArray(testPaymentsArray)
+        ? testPaymentsArray.reduce((sum: number, test: any) => 
+            sum + parseFloat(String(test.amount ?? 0).replace(/,/g, "")), 0)
+        : 0;
+      const amt = appointmentFee + testPaymentsTotal;
+      
       if (existing) {
         existing.value += amt;
       } else {
@@ -404,8 +415,9 @@ export const StatsPage = () => {
       }
       
       // Add individual test payments
-      if (payment.test_payments && Array.isArray(payment.test_payments)) {
-        payment.test_payments.forEach((test: any) => {
+      const testPaymentsArray = payment.test_payments as any;
+      if (testPaymentsArray && Array.isArray(testPaymentsArray)) {
+        testPaymentsArray.forEach((test: any) => {
           const testAmount = parseFloat(String(test.amount ?? 0).replace(/,/g, ""));
           if (testAmount > 0) {
             const existing = distribution.find(item => item.name === test.test_name);
@@ -454,7 +466,13 @@ export const StatsPage = () => {
         if (!m) return;
         const idx = monthsWindow.findIndex((x) => x.monthIndex === m.month && x.year === m.year);
         if (idx !== -1) {
-          const amt = parseFloat(String(payment.amount ?? 0).toString().replace(/,/g, ""));
+          const appointmentFee = parseFloat(String(payment.appointment_fee ?? 0).replace(/,/g, ""));
+          const testPaymentsArray = payment.test_payments as any;
+          const testPaymentsTotal = Array.isArray(testPaymentsArray)
+            ? testPaymentsArray.reduce((sum: number, test: any) => 
+                sum + parseFloat(String(test.amount ?? 0).replace(/,/g, "")), 0)
+            : 0;
+          const amt = appointmentFee + testPaymentsTotal;
           monthsWindow[idx].earnings += amt;
         }
       });
@@ -473,7 +491,13 @@ export const StatsPage = () => {
         if (m.month === selectedEarningsMonth && m.year === selectedEarningsYear) {
           const day = m.date.getDate();
           const weekIndex = Math.min(Math.floor((day - 1) / 7), 3);
-          const amt = parseFloat(String(payment.amount ?? 0).toString().replace(/,/g, ""));
+          const appointmentFee = parseFloat(String(payment.appointment_fee ?? 0).replace(/,/g, ""));
+          const testPaymentsArray = payment.test_payments as any;
+          const testPaymentsTotal = Array.isArray(testPaymentsArray)
+            ? testPaymentsArray.reduce((sum: number, test: any) => 
+                sum + parseFloat(String(test.amount ?? 0).replace(/,/g, "")), 0)
+            : 0;
+          const amt = appointmentFee + testPaymentsTotal;
           weeklyData[weekIndex].earnings += amt;
         }
       });

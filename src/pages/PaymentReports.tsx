@@ -47,7 +47,8 @@ export const PaymentReports = () => {
         .select(
           `
           id,
-          amount,
+          appointment_fee,
+          test_payments,
           payment_method,
           tests_done,
           created_at,
@@ -68,17 +69,24 @@ export const PaymentReports = () => {
       if (error) throw error;
 
       const formattedData =
-        payments?.map((payment) => ({
-          payment_id: payment.id,
-          patient_name: payment.appointments?.patients?.name || "Unknown",
-          doctor_name: payment.appointments?.profiles?.name || "Unknown",
-          appointment_date: payment.appointments?.appointment_date || "",
-          appointment_time: payment.appointments?.appointment_time || "",
-          amount: payment.amount,
-          payment_method: payment.payment_method,
-          tests_done: payment.tests_done || "None",
-          created_at: payment.created_at,
-        })) || [];
+        payments?.map((payment) => {
+          const appointmentFee = Number(payment.appointment_fee ?? 0);
+          const testPaymentsArray = payment.test_payments as any;
+          const testPaymentsTotal = Array.isArray(testPaymentsArray)
+            ? testPaymentsArray.reduce((sum: number, test: any) => sum + Number(test.amount ?? 0), 0)
+            : 0;
+          return {
+            payment_id: payment.id,
+            patient_name: payment.appointments?.patients?.name || "Unknown",
+            doctor_name: payment.appointments?.profiles?.name || "Unknown",
+            appointment_date: payment.appointments?.appointment_date || "",
+            appointment_time: payment.appointments?.appointment_time || "",
+            amount: appointmentFee + testPaymentsTotal,
+            payment_method: payment.payment_method,
+            tests_done: payment.tests_done || "None",
+            created_at: payment.created_at,
+          };
+        }) || [];
 
       setPaymentData(formattedData);
     } catch (error) {
