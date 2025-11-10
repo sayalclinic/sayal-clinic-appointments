@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, User, FileText, IndianRupee, RefreshCw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DashboardLayout } from '@/components/Layout/DashboardLayout';
 import { AppointmentCard } from '@/components/Appointments/AppointmentCard';
 import { AppointmentCalendar } from '@/components/Calendar/AppointmentCalendar';
@@ -15,8 +16,7 @@ export const DoctorDashboard = () => {
   const [activeTab, setActiveTab] = useState('pending');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [doctorEarnings, setDoctorEarnings] = useState(0);
-  const [completedToday, setCompletedToday] = useState(0);
-  const [completedThisMonth, setCompletedThisMonth] = useState(0);
+  const [earningsPeriod, setEarningsPeriod] = useState<'daily' | 'monthly' | 'all'>('monthly');
   
   const { appointments, loading, updateAppointmentStatus } = useAppointments();
   const { profile } = useAuth();
@@ -32,39 +32,34 @@ export const DoctorDashboard = () => {
     if (profile?.user_id) {
       fetchDoctorEarnings();
     }
-  }, [appointments, profile?.user_id]);
+  }, [appointments, profile?.user_id, earningsPeriod]);
 
   const fetchDoctorEarnings = async () => {
     try {
-      // Fetch earnings for appointments handled by this doctor
-      const { data: payments } = await supabase
-        .from('payments')
-        .select('amount, appointments!inner(doctor_id)')
-        .eq('appointments.doctor_id', profile?.user_id);
-      
-      const earnings = payments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
-      setDoctorEarnings(earnings);
-
-      // Calculate completed appointments for this doctor
       const today = new Date().toISOString().split('T')[0];
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
 
-      const doctorAppointments = appointments.filter(apt => apt.doctor_id === profile?.user_id);
+      let query = supabase
+        .from('payments')
+        .select('appointment_fee, appointments!inner(doctor_id, appointment_date)')
+        .eq('appointments.doctor_id', profile?.user_id);
 
-      const completedTodayCount = doctorAppointments.filter(apt => 
-        apt.status === 'completed' && apt.appointment_date === today
-      ).length;
+      // Apply date filtering based on selected period
+      if (earningsPeriod === 'daily') {
+        query = query.eq('appointments.appointment_date', today);
+      } else if (earningsPeriod === 'monthly') {
+        const startOfMonth = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
+        const endOfMonth = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+        query = query.gte('appointments.appointment_date', startOfMonth)
+                     .lte('appointments.appointment_date', endOfMonth);
+      }
 
-      const completedThisMonthCount = doctorAppointments.filter(apt => {
-        const aptDate = new Date(apt.appointment_date);
-        return apt.status === 'completed' && 
-               aptDate.getMonth() === currentMonth && 
-               aptDate.getFullYear() === currentYear;
-      }).length;
-
-      setCompletedToday(completedTodayCount);
-      setCompletedThisMonth(completedThisMonthCount);
+      const { data: payments } = await query;
+      
+      // Calculate only consultation earnings (appointment_fee)
+      const earnings = payments?.reduce((sum, payment) => sum + Number(payment.appointment_fee || 0), 0) || 0;
+      setDoctorEarnings(earnings);
     } catch (error) {
       console.error('Error fetching doctor earnings:', error);
     }
@@ -182,13 +177,8 @@ export const DoctorDashboard = () => {
                           apt.appointment_date === dateStr && 
                           apt.status === 'approved'
                         );
-                        const completedAppointments = appointments.filter(apt => 
-                          apt.appointment_date === dateStr && 
-                          apt.status === 'completed'
-                        );
-                        const hasAnyAppointments = activeAppointments.length > 0 || completedAppointments.length > 0;
                         
-                        return !hasAnyAppointments ? (
+                        return activeAppointments.length === 0 ? (
                           <p className="text-muted-foreground text-center py-4">No appointments scheduled</p>
                         ) : (
                           <div className="space-y-3">
@@ -199,23 +189,6 @@ export const DoctorDashboard = () => {
                                 showActions={false}
                               />
                             ))}
-                            {completedAppointments.length > 0 && (
-                              <>
-                                {activeAppointments.length > 0 && (
-                                  <div className="border-t border-border my-2 pt-2">
-                                    <p className="text-xs text-muted-foreground font-medium">Completed Appointments</p>
-                                  </div>
-                                )}
-                                {completedAppointments.map((appointment) => (
-                                  <AppointmentCard
-                                    key={appointment.id}
-                                    appointment={appointment}
-                                    showActions={false}
-                                    isTranslucent={true}
-                                  />
-                                ))}
-                              </>
-                            )}
                           </div>
                         );
                       })()
@@ -228,7 +201,7 @@ export const DoctorDashboard = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mt-4 sm:mt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mt-4 sm:mt-6">
               <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Monthly Appointments</CardTitle>
@@ -251,30 +224,27 @@ export const DoctorDashboard = () => {
 
               <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Completed Appointments</CardTitle>
-                  <Clock className="h-4 w-4 text-success" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-success">
-                    {completedToday} / {completedThisMonth}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Today / This Month
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">My Earnings</CardTitle>
                   <IndianRupee className="h-4 w-4 text-warning" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-warning">
-                    ₹{doctorEarnings.toFixed(2)}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-2xl font-bold text-warning">
+                      ₹{doctorEarnings.toFixed(2)}
+                    </div>
+                    <Select value={earningsPeriod} onValueChange={(value: 'daily' | 'monthly' | 'all') => setEarningsPeriod(value)}>
+                      <SelectTrigger className="w-[110px] h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="all">All Time</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Your total earnings
+                    Consultation income
                   </p>
                 </CardContent>
               </Card>
