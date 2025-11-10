@@ -38,6 +38,18 @@ export const AppointmentCalendar = ({
     );
   };
 
+  const hasOverdueIncompleteAppointments = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    
+    // Only check for dates in the past
+    if (checkDate >= today) return false;
+    
+    const dayAppointments = getAppointmentsForDate(date);
+    return dayAppointments.some(apt => apt.status !== 'completed' && apt.status !== 'missed');
+  };
 
   const getIntensityClass = (appointmentCount: number) => {
     if (appointmentCount === 0) return '';
@@ -91,6 +103,7 @@ export const AppointmentCalendar = ({
             const appointmentCount = dayAppointments.length;
             const isSelected = selectedDate && isSameDay(date, selectedDate);
             const isDayToday = isToday(date);
+            const isOverdue = hasOverdueIncompleteAppointments(date);
 
             return (
               <button
@@ -103,6 +116,7 @@ export const AppointmentCalendar = ({
                     ? 'border-border hover:bg-medical-light/30' 
                     : 'border-transparent text-muted-foreground/50',
                   getIntensityClass(appointmentCount),
+                  isOverdue && 'bg-warning/10 border-warning/30',
                   isSelected && 'border-primary bg-primary/10 animate-scale-in',
                   isDayToday && 'border-primary bg-primary/5 font-semibold animate-bounce-in'
                 )}
