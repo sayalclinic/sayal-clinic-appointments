@@ -188,14 +188,14 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4">
           <DialogTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <User className="w-5 h-5 text-primary" />
-              <span>{patientDetails.name} - Medical Record</span>
+            <div className="flex items-center gap-2">
+              <User className="w-6 h-6 text-primary" />
+              <span className="text-xl">{patientDetails.name}</span>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               {isEditing ? (
                 <>
                   <Button
@@ -235,77 +235,82 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
             <TabsTrigger value="appointments">Appointments</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="details" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TabsContent value="details" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Basic Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Basic Information</CardTitle>
+              <Card className="border-border/50">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-base font-semibold text-foreground">Basic Information</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-5">
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="name">Name</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-foreground font-medium">Name</Label>
                       <Input
                         id="name"
                         value={patientDetails.name}
                         onChange={(e) => setPatientDetails({ ...patientDetails, name: e.target.value })}
                         disabled={!isEditing}
+                        className="text-foreground"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="age">Age</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="age" className="text-foreground font-medium">Age</Label>
                       <Input
                         id="age"
                         type="number"
                         value={patientDetails.age}
                         onChange={(e) => setPatientDetails({ ...patientDetails, age: parseInt(e.target.value) })}
                         disabled={!isEditing}
+                        className="text-foreground"
                       />
                     </div>
                   </div>
-                  <div>
-                    <Label htmlFor="contact">Contact Number</Label>
-                    <div className="flex items-center space-x-2">
-                      <Phone className="w-4 h-4 text-muted-foreground" />
+                  <div className="space-y-2">
+                    <Label htmlFor="contact" className="text-foreground font-medium">Contact Number</Label>
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-primary" />
                       <Input
                         id="contact"
                         value={patientDetails.contact_no}
                         onChange={(e) => setPatientDetails({ ...patientDetails, contact_no: e.target.value })}
                         disabled={!isEditing}
+                        className="text-foreground flex-1"
                       />
                     </div>
                   </div>
-                  <div>
-                    <Label htmlFor="blood_type">Blood Type</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="blood_type" className="text-foreground font-medium">Blood Type</Label>
                     <Input
                       id="blood_type"
                       value={patientDetails.blood_type || ""}
                       onChange={(e) => setPatientDetails({ ...patientDetails, blood_type: e.target.value })}
                       disabled={!isEditing}
                       placeholder="e.g., A+"
+                      className="text-foreground"
                     />
                   </div>
                 </CardContent>
               </Card>
 
               {/* Emergency Contact */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Emergency Contact</CardTitle>
+              <Card className="border-border/50">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-base font-semibold text-foreground">Emergency Contact</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="emergency_name">Contact Name</Label>
+                <CardContent className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="emergency_name" className="text-foreground font-medium">Contact Name</Label>
                     <Input
                       id="emergency_name"
                       value={patientDetails.emergency_contact_name || ""}
                       onChange={(e) => setPatientDetails({ ...patientDetails, emergency_contact_name: e.target.value })}
                       disabled={!isEditing}
+                      className="text-foreground"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="emergency_phone">Contact Phone</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="emergency_phone" className="text-foreground font-medium">Contact Phone</Label>
                     <Input
                       id="emergency_phone"
                       value={patientDetails.emergency_contact_phone || ""}
@@ -313,15 +318,17 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                         setPatientDetails({ ...patientDetails, emergency_contact_phone: e.target.value })
                       }
                       disabled={!isEditing}
+                      className="text-foreground"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="insurance">Insurance Information</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="insurance" className="text-foreground font-medium">Insurance Information</Label>
                     <Textarea
                       id="insurance"
                       value={patientDetails.insurance_info || ""}
                       onChange={(e) => setPatientDetails({ ...patientDetails, insurance_info: e.target.value })}
                       disabled={!isEditing}
+                      className="text-foreground min-h-[80px]"
                     />
                   </div>
                 </CardContent>
@@ -329,36 +336,38 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
             </div>
 
             {/* Medical Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center space-x-2">
+            <Card className="border-border/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                   <Heart className="w-5 h-5 text-red-500" />
                   <span>Medical Information</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="allergies">Allergies</Label>
+              <CardContent className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="allergies" className="text-foreground font-medium">Allergies</Label>
                   <Textarea
                     id="allergies"
                     value={patientDetails.allergies || ""}
                     onChange={(e) => setPatientDetails({ ...patientDetails, allergies: e.target.value })}
                     disabled={!isEditing}
                     placeholder="List any known allergies..."
+                    className="text-foreground min-h-[80px]"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="medications">Current Medications</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="medications" className="text-foreground font-medium">Current Medications</Label>
                   <Textarea
                     id="medications"
                     value={patientDetails.current_medications || ""}
                     onChange={(e) => setPatientDetails({ ...patientDetails, current_medications: e.target.value })}
                     disabled={!isEditing}
                     placeholder="List current medications..."
+                    className="text-foreground min-h-[80px]"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="medical_history">Medical History</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="medical_history" className="text-foreground font-medium">Medical History</Label>
                   <Textarea
                     id="medical_history"
                     value={patientDetails.medical_history || ""}
@@ -366,33 +375,34 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                     disabled={!isEditing}
                     placeholder="Medical history and conditions..."
                     rows={4}
+                    className="text-foreground min-h-[100px]"
                   />
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="history" className="space-y-4">
+          <TabsContent value="history" className="space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Visit History</h3>
+              <h3 className="text-base font-semibold text-foreground">Visit History</h3>
               <Button size="sm">
                 <Plus className="w-4 h-4 mr-1" />
                 Add Visit
               </Button>
             </div>
             {visits.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText className="w-12 h-12 mx-auto mb-4 opacity-40" />
                 <p>No visit history recorded</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {visits.map((visit) => (
-                  <Card key={visit.id}>
-                    <CardHeader className="pb-2">
+                  <Card key={visit.id} className="border-border/50">
+                    <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-base">
-                          Visit - {format(new Date(visit.visit_date), "MMM dd, yyyy")}
+                        <CardTitle className="text-base font-semibold text-foreground">
+                          {format(new Date(visit.visit_date), "MMM dd, yyyy")}
                         </CardTitle>
                         {visit.follow_up_needed && (
                           <Badge variant="outline" className="bg-warning/10 text-warning">
@@ -401,29 +411,29 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                         )}
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-2">
+                    <CardContent className="space-y-3">
                       {visit.diagnosis && (
-                        <div>
-                          <span className="font-medium">Diagnosis:</span>
-                          <p className="text-muted-foreground">{visit.diagnosis}</p>
+                        <div className="space-y-1">
+                          <span className="font-medium text-foreground">Diagnosis</span>
+                          <p className="text-foreground leading-relaxed">{visit.diagnosis}</p>
                         </div>
                       )}
                       {visit.treatment_plan && (
-                        <div>
-                          <span className="font-medium">Treatment:</span>
-                          <p className="text-muted-foreground">{visit.treatment_plan}</p>
+                        <div className="space-y-1">
+                          <span className="font-medium text-foreground">Treatment</span>
+                          <p className="text-foreground leading-relaxed">{visit.treatment_plan}</p>
                         </div>
                       )}
                       {visit.prescriptions && (
-                        <div>
-                          <span className="font-medium">Prescriptions:</span>
-                          <p className="text-muted-foreground">{visit.prescriptions}</p>
+                        <div className="space-y-1">
+                          <span className="font-medium text-foreground">Prescriptions</span>
+                          <p className="text-foreground leading-relaxed">{visit.prescriptions}</p>
                         </div>
                       )}
                       {visit.visit_notes && (
-                        <div>
-                          <span className="font-medium">Notes:</span>
-                          <p className="text-muted-foreground">{visit.visit_notes}</p>
+                        <div className="space-y-1">
+                          <span className="font-medium text-foreground">Notes</span>
+                          <p className="text-foreground leading-relaxed">{visit.visit_notes}</p>
                         </div>
                       )}
                     </CardContent>
@@ -433,20 +443,20 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
             )}
           </TabsContent>
 
-          <TabsContent value="appointments" className="space-y-4">
-            <h3 className="text-lg font-semibold">Appointment History</h3>
+          <TabsContent value="appointments" className="space-y-6">
+            <h3 className="text-base font-semibold text-foreground">Appointment History</h3>
             {appointments.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <div className="text-center py-12 text-muted-foreground">
+                <Calendar className="w-12 h-12 mx-auto mb-4 opacity-40" />
                 <p>No appointments found</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {appointments.map((appointment) => (
-                  <Card key={appointment.id}>
-                    <CardHeader className="pb-2">
+                  <Card key={appointment.id} className="border-border/50">
+                    <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-base">
+                        <CardTitle className="text-base font-semibold text-foreground">
                           {format(new Date(appointment.appointment_date), "MMM dd, yyyy")} at{" "}
                           {appointment.appointment_time}
                         </CardTitle>
@@ -466,30 +476,32 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div>
-                        <span className="font-medium">Doctor:</span>
-                        {appointment.doctor_profile?.name}
+                    <CardContent className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <span className="font-medium text-foreground min-w-[80px]">Doctor</span>
+                        <span className="text-foreground">{appointment.doctor_profile?.name}</span>
                       </div>
                       {appointment.reason_for_visit && (
-                        <div>
-                          <span className="font-medium">Reason:</span> {appointment.reason_for_visit}
+                        <div className="flex items-start gap-3">
+                          <span className="font-medium text-foreground min-w-[80px]">Reason</span>
+                          <span className="text-foreground flex-1">{appointment.reason_for_visit}</span>
                         </div>
                       )}
                       {appointment.symptoms && (
-                        <div>
-                          <span className="font-medium">Symptoms:</span> {appointment.symptoms}
+                        <div className="flex items-start gap-3">
+                          <span className="font-medium text-foreground min-w-[80px]">Symptoms</span>
+                          <span className="text-foreground flex-1">{appointment.symptoms}</span>
                         </div>
                       )}
                       {appointment.payments && appointment.payments.length > 0 && (
-                        <div className="space-y-1">
-                          <span className="font-medium">Payment Details:</span>
+                        <div className="space-y-2">
+                          <span className="font-medium text-foreground">Payment Details</span>
                           {appointment.payments.map((payment: any, index: number) => (
-                            <div key={index} className="text-sm text-muted-foreground pl-4">
-                              <div>
+                            <div key={index} className="pl-4 space-y-1 border-l-2 border-primary/20">
+                              <div className="text-foreground">
                                 Amount: ${payment.amount} ({payment.payment_method})
                               </div>
-                              {payment.tests_done && <div>Tests: {payment.tests_done}</div>}
+                              {payment.tests_done && <div className="text-foreground">Tests: {payment.tests_done}</div>}
                             </div>
                           ))}
                         </div>

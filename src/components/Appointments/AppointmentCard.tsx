@@ -308,73 +308,73 @@ export const AppointmentCard = ({
           </Card>
         </DialogTrigger>
 
-        <DialogContent className="max-w-2xl animate-scale-in">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <User className="w-5 h-5 text-primary" />
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto animate-scale-in">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <User className="w-6 h-6 text-primary" />
               <span>Appointment Details</span>
             </DialogTitle>
-            <DialogDescription>Complete information about this appointment</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          
+          <div className="space-y-6">
             {/* Patient Information */}
-            <div className="space-y-2">
-              <h3 className="font-semibold text-medical-dark">Patient Information</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Name:</span> {appointment.patients?.name}
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-foreground border-b pb-2">Patient Information</h3>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <span className="font-medium text-foreground min-w-[120px]">Name</span>
+                  <span className="text-foreground">{appointment.patients?.name}</span>
                 </div>
-                <div>
-                  <span className="font-medium">Age:</span> {appointment.patients?.age} years
+                <div className="flex items-start gap-3">
+                  <span className="font-medium text-foreground min-w-[120px]">Age</span>
+                  <span className="text-foreground">{appointment.patients?.age} years</span>
                 </div>
-                <div className="col-span-2">
-                  <div className="flex items-center space-x-1">
-                    <Phone className="w-4 h-4" />
-                    <span className="font-medium">Contact:</span> {appointment.patients?.contact_no}
-                  </div>
+                <div className="flex items-start gap-3">
+                  <Phone className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                  <span className="font-medium text-foreground min-w-[100px]">Contact</span>
+                  <span className="text-foreground">{appointment.patients?.contact_no}</span>
                 </div>
                 {appointment.patients?.medical_history && (
-                  <div className="col-span-2">
-                    <span className="font-medium">Medical History:</span>
-                    <p className="text-muted-foreground mt-1">{appointment.patients.medical_history}</p>
+                  <div className="flex items-start gap-3">
+                    <span className="font-medium text-foreground min-w-[120px]">Medical History</span>
+                    <p className="text-foreground flex-1 leading-relaxed">{appointment.patients.medical_history}</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Appointment Information */}
-            <div className="space-y-2">
-              <h3 className="font-semibold text-medical-dark">Appointment Information</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center space-x-1">
-                  <Stethoscope className="w-4 h-4" />
-                  <span className="font-medium">Doctor:</span>
-                  {appointment.doctor_profile?.name}
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-foreground border-b pb-2">Appointment Information</h3>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <Stethoscope className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                  <span className="font-medium text-foreground min-w-[100px]">Doctor</span>
+                  <span className="text-foreground">{appointment.doctor_profile?.name}</span>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <User className="w-4 h-4" />
-                  <span className="font-medium">Receptionist:</span> {appointment.receptionist_profile?.name}
+                <div className="flex items-start gap-3">
+                  <User className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                  <span className="font-medium text-foreground min-w-[100px]">Receptionist</span>
+                  <span className="text-foreground">{appointment.receptionist_profile?.name}</span>
                 </div>
                 {appointment.reason_for_visit && (
-                  <div className="col-span-2">
-                    <span className="font-medium">Reason for Visit:</span>
-                    <p className="text-muted-foreground mt-1">{appointment.reason_for_visit}</p>
+                  <div className="flex items-start gap-3">
+                    <span className="font-medium text-foreground min-w-[120px]">Reason for Visit</span>
+                    <p className="text-foreground flex-1 leading-relaxed">{appointment.reason_for_visit}</p>
                   </div>
                 )}
                 {appointment.symptoms && (
-                  <div className="col-span-2">
-                    <span className="font-medium">Symptoms:</span>
-                    <p className="text-muted-foreground mt-1">{appointment.symptoms}</p>
+                  <div className="flex items-start gap-3">
+                    <span className="font-medium text-foreground min-w-[120px]">Symptoms</span>
+                    <p className="text-foreground flex-1 leading-relaxed">{appointment.symptoms}</p>
                   </div>
                 )}
                 {appointment.denial_reason && (
-                  <div className="col-span-2">
-                    <div className="flex items-start space-x-1 text-destructive">
-                      <AlertCircle className="w-4 h-4 mt-0.5" />
-                      <div>
-                        <span className="font-medium">Denial Reason:</span>
-                        <p className="mt-1">{appointment.denial_reason}</p>
-                      </div>
+                  <div className="flex items-start gap-3 p-3 bg-destructive/5 rounded-md border border-destructive/20">
+                    <AlertCircle className="w-4 h-4 mt-0.5 text-destructive flex-shrink-0" />
+                    <div className="flex-1">
+                      <span className="font-medium text-destructive">Denial Reason</span>
+                      <p className="text-destructive mt-1 leading-relaxed">{appointment.denial_reason}</p>
                     </div>
                   </div>
                 )}
