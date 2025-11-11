@@ -33,19 +33,20 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
     }
   }
 
-  // Generate evening slots (17:00 - 19:00+, 15-min intervals before 19:00, 5-min after)
+  // Generate evening slots (17:00 - 19:00, 15-min intervals with 3 slots limit)
+  // Then 19:00+ with 5-min intervals (unlimited)
   const eveningSlots = [];
-  // 17:00 to 19:00 in 15-min intervals
+  // 17:00 to 19:00 in 15-min intervals (limited to 3 per slot)
   for (let hour = 17; hour < 19; hour++) {
     for (let min = 0; min < 60; min += 15) {
       const time = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
       eveningSlots.push(time);
     }
   }
-  // 19:00+ in 5-min intervals (unlimited slots)
-  for (let hour = 19; hour <= 20; hour++) {
+  // 19:00 onwards in 5-min intervals (unlimited slots)
+  for (let hour = 19; hour <= 21; hour++) {
     for (let min = 0; min < 60; min += 5) {
-      if (hour === 20 && min > 0) break;
+      if (hour === 21 && min > 0) break;
       const time = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
       eveningSlots.push(time);
     }
@@ -122,10 +123,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
   };
 
   const formatTimeLabel = (time: string) => {
-    const [hours, mins] = time.split(':').map(Number);
-    const hour = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-    const period = hours >= 12 ? 'PM' : 'AM';
-    return `${hour}:${String(mins).padStart(2, '0')} ${period}`;
+    return time; // Just return the time as-is (24-hour format)
   };
 
   const getSlotInfo = (slot: string) => {
@@ -144,7 +142,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
       {/* Morning Section */}
       <Collapsible open={morningOpen} onOpenChange={setMorningOpen}>
         <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 bg-muted/30 rounded hover:bg-muted/50 transition-colors">
-          <span className="text-sm font-medium">Morning (10:00 AM - 12:30 PM)</span>
+          <span className="text-sm font-medium">Morning (10:00 - 12:30)</span>
           {morningOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-2">
@@ -179,7 +177,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
       {/* Evening Section */}
       <Collapsible open={eveningOpen} onOpenChange={setEveningOpen}>
         <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 bg-muted/30 rounded hover:bg-muted/50 transition-colors">
-          <span className="text-sm font-medium">Evening (5:00 PM - 8:00 PM)</span>
+          <span className="text-sm font-medium">Evening (17:00 onwards, unlimited after 19:00)</span>
           {eveningOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-2">
@@ -211,7 +209,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
             })}
           </div>
           <p className="text-[10px] text-muted-foreground mt-2 px-1">
-            * After 7:00 PM - Unlimited appointments
+            * After 19:00 - Unlimited appointments
           </p>
         </CollapsibleContent>
       </Collapsible>

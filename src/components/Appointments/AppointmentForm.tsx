@@ -505,14 +505,28 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
 
               <div className="space-y-2">
                 <Label>Appointment Time Slot</Label>
-                <div className="border rounded-lg">
-                  <TimeSlotPicker
-                    value={form.watch("appointmentTime")}
-                    onChange={(time) => form.setValue("appointmentTime", time)}
-                    doctorId={form.watch("doctorId")}
-                    appointmentDate={form.watch("appointmentDate")}
-                  />
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !form.watch("appointmentTime") && "text-muted-foreground",
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.watch("appointmentTime") || <span>Select time</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-3" align="start">
+                    <TimeSlotPicker
+                      value={form.watch("appointmentTime")}
+                      onChange={(time) => form.setValue("appointmentTime", time)}
+                      doctorId={form.watch("doctorId")}
+                      appointmentDate={form.watch("appointmentDate")}
+                    />
+                  </PopoverContent>
+                </Popover>
                 {form.formState.errors.appointmentTime && (
                   <p className="text-sm text-destructive">{form.formState.errors.appointmentTime.message}</p>
                 )}
