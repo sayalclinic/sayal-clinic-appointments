@@ -28,7 +28,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
   for (let hour = 10; hour <= 12; hour++) {
     for (let min = 0; min < 60; min += 15) {
       if (hour === 12 && min > 30) break;
-      const time = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+      const time = `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
       morningSlots.push(time);
     }
   }
@@ -38,7 +38,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
   for (let hour = 17; hour <= 19; hour++) {
     for (let min = 0; min < 60; min += 15) {
       if (hour === 19 && min > 0) break;
-      const time = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+      const time = `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
       eveningSlots.push(time);
     }
   }
@@ -51,45 +51,47 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
 
     const fetchSlotAvailability = async () => {
       const dateStr = format(appointmentDate, "yyyy-MM-dd");
-      
+
       const { data: appointments } = await supabase
-        .from('appointments')
-        .select('appointment_time')
-        .eq('doctor_id', doctorId)
-        .eq('appointment_date', dateStr);
+        .from("appointments")
+        .select("appointment_time")
+        .eq("doctor_id", doctorId)
+        .eq("appointment_date", dateStr);
 
       const availability: Record<string, SlotAvailability> = {};
 
       // Count appointments per slot
-      [...morningSlots, ...eveningSlots].forEach(slot => {
-        const [hours, minutes] = slot.split(':').map(Number);
+      [...morningSlots, ...eveningSlots].forEach((slot) => {
+        const [hours, minutes] = slot.split(":").map(Number);
         const isUnlimited = hours >= 19;
-        
+
         let count = 0;
-        
+
         if (isUnlimited) {
           // For 19:00, count all appointments from 19:00 onwards
-          count = appointments?.filter(apt => {
-            const [aptHours, aptMinutes] = apt.appointment_time.split(':').map(Number);
-            const aptTime = aptHours * 60 + aptMinutes;
-            return aptTime >= 19 * 60;
-          }).length || 0;
+          count =
+            appointments?.filter((apt) => {
+              const [aptHours, aptMinutes] = apt.appointment_time.split(":").map(Number);
+              const aptTime = aptHours * 60 + aptMinutes;
+              return aptTime >= 19 * 60;
+            }).length || 0;
         } else {
           // For other slots, count appointments within the 15-minute window
           const slotStart = hours * 60 + minutes;
           const slotEnd = slotStart + 15;
-          
-          count = appointments?.filter(apt => {
-            const [aptHours, aptMinutes] = apt.appointment_time.split(':').map(Number);
-            const aptTime = aptHours * 60 + aptMinutes;
-            return aptTime >= slotStart && aptTime < slotEnd;
-          }).length || 0;
+
+          count =
+            appointments?.filter((apt) => {
+              const [aptHours, aptMinutes] = apt.appointment_time.split(":").map(Number);
+              const aptTime = aptHours * 60 + aptMinutes;
+              return aptTime >= slotStart && aptTime < slotEnd;
+            }).length || 0;
         }
 
         availability[slot] = {
           time: slot,
           count,
-          maxSlots: isUnlimited ? 999 : 3
+          maxSlots: isUnlimited ? 999 : 3,
         };
       });
 
@@ -104,7 +106,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
     if (!availability) return "bg-background hover:bg-accent";
 
     const fillRatio = availability.count / availability.maxSlots;
-    
+
     if (availability.count >= availability.maxSlots && availability.maxSlots < 999) {
       return "bg-destructive/20 text-destructive cursor-not-allowed";
     }
@@ -114,7 +116,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
     } else if (fillRatio >= 0.33) {
       return "bg-primary/40 text-foreground hover:bg-primary/50";
     }
-    
+
     return "bg-background hover:bg-accent";
   };
 
@@ -130,12 +132,12 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
 
   const getSlotInfo = (slot: string) => {
     const availability = slotAvailability[slot];
-    if (!availability) return '';
-    
+    if (!availability) return "";
+
     if (availability.maxSlots >= 999) {
-      return availability.count > 0 ? `${availability.count} booked` : '';
+      return availability.count > 0 ? `${availability.count} booked` : "";
     }
-    
+
     return `${availability.count}/${availability.maxSlots}`;
   };
 
@@ -144,15 +146,15 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
       {/* Morning Section */}
       <Collapsible open={morningOpen} onOpenChange={setMorningOpen}>
         <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 bg-muted/30 rounded hover:bg-muted/50 transition-colors">
-          <span className="text-sm font-medium">Morning (10:00 - 12:30)</span>
+          <span className="text-sm font-medium">Morning</span>
           {morningOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-2">
           <div className="grid grid-cols-4 gap-1.5 px-1">
-            {morningSlots.map(slot => {
+            {morningSlots.map((slot) => {
               const selected = value === slot;
               const available = isSlotAvailable(slot);
-              
+
               return (
                 <button
                   key={slot}
@@ -164,7 +166,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
                     selected && "border-primary ring-1 ring-primary/20",
                     !selected && "border-transparent",
                     getSlotClassName(slot),
-                    !available && "opacity-50"
+                    !available && "opacity-50",
                   )}
                 >
                   <div className="font-medium">{formatTimeLabel(slot)}</div>
@@ -179,17 +181,17 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
       {/* Evening Section */}
       <Collapsible open={eveningOpen} onOpenChange={setEveningOpen}>
         <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 bg-muted/30 rounded hover:bg-muted/50 transition-colors">
-          <span className="text-sm font-medium">Evening (17:00 - 19:00, unlimited at 19:00)</span>
+          <span className="text-sm font-medium">Evening</span>
           {eveningOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-2">
           <div className="grid grid-cols-4 gap-1.5 px-1">
-            {eveningSlots.map(slot => {
+            {eveningSlots.map((slot) => {
               const selected = value === slot;
               const available = isSlotAvailable(slot);
-              const [hours] = slot.split(':').map(Number);
+              const [hours] = slot.split(":").map(Number);
               const isUnlimited = hours >= 19;
-              
+
               return (
                 <button
                   key={slot}
@@ -201,7 +203,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
                     selected && "border-primary ring-1 ring-primary/20",
                     !selected && "border-transparent",
                     getSlotClassName(slot),
-                    !available && "opacity-50"
+                    !available && "opacity-50",
                   )}
                 >
                   <div className="font-medium">{formatTimeLabel(slot)}</div>
@@ -214,9 +216,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
       </Collapsible>
 
       {!doctorId || !appointmentDate ? (
-        <p className="text-xs text-muted-foreground text-center py-2">
-          Select doctor and date
-        </p>
+        <p className="text-xs text-muted-foreground text-center py-2">Select doctor and date</p>
       ) : null}
     </div>
   );
