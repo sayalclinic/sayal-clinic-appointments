@@ -19,8 +19,8 @@ interface SlotAvailability {
 }
 
 export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: TimeSlotPickerProps) => {
-  const [morningOpen, setMorningOpen] = useState(true);
-  const [eveningOpen, setEveningOpen] = useState(true);
+  const [morningOpen, setMorningOpen] = useState(false);
+  const [eveningOpen, setEveningOpen] = useState(false);
   const [slotAvailability, setSlotAvailability] = useState<Record<string, SlotAvailability>>({});
 
   // Generate morning slots (10:00 - 12:30, 15-min intervals)
@@ -140,15 +140,15 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
   };
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-2">
       {/* Morning Section */}
       <Collapsible open={morningOpen} onOpenChange={setMorningOpen}>
-        <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
-          <span className="font-semibold">Morning (10:00 AM - 12:30 PM)</span>
-          {morningOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 bg-muted/30 rounded hover:bg-muted/50 transition-colors">
+          <span className="text-sm font-medium">Morning (10:00 AM - 12:30 PM)</span>
+          {morningOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </CollapsibleTrigger>
-        <CollapsibleContent className="mt-3">
-          <div className="grid grid-cols-3 gap-2">
+        <CollapsibleContent className="mt-2">
+          <div className="grid grid-cols-4 gap-1.5 px-1">
             {morningSlots.map(slot => {
               const selected = value === slot;
               const available = isSlotAvailable(slot);
@@ -160,15 +160,15 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
                   disabled={!available}
                   onClick={() => available && onChange(slot)}
                   className={cn(
-                    "p-3 rounded-lg border-2 transition-all text-sm",
-                    selected && "border-primary ring-2 ring-primary/20",
+                    "px-2 py-1.5 rounded border transition-all text-xs",
+                    selected && "border-primary ring-1 ring-primary/20",
                     !selected && "border-transparent",
                     getSlotClassName(slot),
                     !available && "opacity-50"
                   )}
                 >
                   <div className="font-medium">{formatTimeLabel(slot)}</div>
-                  <div className="text-xs opacity-70 mt-1">{getSlotInfo(slot)}</div>
+                  {getSlotInfo(slot) && <div className="text-[10px] opacity-70">{getSlotInfo(slot)}</div>}
                 </button>
               );
             })}
@@ -178,12 +178,12 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
 
       {/* Evening Section */}
       <Collapsible open={eveningOpen} onOpenChange={setEveningOpen}>
-        <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
-          <span className="font-semibold">Evening (5:00 PM - 8:00 PM)</span>
-          {eveningOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 bg-muted/30 rounded hover:bg-muted/50 transition-colors">
+          <span className="text-sm font-medium">Evening (5:00 PM - 8:00 PM)</span>
+          {eveningOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </CollapsibleTrigger>
-        <CollapsibleContent className="mt-3">
-          <div className="grid grid-cols-3 gap-2">
+        <CollapsibleContent className="mt-2">
+          <div className="grid grid-cols-4 gap-1.5 px-1">
             {eveningSlots.map(slot => {
               const selected = value === slot;
               const available = isSlotAvailable(slot);
@@ -197,29 +197,27 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
                   disabled={!available}
                   onClick={() => available && onChange(slot)}
                   className={cn(
-                    "p-3 rounded-lg border-2 transition-all text-sm",
-                    selected && "border-primary ring-2 ring-primary/20",
+                    "px-2 py-1.5 rounded border transition-all text-xs",
+                    selected && "border-primary ring-1 ring-primary/20",
                     !selected && "border-transparent",
                     getSlotClassName(slot),
                     !available && "opacity-50"
                   )}
                 >
                   <div className="font-medium">{formatTimeLabel(slot)}</div>
-                  <div className="text-xs opacity-70 mt-1">
-                    {isUnlimited && getSlotInfo(slot) ? getSlotInfo(slot) : !isUnlimited ? getSlotInfo(slot) : ''}
-                  </div>
+                  {getSlotInfo(slot) && <div className="text-[10px] opacity-70">{getSlotInfo(slot)}</div>}
                 </button>
               );
             })}
           </div>
-          <p className="text-xs text-muted-foreground mt-3 px-1">
-            * After 7:00 PM - Unlimited appointments available
+          <p className="text-[10px] text-muted-foreground mt-2 px-1">
+            * After 7:00 PM - Unlimited appointments
           </p>
         </CollapsibleContent>
       </Collapsible>
 
       {!doctorId || !appointmentDate ? (
-        <p className="text-sm text-muted-foreground text-center py-4">
+        <p className="text-xs text-muted-foreground text-center py-2">
           Please select a doctor and date first
         </p>
       ) : null}
