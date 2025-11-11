@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, User, FileText, Stethoscope } from "lucide-react";
+import { CalendarIcon, User, FileText, Stethoscope } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { TimeWheelPicker } from "@/components/ui/time-wheel-picker";
-import { ClockTimePicker } from "@/components/ui/clock-time-picker";
+import { TimeSlotPicker } from "@/components/ui/time-slot-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -128,30 +127,6 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
     [form, searchPatientByName, appointmentType],
   );
 
-  const timeSlots = [
-    { value: "10:00", label: "10:00 AM" },
-    { value: "10:30", label: "10:30 AM" },
-    { value: "11:00", label: "11:00 AM" },
-    { value: "11:30", label: "11:30 AM" },
-    { value: "12:00", label: "12:00 PM" },
-    { value: "12:30", label: "12:30 PM" },
-    { value: "13:00", label: "1:00 PM" },
-    { value: "13:30", label: "1:30 PM" },
-    { value: "14:00", label: "2:00 PM" },
-    { value: "14:30", label: "2:30 PM" },
-    { value: "15:00", label: "3:00 PM" },
-    { value: "15:30", label: "3:30 PM" },
-    { value: "16:00", label: "4:00 PM" },
-    { value: "16:30", label: "4:30 PM" },
-    { value: "17:00", label: "5:00 PM" },
-    { value: "17:30", label: "5:30 PM" },
-    { value: "18:00", label: "6:00 PM" },
-    { value: "18:30", label: "6:30 PM" },
-    { value: "19:00", label: "7:00 PM" },
-    { value: "19:30", label: "7:30 PM" },
-    { value: "20:00", label: "8:00 PM" },
-  ];
-
   const onSubmit = async (data: AppointmentFormData) => {
     setIsLoading(true);
 
@@ -167,15 +142,17 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       const appointmentDate = format(data.appointmentDate, "yyyy-MM-dd");
       const selectedTime = data.appointmentTime;
       
-      // Calculate base 15-minute slot
+      // Calculate base slot time
       const [hours, minutes] = selectedTime.split(':').map(Number);
+      const isUnlimited = hours >= 19; // After 7:00 PM is unlimited
+      
       const totalMinutes = hours * 60 + minutes;
       const slotMinutes = Math.floor(totalMinutes / 15) * 15; // Round down to nearest 15-min slot
       const slotHours = Math.floor(slotMinutes / 60);
       const slotMins = slotMinutes % 60;
       const baseSlotTime = `${String(slotHours).padStart(2, '0')}:${String(slotMins).padStart(2, '0')}`;
       
-      // Check existing appointments in this 15-minute slot for this doctor and date
+      // Check existing appointments in this slot for this doctor and date
       const { data: existingAppointments, error: checkError } = await supabase
         .from('appointments')
         .select('appointment_time')
@@ -190,8 +167,8 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       
       const slotCount = existingAppointments?.length || 0;
       
-      // Validate slot availability (max 3 per 15-min slot)
-      if (slotCount >= 3) {
+      // Validate slot availability (max 3 per 15-min slot, unlimited after 7:00 PM)
+      if (!isUnlimited && slotCount >= 3) {
         form.setError('appointmentTime', {
           type: 'manual',
           message: `This time slot is fully booked (3/3 appointments). Please select a different time.`
@@ -200,20 +177,27 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         return;
       }
       
-      // Calculate actual appointment time based on slot position
-      const offsetMinutes = slotCount * 5; // 0, 5, or 10 minutes
+      // Calculate actual appointment time based on slot position (5-minute intervals)
+      const offsetMinutes = slotCount * 5;
       const actualMinutes = slotMinutes + offsetMinutes;
       const actualHours = Math.floor(actualMinutes / 60);
       const actualMins = actualMinutes % 60;
       const appointmentTime = `${String(actualHours).padStart(2, '0')}:${String(actualMins).padStart(2, '0')}`;
       
-      console.log(`Slot: ${baseSlotTime}, Position: ${slotCount + 1}/3, Actual time: ${appointmentTime}`);
+      console.log(`Slot: ${baseSlotTime}, Position: ${slotCount + 1}${isUnlimited ? '' : '/3'}, Actual time: ${appointmentTime}`);
       
       // Show toast notification about slot position
-      toast({
-        title: `Slot Position: ${slotCount + 1}/3`,
-        description: `Appointment scheduled at ${appointmentTime} (${slotCount === 0 ? 'First' : slotCount === 1 ? 'Second' : 'Third'} in this slot)`,
-      });
+      if (isUnlimited) {
+        toast({
+          title: `Appointment Scheduled`,
+          description: `Appointment scheduled at ${appointmentTime}`,
+        });
+      } else {
+        toast({
+          title: `Slot Position: ${slotCount + 1}/3`,
+          description: `Appointment scheduled at ${appointmentTime} (${slotCount === 0 ? 'First' : slotCount === 1 ? 'Second' : 'Third'} in this slot)`,
+        });
+      }
 
       // Then create the appointment, passing isWalkIn flag
       // Ensure repeat appointments use the SAME patient_id as previous ones
@@ -520,43 +504,18 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label>Appointment Time</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !form.watch("appointmentTime") && "text-muted-foreground",
-                      )}
-                    >
-                      <Clock className="mr-2 h-4 w-4" />
-                      {form.watch("appointmentTime") ? (
-                        (() => {
-                          const time = form.watch("appointmentTime");
-                          const [hours, mins] = time.split(":").map(Number);
-                          const hour = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-                          const period = hours >= 12 ? "PM" : "AM";
-                          return `${hour}:${String(mins).padStart(2, "0")} ${period}`;
-                        })()
-                      ) : (
-                        <span>Select time</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <ClockTimePicker
-                      value={form.watch("appointmentTime")}
-                      onChange={(time) => form.setValue("appointmentTime", time)}
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label>Appointment Time Slot</Label>
+                <div className="border rounded-lg">
+                  <TimeSlotPicker
+                    value={form.watch("appointmentTime")}
+                    onChange={(time) => form.setValue("appointmentTime", time)}
+                    doctorId={form.watch("doctorId")}
+                    appointmentDate={form.watch("appointmentDate")}
+                  />
+                </div>
                 {form.formState.errors.appointmentTime && (
                   <p className="text-sm text-destructive">{form.formState.errors.appointmentTime.message}</p>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  Select a 15-minute time slot. Up to 3 appointments per slot (auto-scheduled at 0, 5, and 10 minutes).
-                </p>
               </div>
             </div>
           </div>
