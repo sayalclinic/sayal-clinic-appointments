@@ -27,17 +27,18 @@ const AppContent = () => {
   }, [user]);
 
   return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/signup" element={<SignUp />} />
-      <Route path="/signin" element={<SignIn />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/appointment-history" element={<AppointmentHistory />} />
-      <Route path="/payment-reports" element={<PaymentReports />} />
-      <Route path="/stats" element={<StatsPage />} />
-      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <div className="page-transition">
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/appointment-history" element={<AppointmentHistory />} />
+        <Route path="/payment-reports" element={<PaymentReports />} />
+        <Route path="/stats" element={<StatsPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
   );
 };
 

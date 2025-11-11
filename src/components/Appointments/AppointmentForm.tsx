@@ -184,20 +184,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       const actualMins = actualMinutes % 60;
       const appointmentTime = `${String(actualHours).padStart(2, '0')}:${String(actualMins).padStart(2, '0')}`;
       
-      console.log(`Slot: ${baseSlotTime}, Position: ${slotCount + 1}${isUnlimited ? '' : '/3'}, Actual time: ${appointmentTime}`);
-      
-      // Show toast notification about slot position
-      if (isUnlimited) {
-        toast({
-          title: `Appointment Scheduled`,
-          description: `Appointment scheduled at ${appointmentTime}`,
-        });
-      } else {
-        toast({
-          title: `Slot Position: ${slotCount + 1}/3`,
-          description: `Appointment scheduled at ${appointmentTime} (${slotCount === 0 ? 'First' : slotCount === 1 ? 'Second' : 'Third'} in this slot)`,
-        });
-      }
+      console.log(`Slot: ${baseSlotTime}, Actual time: ${appointmentTime}`);
 
       // Then create the appointment, passing isWalkIn flag
       // Ensure repeat appointments use the SAME patient_id as previous ones

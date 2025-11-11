@@ -177,7 +177,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
       {/* Evening Section */}
       <Collapsible open={eveningOpen} onOpenChange={setEveningOpen}>
         <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 bg-muted/30 rounded hover:bg-muted/50 transition-colors">
-          <span className="text-sm font-medium">Evening (17:00 onwards, unlimited after 19:00)</span>
+          <span className="text-sm font-medium">Evening (17:00 onwards)</span>
           {eveningOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-2">
@@ -208,15 +208,12 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
               );
             })}
           </div>
-          <p className="text-[10px] text-muted-foreground mt-2 px-1">
-            * After 19:00 - Unlimited appointments
-          </p>
         </CollapsibleContent>
       </Collapsible>
 
       {!doctorId || !appointmentDate ? (
         <p className="text-xs text-muted-foreground text-center py-2">
-          Please select a doctor and date first
+          Select doctor and date
         </p>
       ) : null}
     </div>
