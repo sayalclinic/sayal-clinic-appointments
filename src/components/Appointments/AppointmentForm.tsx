@@ -142,49 +142,48 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       const appointmentDate = format(data.appointmentDate, "yyyy-MM-dd");
       const selectedTime = data.appointmentTime;
       
-      // Calculate base slot time
+      // Calculate slot time and handle 19:00+ appointments
       const [hours, minutes] = selectedTime.split(':').map(Number);
-      const isUnlimited = hours >= 19; // After 7:00 PM is unlimited
+      const isUnlimited = hours >= 19;
       
       const totalMinutes = hours * 60 + minutes;
-      const slotMinutes = Math.floor(totalMinutes / 15) * 15; // Round down to nearest 15-min slot
+      const slotMinutes = Math.floor(totalMinutes / 15) * 15;
       const slotHours = Math.floor(slotMinutes / 60);
       const slotMins = slotMinutes % 60;
       const baseSlotTime = `${String(slotHours).padStart(2, '0')}:${String(slotMins).padStart(2, '0')}`;
       
-      // Check existing appointments in this slot for this doctor and date
+      // For 19:00+, check all appointments starting from 19:00
+      const checkStartTime = isUnlimited ? '19:00' : baseSlotTime;
+      const checkEndTime = isUnlimited ? '23:59' : `${String(slotHours).padStart(2, '0')}:${String(slotMins + 15).padStart(2, '0')}`;
+      
       const { data: existingAppointments, error: checkError } = await supabase
         .from('appointments')
         .select('appointment_time')
         .eq('doctor_id', data.doctorId)
         .eq('appointment_date', appointmentDate)
-        .gte('appointment_time', baseSlotTime)
-        .lt('appointment_time', `${String(slotHours).padStart(2, '0')}:${String(slotMins + 15).padStart(2, '0')}`);
+        .gte('appointment_time', checkStartTime)
+        .lt('appointment_time', checkEndTime);
       
-      if (checkError) {
-        throw checkError;
-      }
+      if (checkError) throw checkError;
       
       const slotCount = existingAppointments?.length || 0;
       
-      // Validate slot availability (max 3 per 15-min slot, unlimited after 7:00 PM)
       if (!isUnlimited && slotCount >= 3) {
         form.setError('appointmentTime', {
           type: 'manual',
-          message: `This time slot is fully booked (3/3 appointments). Please select a different time.`
+          message: `This time slot is fully booked. Please select a different time.`
         });
         setIsLoading(false);
         return;
       }
       
-      // Calculate actual appointment time based on slot position (5-minute intervals)
-      const offsetMinutes = slotCount * 5;
-      const actualMinutes = slotMinutes + offsetMinutes;
+      // Calculate actual time: 15-minute intervals for all appointments
+      const baseTime = isUnlimited ? 19 * 60 : slotMinutes;
+      const offsetMinutes = slotCount * 15;
+      const actualMinutes = baseTime + offsetMinutes;
       const actualHours = Math.floor(actualMinutes / 60);
       const actualMins = actualMinutes % 60;
       const appointmentTime = `${String(actualHours).padStart(2, '0')}:${String(actualMins).padStart(2, '0')}`;
-      
-      console.log(`Slot: ${baseSlotTime}, Actual time: ${appointmentTime}`);
 
       // Then create the appointment, passing isWalkIn flag
       // Ensure repeat appointments use the SAME patient_id as previous ones

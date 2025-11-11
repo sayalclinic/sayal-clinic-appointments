@@ -33,20 +33,11 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
     }
   }
 
-  // Generate evening slots (17:00 - 19:00, 15-min intervals with 3 slots limit)
-  // Then 19:00+ with 5-min intervals (unlimited)
+  // Generate evening slots (17:00 - 19:00, 15-min intervals)
   const eveningSlots = [];
-  // 17:00 to 19:00 in 15-min intervals (limited to 3 per slot)
-  for (let hour = 17; hour < 19; hour++) {
+  for (let hour = 17; hour <= 19; hour++) {
     for (let min = 0; min < 60; min += 15) {
-      const time = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-      eveningSlots.push(time);
-    }
-  }
-  // 19:00 onwards in 5-min intervals (unlimited slots)
-  for (let hour = 19; hour <= 21; hour++) {
-    for (let min = 0; min < 60; min += 5) {
-      if (hour === 21 && min > 0) break;
+      if (hour === 19 && min > 0) break;
       const time = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
       eveningSlots.push(time);
     }
@@ -72,22 +63,33 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
       // Count appointments per slot
       [...morningSlots, ...eveningSlots].forEach(slot => {
         const [hours, minutes] = slot.split(':').map(Number);
-        const slotStart = hours * 60 + minutes;
-        const slotEnd = slotStart + 15;
-        
-        // Check if this is after 19:00 (unlimited slots)
         const isUnlimited = hours >= 19;
         
-        const count = appointments?.filter(apt => {
-          const [aptHours, aptMinutes] = apt.appointment_time.split(':').map(Number);
-          const aptTime = aptHours * 60 + aptMinutes;
-          return aptTime >= slotStart && aptTime < slotEnd;
-        }).length || 0;
+        let count = 0;
+        
+        if (isUnlimited) {
+          // For 19:00, count all appointments from 19:00 onwards
+          count = appointments?.filter(apt => {
+            const [aptHours, aptMinutes] = apt.appointment_time.split(':').map(Number);
+            const aptTime = aptHours * 60 + aptMinutes;
+            return aptTime >= 19 * 60;
+          }).length || 0;
+        } else {
+          // For other slots, count appointments within the 15-minute window
+          const slotStart = hours * 60 + minutes;
+          const slotEnd = slotStart + 15;
+          
+          count = appointments?.filter(apt => {
+            const [aptHours, aptMinutes] = apt.appointment_time.split(':').map(Number);
+            const aptTime = aptHours * 60 + aptMinutes;
+            return aptTime >= slotStart && aptTime < slotEnd;
+          }).length || 0;
+        }
 
         availability[slot] = {
           time: slot,
           count,
-          maxSlots: isUnlimited ? 999 : 3 // Effectively unlimited after 7pm
+          maxSlots: isUnlimited ? 999 : 3
         };
       });
 
@@ -177,7 +179,7 @@ export const TimeSlotPicker = ({ value, onChange, doctorId, appointmentDate }: T
       {/* Evening Section */}
       <Collapsible open={eveningOpen} onOpenChange={setEveningOpen}>
         <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 bg-muted/30 rounded hover:bg-muted/50 transition-colors">
-          <span className="text-sm font-medium">Evening (17:00 onwards)</span>
+          <span className="text-sm font-medium">Evening (17:00 - 19:00, unlimited at 19:00)</span>
           {eveningOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-2">
