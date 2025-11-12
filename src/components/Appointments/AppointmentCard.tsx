@@ -162,19 +162,19 @@ export const AppointmentCard = ({
       <Dialog>
         <DialogTrigger asChild>
           <Card
-            className={`smooth-hover hover:shadow-elevated border-l-4 ${
+            className={`smooth-hover hover:shadow-lg border-l-4 ${
               appointment.status === "approved"
                 ? "border-l-success"
                 : appointment.status === "denied"
                   ? "border-l-destructive"
                   : "border-l-primary"
-            } cursor-pointer animate-fade-in transition-all duration-300 ${isTranslucent ? "opacity-50" : ""}`}
+            } cursor-pointer animate-fade-in transition-all duration-150 ${isTranslucent ? "opacity-60" : ""}`}
           >
-            <CardHeader className="pb-3 px-3 sm:px-4">
-              <div className="space-y-2 sm:space-y-3">
-                <div className="flex items-center justify-between gap-2">
+            <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-5 pt-3 sm:pt-4">
+              <div className="space-y-2.5 sm:space-y-3">
+                <div className="flex items-start justify-between gap-2 sm:gap-3">
                   <h3
-                    className="font-bold text-foreground text-base sm:text-lg truncate cursor-pointer hover:text-primary smooth-transition max-w-[60%] sm:max-w-none"
+                    className="font-bold text-foreground text-sm sm:text-base leading-tight cursor-pointer hover:text-primary smooth-transition line-clamp-2 flex-1"
                     onClick={(e) => {
                       e.stopPropagation();
                       setPatientDialogOpen(true);
@@ -184,27 +184,27 @@ export const AppointmentCard = ({
                   </h3>
                   <Badge
                     variant="outline"
-                    className={`${getStatusColor(appointment.status)} text-[10px] sm:text-xs smooth-transition px-1.5 sm:px-2 py-0.5 font-semibold whitespace-nowrap`}
+                    className={`${getStatusColor(appointment.status)} text-[9px] sm:text-xs smooth-transition px-1.5 sm:px-2.5 py-0.5 sm:py-1 font-semibold whitespace-nowrap shrink-0 rounded-md`}
                   >
                     {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                   </Badge>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
-                  <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground flex-wrap">
-                    <div className="flex items-center gap-1 sm:gap-1.5">
-                      <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
-                      <span className="font-medium whitespace-nowrap">
-                        {format(new Date(appointment.appointment_date), "MMM dd, yyyy")}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs text-muted-foreground flex-wrap">
+                    <div className="flex items-center gap-1 sm:gap-1.5 bg-muted/40 px-2 py-1 rounded-md">
+                      <Calendar className="w-3 h-3 flex-shrink-0" />
+                      <span className="font-medium whitespace-nowrap text-[11px] sm:text-xs">
+                        {format(new Date(appointment.appointment_date), "MMM dd")}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1 sm:gap-1.5">
-                      <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
-                      <span className="font-medium whitespace-nowrap">{appointment.appointment_time}</span>
+                    <div className="flex items-center gap-1 sm:gap-1.5 bg-muted/40 px-2 py-1 rounded-md">
+                      <Clock className="w-3 h-3 flex-shrink-0" />
+                      <span className="font-medium whitespace-nowrap text-[11px] sm:text-xs">{appointment.appointment_time}</span>
                     </div>
                   </div>
 
-                  <div className="text-xs sm:text-sm font-semibold text-foreground bg-secondary/50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md whitespace-nowrap">
+                  <div className="text-[10px] sm:text-xs font-semibold text-foreground bg-primary/10 border border-primary/20 px-2 sm:px-2.5 py-1 rounded-md whitespace-nowrap">
                     Age: {appointment.patients?.age}
                   </div>
                 </div>
@@ -337,36 +337,36 @@ export const AppointmentCard = ({
           </Card>
         </DialogTrigger>
 
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto animate-scale-in">
-          <DialogHeader className="pb-4">
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <User className="w-6 h-6 text-primary" />
-              <span>Appointment Details</span>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto animate-scale-in">
+          <DialogHeader className="pb-3 sm:pb-4">
+            <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <User className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+              <span className="truncate">Appointment Details</span>
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-6">
+          <div className="space-y-5 sm:space-y-6">
             {/* Patient Information */}
             <div className="space-y-3">
-              <h3 className="text-base font-semibold text-foreground border-b pb-2">Patient Information</h3>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <span className="font-medium text-foreground min-w-[120px]">Name</span>
-                  <span className="text-foreground">{appointment.patients?.name}</span>
+              <h3 className="text-sm sm:text-base font-semibold text-foreground border-b pb-2">Patient Information</h3>
+              <div className="space-y-2.5 sm:space-y-3">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <span className="font-medium text-foreground min-w-[90px] sm:min-w-[120px] text-xs sm:text-sm shrink-0">Name</span>
+                  <span className="text-foreground text-xs sm:text-sm break-words">{appointment.patients?.name}</span>
                 </div>
-                <div className="flex items-start gap-3">
-                  <span className="font-medium text-foreground min-w-[120px]">Age</span>
-                  <span className="text-foreground">{appointment.patients?.age} years</span>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <span className="font-medium text-foreground min-w-[90px] sm:min-w-[120px] text-xs sm:text-sm shrink-0">Age</span>
+                  <span className="text-foreground text-xs sm:text-sm">{appointment.patients?.age} years</span>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Phone className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span className="font-medium text-foreground min-w-[100px]">Contact</span>
-                  <span className="text-foreground">{appointment.patients?.contact_no}</span>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 text-primary flex-shrink-0" />
+                  <span className="font-medium text-foreground min-w-[80px] sm:min-w-[100px] text-xs sm:text-sm shrink-0">Contact</span>
+                  <span className="text-foreground text-xs sm:text-sm break-all">{appointment.patients?.contact_no}</span>
                 </div>
                 {appointment.patients?.medical_history && (
-                  <div className="flex items-start gap-3">
-                    <span className="font-medium text-foreground min-w-[120px]">Medical History</span>
-                    <p className="text-foreground flex-1 leading-relaxed">{appointment.patients.medical_history}</p>
+                  <div className="flex items-start gap-2 sm:gap-3 p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <span className="font-medium text-foreground min-w-[90px] sm:min-w-[120px] text-xs sm:text-sm shrink-0">Medical History</span>
+                    <p className="text-foreground flex-1 leading-relaxed text-xs sm:text-sm break-words">{appointment.patients.medical_history}</p>
                   </div>
                 )}
               </div>
@@ -374,36 +374,36 @@ export const AppointmentCard = ({
 
             {/* Appointment Information */}
             <div className="space-y-3">
-              <h3 className="text-base font-semibold text-foreground border-b pb-2">Appointment Information</h3>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Stethoscope className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span className="font-medium text-foreground min-w-[100px]">Doctor</span>
-                  <span className="text-foreground">{appointment.doctor_profile?.name}</span>
+              <h3 className="text-sm sm:text-base font-semibold text-foreground border-b pb-2">Appointment Information</h3>
+              <div className="space-y-2.5 sm:space-y-3">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <Stethoscope className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 text-primary flex-shrink-0" />
+                  <span className="font-medium text-foreground min-w-[80px] sm:min-w-[100px] text-xs sm:text-sm shrink-0">Doctor</span>
+                  <span className="text-foreground text-xs sm:text-sm break-words">{appointment.doctor_profile?.name}</span>
                 </div>
-                <div className="flex items-start gap-3">
-                  <User className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span className="font-medium text-foreground min-w-[100px]">Receptionist</span>
-                  <span className="text-foreground">{appointment.receptionist_profile?.name}</span>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 text-primary flex-shrink-0" />
+                  <span className="font-medium text-foreground min-w-[80px] sm:min-w-[100px] text-xs sm:text-sm shrink-0">Receptionist</span>
+                  <span className="text-foreground text-xs sm:text-sm break-words">{appointment.receptionist_profile?.name}</span>
                 </div>
                 {appointment.reason_for_visit && (
-                  <div className="flex items-start gap-3">
-                    <span className="font-medium text-foreground min-w-[120px]">Reason for Visit</span>
-                    <p className="text-foreground flex-1 leading-relaxed">{appointment.reason_for_visit}</p>
+                  <div className="flex items-start gap-2 sm:gap-3 p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <span className="font-medium text-foreground min-w-[90px] sm:min-w-[120px] text-xs sm:text-sm shrink-0">Reason for Visit</span>
+                    <p className="text-foreground flex-1 leading-relaxed text-xs sm:text-sm break-words">{appointment.reason_for_visit}</p>
                   </div>
                 )}
                 {appointment.symptoms && (
-                  <div className="flex items-start gap-3">
-                    <span className="font-medium text-foreground min-w-[120px]">Symptoms</span>
-                    <p className="text-foreground flex-1 leading-relaxed">{appointment.symptoms}</p>
+                  <div className="flex items-start gap-2 sm:gap-3 p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <span className="font-medium text-foreground min-w-[90px] sm:min-w-[120px] text-xs sm:text-sm shrink-0">Symptoms</span>
+                    <p className="text-foreground flex-1 leading-relaxed text-xs sm:text-sm break-words">{appointment.symptoms}</p>
                   </div>
                 )}
                 {appointment.denial_reason && (
-                  <div className="flex items-start gap-3 p-3 bg-destructive/5 rounded-md border border-destructive/20">
-                    <AlertCircle className="w-4 h-4 mt-0.5 text-destructive flex-shrink-0" />
-                    <div className="flex-1">
-                      <span className="font-medium text-destructive">Denial Reason</span>
-                      <p className="text-destructive mt-1 leading-relaxed">{appointment.denial_reason}</p>
+                  <div className="flex items-start gap-2 sm:gap-3 p-3 bg-destructive/5 rounded-lg border border-destructive/20">
+                    <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 text-destructive flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-destructive block mb-1 text-xs sm:text-sm">Denial Reason</span>
+                      <p className="text-destructive leading-relaxed text-xs sm:text-sm break-words">{appointment.denial_reason}</p>
                     </div>
                   </div>
                 )}
