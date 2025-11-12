@@ -444,19 +444,20 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
           </TabsContent>
 
           <TabsContent value="appointments" className="space-y-6">
-            <h3 className="text-base font-semibold text-foreground">Appointment History</h3>
+            <h3 className="text-lg font-semibold text-foreground border-b pb-3">Appointment History</h3>
             {appointments.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Calendar className="w-12 h-12 mx-auto mb-4 opacity-40" />
                 <p>No appointments found</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {appointments.map((appointment) => (
-                  <Card key={appointment.id} className="border-border/50">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-base font-semibold text-foreground">
+                  <Card key={appointment.id} className="border-border/50 shadow-sm">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-primary" />
                           {format(new Date(appointment.appointment_date), "MMM dd, yyyy")} at{" "}
                           {appointment.appointment_time}
                         </CardTitle>
@@ -464,46 +465,76 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                           variant="outline"
                           className={
                             appointment.status === "completed"
-                              ? "bg-success/10 text-success"
+                              ? "bg-success/10 text-success border-success/20"
                               : appointment.status === "approved"
-                                ? "bg-primary/10 text-primary"
+                                ? "bg-primary/10 text-primary border-primary/20"
                                 : appointment.status === "pending"
-                                  ? "bg-warning/10 text-warning"
-                                  : "bg-destructive/10 text-destructive"
+                                  ? "bg-warning/10 text-warning border-warning/20"
+                                  : "bg-destructive/10 text-destructive border-destructive/20"
                           }
                         >
                           {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        <span className="font-medium text-foreground min-w-[80px]">Doctor</span>
-                        <span className="text-foreground">{appointment.doctor_profile?.name}</span>
-                      </div>
-                      {appointment.reason_for_visit && (
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-start gap-3">
-                          <span className="font-medium text-foreground min-w-[80px]">Reason</span>
-                          <span className="text-foreground flex-1">{appointment.reason_for_visit}</span>
+                          <User className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                          <div className="flex-1">
+                            <span className="font-medium text-foreground block mb-1">Doctor</span>
+                            <span className="text-foreground">{appointment.doctor_profile?.name}</span>
+                          </div>
                         </div>
-                      )}
-                      {appointment.symptoms && (
-                        <div className="flex items-start gap-3">
-                          <span className="font-medium text-foreground min-w-[80px]">Symptoms</span>
-                          <span className="text-foreground flex-1">{appointment.symptoms}</span>
-                        </div>
-                      )}
-                      {appointment.payments && appointment.payments.length > 0 && (
-                        <div className="space-y-2">
-                          <span className="font-medium text-foreground">Payment Details</span>
-                          {appointment.payments.map((payment: any, index: number) => (
-                            <div key={index} className="pl-4 space-y-1 border-l-2 border-primary/20">
-                              <div className="text-foreground">
-                                Amount: ${payment.amount} ({payment.payment_method})
-                              </div>
-                              {payment.tests_done && <div className="text-foreground">Tests: {payment.tests_done}</div>}
+                        
+                        {appointment.reason_for_visit && (
+                          <div className="flex items-start gap-3">
+                            <FileText className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                            <div className="flex-1">
+                              <span className="font-medium text-foreground block mb-1">Reason for Visit</span>
+                              <span className="text-foreground">{appointment.reason_for_visit}</span>
                             </div>
-                          ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {appointment.symptoms && (
+                        <div className="flex items-start gap-3 pt-2 border-t border-border/50">
+                          <FileText className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                          <div className="flex-1">
+                            <span className="font-medium text-foreground block mb-1">Symptoms</span>
+                            <p className="text-foreground leading-relaxed">{appointment.symptoms}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {appointment.denial_reason && (
+                        <div className="flex items-start gap-3 p-3 bg-destructive/5 rounded-md border border-destructive/20">
+                          <div className="flex-1">
+                            <span className="font-medium text-destructive block mb-1">Denial Reason</span>
+                            <p className="text-destructive leading-relaxed">{appointment.denial_reason}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {appointment.payments && appointment.payments.length > 0 && (
+                        <div className="pt-2 border-t border-border/50">
+                          <span className="font-medium text-foreground block mb-3">Payment Details</span>
+                          <div className="space-y-3">
+                            {appointment.payments.map((payment: any, index: number) => (
+                              <div key={index} className="p-3 bg-muted/30 rounded-md border border-border/50">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-medium text-foreground">Amount: ₹{payment.amount}</span>
+                                  <Badge variant="outline" className="text-xs">{payment.payment_method}</Badge>
+                                </div>
+                                {payment.tests_done && (
+                                  <div className="text-sm text-foreground">
+                                    <span className="font-medium">Tests Done:</span> {payment.tests_done}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </CardContent>

@@ -71,26 +71,47 @@ export const EditAppointmentDialog = ({
     setIsLoading(true);
     
     try {
-      // Check if timing changed
-      const timingChanged = 
-        data.appointmentDate !== appointment.appointment_date ||
-        data.appointmentTime !== appointment.appointment_time;
+      const isPastAppointment = appointment.status === 'completed' || appointment.status === 'missed';
+      
+      // For past appointments, don't check timing changes or require doctor approval
+      if (isPastAppointment) {
+        await updateAppointment(
+          appointment.id,
+          {
+            patient_id: appointment.patient_id,
+            patient_name: data.patientName,
+            patient_age: data.patientAge,
+            contact_no: data.contactNo,
+            doctor_id: appointment.doctor_id, // Keep original doctor
+            appointment_date: appointment.appointment_date, // Keep original date
+            appointment_time: appointment.appointment_time, // Keep original time
+            reason_for_visit: data.reasonForVisit,
+            symptoms: data.symptoms,
+          },
+          false // No timing change for past appointments
+        );
+      } else {
+        // Check if timing changed for active appointments
+        const timingChanged = 
+          data.appointmentDate !== appointment.appointment_date ||
+          data.appointmentTime !== appointment.appointment_time;
 
-      await updateAppointment(
-        appointment.id,
-        {
-          patient_id: appointment.patient_id,
-          patient_name: data.patientName,
-          patient_age: data.patientAge,
-          contact_no: data.contactNo,
-          doctor_id: data.doctorId,
-          appointment_date: data.appointmentDate,
-          appointment_time: data.appointmentTime,
-          reason_for_visit: data.reasonForVisit,
-          symptoms: data.symptoms,
-        },
-        timingChanged
-      );
+        await updateAppointment(
+          appointment.id,
+          {
+            patient_id: appointment.patient_id,
+            patient_name: data.patientName,
+            patient_age: data.patientAge,
+            contact_no: data.contactNo,
+            doctor_id: data.doctorId,
+            appointment_date: data.appointmentDate,
+            appointment_time: data.appointmentTime,
+            reason_for_visit: data.reasonForVisit,
+            symptoms: data.symptoms,
+          },
+          timingChanged
+        );
+      }
 
       onOpenChange(false);
       onSuccess?.();
@@ -103,6 +124,8 @@ export const EditAppointmentDialog = ({
 
   if (!appointment) return null;
 
+  const isPastAppointment = appointment.status === 'completed' || appointment.status === 'missed';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -112,7 +135,10 @@ export const EditAppointmentDialog = ({
             <span>Edit Appointment</span>
           </DialogTitle>
           <DialogDescription>
-            Update appointment details for {appointment.patients?.name}
+            {isPastAppointment 
+              ? `Update recorded details for ${appointment.patients?.name} (timing cannot be changed)` 
+              : `Update appointment details for ${appointment.patients?.name}`
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -169,69 +195,82 @@ export const EditAppointmentDialog = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {!isPastAppointment && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Doctor</Label>
+                <Select onValueChange={(value) => form.setValue('doctorId', value)} defaultValue={appointment.doctor_id}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select doctor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {doctors.map((doctor) => (
+                      <SelectItem key={doctor.user_id} value={doctor.user_id}>
+                        {doctor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.doctorId && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.doctorId.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="appointmentDate">Date</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="appointmentDate"
+                    type="date"
+                    className="pl-10"
+                    min={new Date().toISOString().split('T')[0]}
+                    autoComplete="off"
+                    {...form.register('appointmentDate')}
+                  />
+                </div>
+                {form.formState.errors.appointmentDate && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.appointmentDate.message}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!isPastAppointment && (
             <div className="space-y-2">
-              <Label>Doctor</Label>
-              <Select onValueChange={(value) => form.setValue('doctorId', value)} defaultValue={appointment.doctor_id}>
+              <Label>Time Slot</Label>
+              <Select onValueChange={(value) => form.setValue('appointmentTime', value)} defaultValue={appointment.appointment_time}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select doctor" />
+                  <SelectValue placeholder="Select time" />
                 </SelectTrigger>
                 <SelectContent>
-                  {doctors.map((doctor) => (
-                    <SelectItem key={doctor.user_id} value={doctor.user_id}>
-                      {doctor.name}
+                  {timeSlots.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {time}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {form.formState.errors.doctorId && (
+              {form.formState.errors.appointmentTime && (
                 <p className="text-sm text-destructive">
-                  {form.formState.errors.doctorId.message}
+                  {form.formState.errors.appointmentTime.message}
                 </p>
               )}
             </div>
+          )}
 
-            <div className="space-y-2">
-              <Label htmlFor="appointmentDate">Date</Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="appointmentDate"
-                  type="date"
-                  className="pl-10"
-                  min={new Date().toISOString().split('T')[0]}
-                  autoComplete="off"
-                  {...form.register('appointmentDate')}
-                />
-              </div>
-              {form.formState.errors.appointmentDate && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.appointmentDate.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Time Slot</Label>
-            <Select onValueChange={(value) => form.setValue('appointmentTime', value)} defaultValue={appointment.appointment_time}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select time" />
-              </SelectTrigger>
-              <SelectContent>
-                {timeSlots.map((time) => (
-                  <SelectItem key={time} value={time}>
-                    {time}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {form.formState.errors.appointmentTime && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.appointmentTime.message}
+          {isPastAppointment && (
+            <div className="p-4 bg-muted/30 rounded-md border border-border/50">
+              <p className="text-sm text-muted-foreground">
+                <strong>Note:</strong> This is a past appointment. You can only edit patient details, reason for visit, and symptoms. 
+                Timing and doctor cannot be changed.
               </p>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="reasonForVisit">Reason for Visit</Label>

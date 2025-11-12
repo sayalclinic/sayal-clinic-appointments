@@ -299,6 +299,35 @@ export const AppointmentCard = ({
                             </Button>
                           </div>
                         )}
+                        {/* Past appointments - Edit and Delete */}
+                        {(appointment.status === "completed" || appointment.status === "missed") && (
+                          <div className="flex gap-1 w-full">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="border border-border/50 text-muted-foreground hover:bg-muted/30 hover:text-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 h-7 sm:h-8 smooth-button flex-1 min-w-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit();
+                              }}
+                            >
+                              <Edit className="w-3 h-3 sm:mr-1" />
+                              <span className="hidden sm:inline">Edit</span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="border border-border/50 text-muted-foreground hover:bg-destructive/10 hover:text-destructive text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 h-7 sm:h-8 smooth-button flex-1 min-w-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete?.(appointment.id);
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3 sm:mr-1" />
+                              <span className="hidden sm:inline">Delete</span>
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
