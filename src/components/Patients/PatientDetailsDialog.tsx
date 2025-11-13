@@ -403,7 +403,7 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
         </Tabs>
 
         {/* Patient Actions at Bottom */}
-        <div className="flex items-center justify-end gap-2 pt-4 border-t">
+        <div className="flex items-center justify-center gap-2 pt-4 border-t">
           {isEditing ? (
             <>
               <Button
