@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Patient } from "@/hooks/useAppointments";
 import { format } from "date-fns";
+import { EditAppointmentDialog } from "@/components/Appointments/EditAppointmentDialog";
+import { PaymentDialog } from "@/components/Payments/PaymentDialog";
 
 interface PatientDetailsDialogProps {
   patient: Patient | null;
@@ -35,6 +37,7 @@ interface PatientVisit {
 // Using base Patient interface with only essential fields
 
 export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: PatientDetailsDialogProps) => {
+  const { toast } = useToast();
   const [patientDetails, setPatientDetails] = useState<Patient | null>(null);
   
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -168,6 +171,8 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
       toast({ title: "Error", description: "Failed to delete appointment", variant: "destructive" });
     }
   };
+
+  if (!patientDetails) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
