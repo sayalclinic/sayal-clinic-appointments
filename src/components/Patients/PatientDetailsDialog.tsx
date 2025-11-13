@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Phone, Heart, Calendar, FileText, Plus, Edit2, Save } from "lucide-react";
+import { User, Phone, Calendar, FileText, Edit2, Save, CreditCard, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Patient } from "@/hooks/useAppointments";
@@ -36,11 +36,13 @@ interface PatientVisit {
 
 export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: PatientDetailsDialogProps) => {
   const [patientDetails, setPatientDetails] = useState<Patient | null>(null);
-  const [visits, setVisits] = useState<PatientVisit[]>([]);
+  
   const [appointments, setAppointments] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
 
   useEffect(() => {
     if (patient && open) {
@@ -155,7 +157,17 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
     }
   };
 
-  if (!patientDetails) return null;
+  const handleDeleteAppointment = async (appointmentId: string) => {
+    try {
+      const { error } = await supabase.from("appointments").delete().eq("id", appointmentId);
+      if (error) throw error;
+      toast({ title: "Deleted", description: "Appointment deleted" });
+      fetchPatientAppointments();
+    } catch (error) {
+      console.error("Error deleting appointment:", error);
+      toast({ title: "Error", description: "Failed to delete appointment", variant: "destructive" });
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -200,9 +212,8 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
         </DialogHeader>
 
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="details">Patient Details</TabsTrigger>
-            <TabsTrigger value="history">Medical History</TabsTrigger>
             <TabsTrigger value="appointments">Appointments</TabsTrigger>
           </TabsList>
 
@@ -251,92 +262,18 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="blood_type" className="text-foreground font-medium">Blood Type</Label>
-                    <Input
-                      id="blood_type"
-                      value={patientDetails.blood_type || ""}
-                      onChange={(e) => setPatientDetails({ ...patientDetails, blood_type: e.target.value })}
-                      disabled={!isEditing}
-                      placeholder="e.g., A+"
-                      className="text-foreground"
-                    />
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Emergency Contact */}
-              <Card className="border-border/50">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-base font-semibold text-foreground">Emergency Contact</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="emergency_name" className="text-foreground font-medium">Contact Name</Label>
-                    <Input
-                      id="emergency_name"
-                      value={patientDetails.emergency_contact_name || ""}
-                      onChange={(e) => setPatientDetails({ ...patientDetails, emergency_contact_name: e.target.value })}
-                      disabled={!isEditing}
-                      className="text-foreground"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="emergency_phone" className="text-foreground font-medium">Contact Phone</Label>
-                    <Input
-                      id="emergency_phone"
-                      value={patientDetails.emergency_contact_phone || ""}
-                      onChange={(e) =>
-                        setPatientDetails({ ...patientDetails, emergency_contact_phone: e.target.value })
-                      }
-                      disabled={!isEditing}
-                      className="text-foreground"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="insurance" className="text-foreground font-medium">Insurance Information</Label>
-                    <Textarea
-                      id="insurance"
-                      value={patientDetails.insurance_info || ""}
-                      onChange={(e) => setPatientDetails({ ...patientDetails, insurance_info: e.target.value })}
-                      disabled={!isEditing}
-                      className="text-foreground min-h-[80px]"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
-            {/* Medical Information */}
+            {/* Medical History (only field kept) */}
             <Card className="border-border/50">
               <CardHeader className="pb-4">
-                <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-red-500" />
-                  <span>Medical Information</span>
-                </CardTitle>
+                <CardTitle className="text-base font-semibold text-foreground">Medical History</CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="allergies" className="text-foreground font-medium">Allergies</Label>
-                  <Textarea
-                    id="allergies"
-                    value={patientDetails.allergies || ""}
-                    onChange={(e) => setPatientDetails({ ...patientDetails, allergies: e.target.value })}
-                    disabled={!isEditing}
-                    placeholder="List any known allergies..."
-                    className="text-foreground min-h-[80px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="medications" className="text-foreground font-medium">Current Medications</Label>
-                  <Textarea
-                    id="medications"
-                    value={patientDetails.current_medications || ""}
-                    onChange={(e) => setPatientDetails({ ...patientDetails, current_medications: e.target.value })}
-                    disabled={!isEditing}
-                    placeholder="List current medications..."
-                    className="text-foreground min-h-[80px]"
-                  />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="medical_history" className="text-foreground font-medium">Medical History</Label>
                   <Textarea
@@ -353,66 +290,6 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
             </Card>
           </TabsContent>
 
-          <TabsContent value="history" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold text-foreground">Visit History</h3>
-              <Button size="sm">
-                <Plus className="w-4 h-4 mr-1" />
-                Add Visit
-              </Button>
-            </div>
-            {visits.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <FileText className="w-12 h-12 mx-auto mb-4 opacity-40" />
-                <p>No visit history recorded</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {visits.map((visit) => (
-                  <Card key={visit.id} className="border-border/50">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-base font-semibold text-foreground">
-                          {format(new Date(visit.visit_date), "MMM dd, yyyy")}
-                        </CardTitle>
-                        {visit.follow_up_needed && (
-                          <Badge variant="outline" className="bg-warning/10 text-warning">
-                            Follow-up Required
-                          </Badge>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {visit.diagnosis && (
-                        <div className="space-y-1">
-                          <span className="font-medium text-foreground">Diagnosis</span>
-                          <p className="text-foreground leading-relaxed">{visit.diagnosis}</p>
-                        </div>
-                      )}
-                      {visit.treatment_plan && (
-                        <div className="space-y-1">
-                          <span className="font-medium text-foreground">Treatment</span>
-                          <p className="text-foreground leading-relaxed">{visit.treatment_plan}</p>
-                        </div>
-                      )}
-                      {visit.prescriptions && (
-                        <div className="space-y-1">
-                          <span className="font-medium text-foreground">Prescriptions</span>
-                          <p className="text-foreground leading-relaxed">{visit.prescriptions}</p>
-                        </div>
-                      )}
-                      {visit.visit_notes && (
-                        <div className="space-y-1">
-                          <span className="font-medium text-foreground">Notes</span>
-                          <p className="text-foreground leading-relaxed">{visit.visit_notes}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
 
           <TabsContent value="appointments" className="space-y-6">
             <h3 className="text-lg font-semibold text-foreground border-b pb-3">Appointment History</h3>
@@ -508,6 +385,41 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                           </div>
                         </div>
                       )}
+
+                      {(appointment.status === 'completed' || appointment.status === 'missed') && (
+                        <div className="flex justify-end gap-2 pt-4 border-t border-border/40">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="bg-muted/40 text-muted-foreground hover:bg-muted/60"
+                            onClick={() => {
+                              setSelectedAppointment(appointment);
+                              setEditDialogOpen(true);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="bg-muted/40 text-muted-foreground hover:bg-muted/60"
+                            onClick={() => {
+                              setSelectedAppointment(appointment);
+                              setPaymentDialogOpen(true);
+                            }}
+                          >
+                            Payment
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="bg-muted/40 text-muted-foreground hover:bg-muted/60"
+                            onClick={() => handleDeleteAppointment(appointment.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -515,6 +427,24 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
             )}
           </TabsContent>
         </Tabs>
+
+        {selectedAppointment && (
+          <EditAppointmentDialog
+            appointment={selectedAppointment}
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            onSuccess={fetchPatientAppointments}
+          />
+        )}
+        {selectedAppointment && (
+          <PaymentDialog
+            appointmentId={selectedAppointment.id}
+            patientName={patientDetails.name}
+            open={paymentDialogOpen}
+            onOpenChange={setPaymentDialogOpen}
+            onSuccess={fetchPatientAppointments}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
