@@ -178,41 +178,9 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-4">
-          <DialogTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <User className="w-6 h-6 text-primary" />
-              <span className="text-xl">{patientDetails.name}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {isEditing ? (
-                <>
-                  <Button
-                    size="sm"
-                    onClick={handleSavePatient}
-                    disabled={loading}
-                    className="bg-success hover:bg-success/90"
-                  >
-                    <Save className="w-4 h-4 mr-1" />
-                    Save
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
-                    Cancel
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
-                    <Edit2 className="w-4 h-4 mr-1" />
-                    Edit
-                  </Button>
-                  {onDelete && (
-                    <Button size="sm" variant="destructive" onClick={handleDeletePatient}>
-                      Delete Patient
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
+          <DialogTitle className="flex items-center gap-2">
+            <User className="w-6 h-6 text-primary" />
+            <span className="text-xl">{patientDetails.name}</span>
           </DialogTitle>
         </DialogHeader>
 
@@ -391,40 +359,41 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                         </div>
                       )}
 
-                      {(appointment.status === 'completed' || appointment.status === 'missed') && (
-                        <div className="flex justify-end gap-2 pt-4 border-t border-border/40">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="bg-muted/40 text-muted-foreground hover:bg-muted/60"
-                            onClick={() => {
-                              setSelectedAppointment(appointment);
-                              setEditDialogOpen(true);
-                            }}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="bg-muted/40 text-muted-foreground hover:bg-muted/60"
-                            onClick={() => {
-                              setSelectedAppointment(appointment);
-                              setPaymentDialogOpen(true);
-                            }}
-                          >
-                            Payment
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="bg-muted/40 text-muted-foreground hover:bg-muted/60"
-                            onClick={() => handleDeleteAppointment(appointment.id)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      )}
+                      <div className="flex justify-end gap-2 pt-4 border-t border-border/40">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="bg-muted/40 text-muted-foreground hover:bg-muted/60"
+                          onClick={() => {
+                            setSelectedAppointment(appointment);
+                            setEditDialogOpen(true);
+                          }}
+                        >
+                          <Edit2 className="w-4 h-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="bg-muted/40 text-muted-foreground hover:bg-muted/60"
+                          onClick={() => {
+                            setSelectedAppointment(appointment);
+                            setPaymentDialogOpen(true);
+                          }}
+                        >
+                          <CreditCard className="w-4 h-4 mr-1" />
+                          Payment
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="bg-muted/40 text-muted-foreground hover:bg-muted/60"
+                          onClick={() => handleDeleteAppointment(appointment.id)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -432,6 +401,39 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Patient Actions at Bottom */}
+        <div className="flex items-center justify-end gap-2 pt-4 border-t">
+          {isEditing ? (
+            <>
+              <Button
+                size="sm"
+                onClick={handleSavePatient}
+                disabled={loading}
+                className="bg-success hover:bg-success/90"
+              >
+                <Save className="w-4 h-4 mr-1" />
+                Save Changes
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+                <Edit2 className="w-4 h-4 mr-1" />
+                Edit Patient
+              </Button>
+              {onDelete && (
+                <Button size="sm" variant="destructive" onClick={handleDeletePatient}>
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete Patient
+                </Button>
+              )}
+            </>
+          )}
+        </div>
 
         {selectedAppointment && (
           <EditAppointmentDialog
