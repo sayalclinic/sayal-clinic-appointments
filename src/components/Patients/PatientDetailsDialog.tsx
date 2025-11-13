@@ -32,17 +32,10 @@ interface PatientVisit {
   appointment_id?: string;
 }
 
-interface ExtendedPatient extends Patient {
-  allergies?: string;
-  current_medications?: string;
-  emergency_contact_name?: string;
-  emergency_contact_phone?: string;
-  insurance_info?: string;
-  blood_type?: string;
-}
+// Using base Patient interface with only essential fields
 
 export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: PatientDetailsDialogProps) => {
-  const [patientDetails, setPatientDetails] = useState<ExtendedPatient | null>(null);
+  const [patientDetails, setPatientDetails] = useState<Patient | null>(null);
   const [visits, setVisits] = useState<PatientVisit[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -52,7 +45,6 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
   useEffect(() => {
     if (patient && open) {
       fetchPatientDetails();
-      fetchPatientVisits();
       fetchPatientAppointments();
     }
   }, [patient, open]);
@@ -75,22 +67,7 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
     }
   };
 
-  const fetchPatientVisits = async () => {
-    if (!patient) return;
-
-    try {
-      const { data, error } = await supabase
-        .from("patient_visits")
-        .select("*")
-        .eq("patient_id", patient.id)
-        .order("visit_date", { ascending: false });
-
-      if (error) throw error;
-      setVisits(data || []);
-    } catch (error) {
-      console.error("Error fetching patient visits:", error);
-    }
-  };
+  // Removed visit fetching - not needed in simplified view
 
   const fetchPatientAppointments = async () => {
     if (!patient) return;
@@ -127,12 +104,6 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
           age: patientDetails.age,
           contact_no: patientDetails.contact_no,
           medical_history: patientDetails.medical_history,
-          allergies: patientDetails.allergies,
-          current_medications: patientDetails.current_medications,
-          emergency_contact_name: patientDetails.emergency_contact_name,
-          emergency_contact_phone: patientDetails.emergency_contact_phone,
-          insurance_info: patientDetails.insurance_info,
-          blood_type: patientDetails.blood_type,
         })
         .eq("id", patientDetails.id);
 
