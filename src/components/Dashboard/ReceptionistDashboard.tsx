@@ -208,7 +208,7 @@ export const ReceptionistDashboard = () => {
                   {activeAppointments.length > 0 && <div className="border-t border-border my-2 pt-2">
                       <p className="text-xs text-muted-foreground mb-2">Past Appointments</p>
                     </div>}
-                  {inactiveAppointments.map(appointment => <AppointmentCard key={appointment.id} appointment={appointment} onEdit={handleEdit} onComplete={handleComplete} onMissed={handleMissed} onDelete={handleDelete} onPaymentSuccess={handlePaymentSuccess} showActions={false} isTranslucent={true} />)}
+                  {inactiveAppointments.map(appointment => <AppointmentCard key={appointment.id} appointment={appointment} onEdit={handleEdit} onComplete={handleComplete} onMissed={handleMissed} onDelete={handleDelete} onPaymentSuccess={handlePaymentSuccess} showActions={true} isTranslucent={true} />)}
                 </>}
             </div>;
                   })() : <p className="text-muted-foreground text-center py-4">Click on a date to view appointments</p>}
