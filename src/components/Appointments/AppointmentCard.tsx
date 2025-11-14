@@ -200,7 +200,7 @@ export const AppointmentCard = ({
                     </div>
                     <div className="flex items-center gap-1 sm:gap-1.5 bg-muted/40 px-2 py-1 rounded-md">
                       <Clock className="w-3 h-3 flex-shrink-0" />
-                      <span className="font-medium whitespace-nowrap text-[11px] sm:text-xs">{appointment.appointment_time}</span>
+                      <span className="font-medium whitespace-nowrap text-[11px] sm:text-xs">{appointment.appointment_time.substring(0, 5)}</span>
                     </div>
                   </div>
 
