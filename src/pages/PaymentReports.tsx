@@ -50,7 +50,6 @@ export const PaymentReports = () => {
           appointment_fee,
           test_payments,
           payment_method,
-          tests_done,
           created_at,
           appointments (
             appointment_date,
@@ -75,6 +74,9 @@ export const PaymentReports = () => {
           const testPaymentsTotal = Array.isArray(testPaymentsArray)
             ? testPaymentsArray.reduce((sum: number, test: any) => sum + Number(test.amount ?? 0), 0)
             : 0;
+          const testsDone = Array.isArray(testPaymentsArray) && testPaymentsArray.length > 0
+            ? testPaymentsArray.map((t: any) => t.test_name).join(', ')
+            : 'None';
           return {
             payment_id: payment.id,
             patient_name: payment.appointments?.patients?.name || "Unknown",
@@ -83,7 +85,7 @@ export const PaymentReports = () => {
             appointment_time: payment.appointments?.appointment_time || "",
             amount: appointmentFee + testPaymentsTotal,
             payment_method: payment.payment_method,
-            tests_done: payment.tests_done || "None",
+            tests_done: testsDone,
             created_at: payment.created_at,
           };
         }) || [];
