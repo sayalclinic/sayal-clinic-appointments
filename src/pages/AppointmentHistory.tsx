@@ -76,7 +76,7 @@ export const AppointmentHistory = () => {
       // Fetch payment data separately
       const { data: paymentsData, error: paymentsError } = await supabase
         .from("payments")
-        .select("appointment_id, amount, payment_method, tests_done");
+        .select("appointment_id, appointment_fee, test_payments, payment_method");
 
       if (paymentsError) throw paymentsError;
 
@@ -84,6 +84,15 @@ export const AppointmentHistory = () => {
       const combinedData =
         appointmentsData?.map((apt) => {
           const payment = paymentsData?.find((p) => p.appointment_id === apt.id);
+          const appointmentFee = Number(payment?.appointment_fee || 0);
+          const testPaymentsArray = payment?.test_payments as any;
+          const testTotal = Array.isArray(testPaymentsArray)
+            ? testPaymentsArray.reduce((sum: number, test: any) => sum + Number(test.amount || 0), 0)
+            : 0;
+          const testsDone = Array.isArray(testPaymentsArray) && testPaymentsArray.length > 0
+            ? testPaymentsArray.map((t: any) => t.test_name).join(', ')
+            : '';
+          
           return {
             patient_name: apt.patients?.name || "Unknown",
             patient_age: apt.patients?.age || 0,
@@ -92,9 +101,9 @@ export const AppointmentHistory = () => {
             appointment_time: apt.appointment_time,
             doctor_name: apt.profiles?.name || "Unknown",
             status: apt.status,
-            amount_paid: payment?.amount || 0,
+            amount_paid: appointmentFee + testTotal,
             payment_method: payment?.payment_method || "",
-            tests_done: payment?.tests_done || "",
+            tests_done: testsDone,
             reason_for_visit: apt.reason_for_visit || "",
             symptoms: apt.symptoms || "",
           };

@@ -73,27 +73,18 @@ export const PaymentDialog = ({
     setIsLoading(true);
     
     try {
-      const testsString = selectedTests.length > 0 
-        ? selectedTests.join(', ') + (data.testsDone ? `, ${data.testsDone}` : '')
-        : data.testsDone || undefined;
-
       // Build test payments array
       const testPaymentsArray = selectedTests.map(testName => ({
         test_name: testName,
         amount: testAmounts[testName] || 0
       }));
 
-      // Calculate total amount
-      const totalAmount = data.appointmentFee + Object.values(testAmounts).reduce((sum, amt) => sum + amt, 0);
-
       // Create payment record
       await createPayment({
         appointment_id: appointmentId,
-        amount: totalAmount,
         appointment_fee: data.appointmentFee,
         test_payments: testPaymentsArray,
         payment_method: data.paymentMethod,
-        tests_done: testsString,
       });
 
       form.reset();

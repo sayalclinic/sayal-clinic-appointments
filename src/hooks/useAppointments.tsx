@@ -37,13 +37,20 @@ export interface Appointment {
 export interface Payment {
   id: string;
   appointment_id: string;
-  amount: number;
-  appointment_fee?: number;
-  test_payments?: Array<{ test_name: string; amount: number }>;
+  appointment_fee: number;
+  test_payments: Array<{ test_name: string; amount: number }>;
   payment_method: string;
-  tests_done?: string;
   created_at: string;
 }
+
+// Helper function to calculate total payment amount
+export const calculatePaymentTotal = (payment: Payment): number => {
+  const appointmentFee = Number(payment.appointment_fee || 0);
+  const testTotal = Array.isArray(payment.test_payments)
+    ? payment.test_payments.reduce((sum, test) => sum + Number(test.amount || 0), 0)
+    : 0;
+  return appointmentFee + testTotal;
+};
 
 export const useAppointments = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -421,11 +428,9 @@ export const useAppointments = () => {
   // Create payment
   const createPayment = async (paymentData: {
     appointment_id: string;
-    amount: number;
-    appointment_fee?: number;
-    test_payments?: Array<{ test_name: string; amount: number }>;
+    appointment_fee: number;
+    test_payments: Array<{ test_name: string; amount: number }>;
     payment_method: string;
-    tests_done?: string;
   }) => {
     try {
       // Create payment record

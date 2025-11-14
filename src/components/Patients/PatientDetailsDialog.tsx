@@ -84,7 +84,7 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
           `
           *,
          doctor_profile:profiles!doctor_id(name),
-         payments (amount, payment_method, tests_done)
+         payments (appointment_fee, test_payments, payment_method)
          `,
         )
         .eq("patient_id", patient.id)
@@ -345,13 +345,18 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                             {appointment.payments.map((payment: any, index: number) => (
                               <div key={index} className="p-3 bg-muted/30 rounded-md border border-border/50">
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="font-medium text-foreground">Amount: ₹{payment.amount}</span>
+                                  <span className="font-medium text-foreground">
+                                    Amount: ₹{Number(payment.appointment_fee || 0) + 
+                                      (Array.isArray(payment.test_payments) 
+                                        ? payment.test_payments.reduce((sum: number, test: any) => sum + Number(test.amount || 0), 0) 
+                                        : 0)}
+                                  </span>
                                   <Badge variant="outline" className="text-xs">{payment.payment_method}</Badge>
                                 </div>
-                                {payment.tests_done && (
-                                  <div className="text-sm text-foreground">
-                                    <span className="font-medium">Tests Done:</span> {payment.tests_done}
-                                  </div>
+                                {payment.test_payments && Array.isArray(payment.test_payments) && payment.test_payments.length > 0 && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    <span className="font-medium">Tests Done:</span> {payment.test_payments.map((t: any) => t.test_name).join(', ')}
+                                  </p>
                                 )}
                               </div>
                             ))}

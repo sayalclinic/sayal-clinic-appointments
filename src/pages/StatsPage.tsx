@@ -140,7 +140,6 @@ export const StatsPage = () => {
           appointment_fee,
           test_payments,
           payment_method,
-          tests_done,
           created_at,
           appointments (
             patient_name,
@@ -158,10 +157,13 @@ export const StatsPage = () => {
           const testPaymentsTotal = Array.isArray(testPaymentsArray)
             ? testPaymentsArray.reduce((sum: number, test: any) => sum + Number(test.amount ?? 0), 0)
             : 0;
+          const testsDone = Array.isArray(testPaymentsArray) && testPaymentsArray.length > 0
+            ? testPaymentsArray.map((t: any) => t.test_name).join(', ')
+            : 'N/A';
           return {
             patient_name: p.appointments?.patients?.name || p.appointments?.patient_name || "Unknown",
             date: new Date(p.created_at).toLocaleDateString(),
-            tests_done: p.tests_done || "N/A",
+            tests_done: testsDone,
             amount: appointmentFee + testPaymentsTotal,
             payment_method: p.payment_method,
           };

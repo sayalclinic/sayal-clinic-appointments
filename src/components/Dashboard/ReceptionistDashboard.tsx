@@ -47,8 +47,15 @@ export const ReceptionistDashboard = () => {
       // Fetch total earnings
       const {
         data: payments
-      } = await supabase.from('payments').select('amount');
-      const total = payments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
+      } = await supabase.from('payments').select('appointment_fee, test_payments');
+      const total = payments?.reduce((sum, payment) => {
+        const appointmentFee = Number(payment.appointment_fee || 0);
+        const testPaymentsArray = payment.test_payments as any;
+        const testTotal = Array.isArray(testPaymentsArray)
+          ? testPaymentsArray.reduce((testSum: number, test: any) => testSum + Number(test.amount || 0), 0)
+          : 0;
+        return sum + appointmentFee + testTotal;
+      }, 0) || 0;
       setTotalEarnings(total);
 
       // Calculate completed appointments

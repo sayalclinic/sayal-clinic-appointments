@@ -100,66 +100,6 @@ export type Database = {
           },
         ]
       }
-      patient_visits: {
-        Row: {
-          appointment_id: string | null
-          created_at: string
-          diagnosis: string | null
-          follow_up_date: string | null
-          follow_up_needed: boolean | null
-          id: string
-          patient_id: string
-          prescriptions: string | null
-          treatment_plan: string | null
-          updated_at: string
-          visit_date: string
-          visit_notes: string | null
-        }
-        Insert: {
-          appointment_id?: string | null
-          created_at?: string
-          diagnosis?: string | null
-          follow_up_date?: string | null
-          follow_up_needed?: boolean | null
-          id?: string
-          patient_id: string
-          prescriptions?: string | null
-          treatment_plan?: string | null
-          updated_at?: string
-          visit_date: string
-          visit_notes?: string | null
-        }
-        Update: {
-          appointment_id?: string | null
-          created_at?: string
-          diagnosis?: string | null
-          follow_up_date?: string | null
-          follow_up_needed?: boolean | null
-          id?: string
-          patient_id?: string
-          prescriptions?: string | null
-          treatment_plan?: string | null
-          updated_at?: string
-          visit_date?: string
-          visit_notes?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "patient_visits_appointment_id_fkey"
-            columns: ["appointment_id"]
-            isOneToOne: false
-            referencedRelation: "appointments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "patient_visits_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "patients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       patients: {
         Row: {
           age: number
@@ -216,34 +156,28 @@ export type Database = {
       }
       payments: {
         Row: {
-          amount: number
           appointment_fee: number | null
           appointment_id: string
           created_at: string
           id: string
           payment_method: string
           test_payments: Json | null
-          tests_done: string | null
         }
         Insert: {
-          amount: number
           appointment_fee?: number | null
           appointment_id: string
           created_at?: string
           id?: string
           payment_method: string
           test_payments?: Json | null
-          tests_done?: string | null
         }
         Update: {
-          amount?: number
           appointment_fee?: number | null
           appointment_id?: string
           created_at?: string
           id?: string
           payment_method?: string
           test_payments?: Json | null
-          tests_done?: string | null
         }
         Relationships: [
           {
