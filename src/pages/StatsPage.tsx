@@ -674,37 +674,35 @@ export const StatsPage = () => {
 
           {/* Monthly Earnings Bar Chart */}
           <Card>
-            <CardHeader className="p-4 sm:p-6">
+            <CardHeader className="p-4 sm:p-6 space-y-3">
+              <CardTitle className="text-xl sm:text-2xl font-bold">Monthly Earnings</CardTitle>
               {!openEarnings ? (
                 <Button 
                   variant="outline" 
                   onClick={() => setOpenEarnings(true)} 
-                  className="w-full text-sm font-medium"
+                  className="w-full"
                 >
-                  Monthly Earnings - Expand
+                  Expand
                 </Button>
               ) : (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <CardTitle className="text-base sm:text-lg">Monthly Earnings</CardTitle>
-                  <div className="flex items-center gap-2">
-                    {earningsView === "weekly" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setEarningsView("monthly");
-                          setSelectedEarningsMonth(null);
-                          setSelectedEarningsYear(null);
-                        }}
-                        className="text-xs"
-                      >
-                        ← Back to Monthly
-                      </Button>
-                    )}
-                    <Button size="sm" variant="outline" onClick={() => setOpenEarnings(false)} className="text-xs">
-                      Collapse
+                <div className="flex items-center gap-2">
+                  {earningsView === "weekly" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEarningsView("monthly");
+                        setSelectedEarningsMonth(null);
+                        setSelectedEarningsYear(null);
+                      }}
+                      className="text-xs"
+                    >
+                      ← Back to Monthly
                     </Button>
-                  </div>
+                  )}
+                  <Button variant="outline" onClick={() => setOpenEarnings(false)} className="w-full">
+                    Collapse
+                  </Button>
                 </div>
               )}
             </CardHeader>
@@ -751,23 +749,15 @@ export const StatsPage = () => {
 
           {/* Busiest Hours Line Graph */}
           <Card>
-            <CardHeader className="p-4 sm:p-6">
-              {!openBusiestHours ? (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setOpenBusiestHours(true)} 
-                  className="w-full text-sm font-medium"
-                >
-                  Busiest Hours - Expand
-                </Button>
-              ) : (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <CardTitle className="text-base sm:text-lg">Busiest Hours</CardTitle>
-                  <Button size="sm" variant="outline" onClick={() => setOpenBusiestHours(false)} className="text-xs">
-                    Collapse
-                  </Button>
-                </div>
-              )}
+            <CardHeader className="p-4 sm:p-6 space-y-3">
+              <CardTitle className="text-xl sm:text-2xl font-bold">Busiest Hours</CardTitle>
+              <Button 
+                variant="outline" 
+                onClick={() => setOpenBusiestHours(!openBusiestHours)} 
+                className="w-full"
+              >
+                {openBusiestHours ? 'Collapse' : 'Expand'}
+              </Button>
             </CardHeader>
             {openBusiestHours && (
               <CardContent className="p-3 sm:p-6 pt-0">
@@ -848,62 +838,56 @@ export const StatsPage = () => {
 
           {/* Age Distribution */}
           <Card>
-            <CardHeader className="p-4 sm:p-6">
-              {!openAgeDistribution ? (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setOpenAgeDistribution(true)} 
-                  className="w-full text-sm font-medium"
-                >
-                  Age Distribution - Expand
-                </Button>
-              ) : (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <CardTitle className="text-base sm:text-lg">Age Distribution</CardTitle>
-                  <div className="flex flex-wrap gap-2">
-                    <Select value={ageFilter} onValueChange={(v: "all" | "monthly") => setAgeFilter(v)}>
-                      <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Time</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {ageFilter === "monthly" && (
-                      <>
-                        <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                          <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {months.map((month, idx) => (
-                              <SelectItem key={idx} value={idx.toString()}>
-                                {month}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                          <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {years.map((year) => (
-                              <SelectItem key={year} value={year.toString()}>
-                                {year}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </>
-                    )}
-                    <Button size="sm" variant="outline" onClick={() => setOpenAgeDistribution(false)} className="text-xs">
-                      Collapse
-                    </Button>
-                  </div>
+            <CardHeader className="p-4 sm:p-6 space-y-3">
+              <CardTitle className="text-xl sm:text-2xl font-bold">Age Distribution</CardTitle>
+              {openAgeDistribution && (
+                <div className="flex flex-wrap gap-2">
+                  <Select value={ageFilter} onValueChange={(v: "all" | "monthly") => setAgeFilter(v)}>
+                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {ageFilter === "monthly" && (
+                    <>
+                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month, idx) => (
+                            <SelectItem key={idx} value={idx.toString()}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
                 </div>
               )}
+              <Button 
+                variant="outline" 
+                onClick={() => setOpenAgeDistribution(!openAgeDistribution)} 
+                className="w-full"
+              >
+                {openAgeDistribution ? 'Collapse' : 'Expand'}
+              </Button>
             </CardHeader>
             {openAgeDistribution && (
               <CardContent className="p-3 sm:p-6 pt-0">
@@ -923,62 +907,56 @@ export const StatsPage = () => {
 
           {/* Patient Type Distribution */}
           <Card>
-            <CardHeader className="p-4 sm:p-6">
-              {!openPatientType ? (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setOpenPatientType(true)} 
-                  className="w-full text-sm font-medium"
-                >
-                  Patient Type Distribution - Expand
-                </Button>
-              ) : (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <CardTitle className="text-base sm:text-lg">Patient Type Distribution</CardTitle>
-                  <div className="flex flex-wrap gap-2">
-                    <Select value={patientTypeFilter} onValueChange={(v: "all" | "monthly") => setPatientTypeFilter(v)}>
-                      <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Time</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {patientTypeFilter === "monthly" && (
-                      <>
-                        <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                          <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {months.map((month, idx) => (
-                              <SelectItem key={idx} value={idx.toString()}>
-                                {month}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                          <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {years.map((year) => (
-                              <SelectItem key={year} value={year.toString()}>
-                                {year}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </>
-                    )}
-                    <Button size="sm" variant="outline" onClick={() => setOpenPatientType(false)} className="text-xs">
-                      Collapse
-                    </Button>
-                  </div>
+            <CardHeader className="p-4 sm:p-6 space-y-3">
+              <CardTitle className="text-xl sm:text-2xl font-bold">Patient Type Distribution</CardTitle>
+              {openPatientType && (
+                <div className="flex flex-wrap gap-2">
+                  <Select value={patientTypeFilter} onValueChange={(v: "all" | "monthly") => setPatientTypeFilter(v)}>
+                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {patientTypeFilter === "monthly" && (
+                    <>
+                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month, idx) => (
+                            <SelectItem key={idx} value={idx.toString()}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
                 </div>
               )}
+              <Button 
+                variant="outline" 
+                onClick={() => setOpenPatientType(!openPatientType)} 
+                className="w-full"
+              >
+                {openPatientType ? 'Collapse' : 'Expand'}
+              </Button>
             </CardHeader>
             {openPatientType && (
               <CardContent className="p-3 sm:p-6 pt-0">
@@ -1025,65 +1003,59 @@ export const StatsPage = () => {
 
           {/* Income Distribution Chart */}
           <Card>
-            <CardHeader className="p-4 sm:p-6">
-              {!openIncome ? (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setOpenIncome(true)} 
-                  className="w-full text-sm font-medium"
-                >
-                  Income Distribution - Expand
-                </Button>
-              ) : (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <CardTitle className="text-base sm:text-lg">Income Distribution</CardTitle>
-                  <div className="flex flex-wrap gap-2">
-                    <Select
-                      value={incomeDistributionFilter}
-                      onValueChange={(v: "all" | "monthly") => setIncomeDistributionFilter(v)}
-                    >
-                      <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Time</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {incomeDistributionFilter === "monthly" && (
-                      <>
-                        <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                          <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {months.map((month, idx) => (
-                              <SelectItem key={idx} value={idx.toString()}>
-                                {month}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                          <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {years.map((year) => (
-                              <SelectItem key={year} value={year.toString()}>
-                                {year}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </>
-                    )}
-                    <Button size="sm" variant="outline" onClick={() => setOpenIncome(false)} className="text-xs">
-                      Collapse
-                    </Button>
-                  </div>
+            <CardHeader className="p-4 sm:p-6 space-y-3">
+              <CardTitle className="text-xl sm:text-2xl font-bold">Income Distribution</CardTitle>
+              {openIncome && (
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    value={incomeDistributionFilter}
+                    onValueChange={(v: "all" | "monthly") => setIncomeDistributionFilter(v)}
+                  >
+                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {incomeDistributionFilter === "monthly" && (
+                    <>
+                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month, idx) => (
+                            <SelectItem key={idx} value={idx.toString()}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
                 </div>
               )}
+              <Button 
+                variant="outline" 
+                onClick={() => setOpenIncome(!openIncome)} 
+                className="w-full"
+              >
+                {openIncome ? 'Collapse' : 'Expand'}
+              </Button>
             </CardHeader>
             {openIncome && (
               <CardContent className="p-3 sm:p-6 pt-0">
@@ -1130,65 +1102,59 @@ export const StatsPage = () => {
 
           {/* Payment Method Distribution */}
           <Card>
-            <CardHeader className="p-4 sm:p-6">
-              {!openPaymentMethod ? (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setOpenPaymentMethod(true)} 
-                  className="w-full text-sm font-medium"
-                >
-                  Payment Method Distribution - Expand
-                </Button>
-              ) : (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <CardTitle className="text-base sm:text-lg">Payment Method Distribution</CardTitle>
-                  <div className="flex flex-wrap gap-2">
-                    <Select
-                      value={paymentMethodFilter}
-                      onValueChange={(v: "all" | "monthly") => setPaymentMethodFilter(v)}
-                    >
-                      <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Time</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {paymentMethodFilter === "monthly" && (
-                      <>
-                        <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                          <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {months.map((month, idx) => (
-                              <SelectItem key={idx} value={idx.toString()}>
-                                {month}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                          <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {years.map((year) => (
-                              <SelectItem key={year} value={year.toString()}>
-                                {year}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </>
-                    )}
-                    <Button size="sm" variant="outline" onClick={() => setOpenPaymentMethod(false)} className="text-xs">
-                      Collapse
-                    </Button>
-                  </div>
+            <CardHeader className="p-4 sm:p-6 space-y-3">
+              <CardTitle className="text-xl sm:text-2xl font-bold">Payment Method Distribution</CardTitle>
+              {openPaymentMethod && (
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    value={paymentMethodFilter}
+                    onValueChange={(v: "all" | "monthly") => setPaymentMethodFilter(v)}
+                  >
+                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {paymentMethodFilter === "monthly" && (
+                    <>
+                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month, idx) => (
+                            <SelectItem key={idx} value={idx.toString()}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
                 </div>
               )}
+              <Button 
+                variant="outline" 
+                onClick={() => setOpenPaymentMethod(!openPaymentMethod)} 
+                className="w-full"
+              >
+                {openPaymentMethod ? 'Collapse' : 'Expand'}
+              </Button>
             </CardHeader>
             {openPaymentMethod && (
               <CardContent className="p-3 sm:p-6 pt-0">
