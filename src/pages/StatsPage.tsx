@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ExportClearUtility } from "@/components/DataExport/ExportClearUtility";
 interface AppointmentHistoryRow {
   patient_name: string;
   patient_age: number;
@@ -343,7 +344,7 @@ export const StatsPage = () => {
   useEffect(() => {
     const fetchAllPayments = async () => {
       if (isAuthenticated) {
-        const { data, error } = await supabase.from("payments").select("appointment_id, payment_method, amount, created_at, appointment_fee, test_payments");
+        const { data, error } = await supabase.from("payments").select("appointment_id, payment_method, created_at, appointment_fee, test_payments");
         if (error) {
           console.error("Error fetching all payments:", error);
         }
@@ -558,7 +559,56 @@ export const StatsPage = () => {
           <h2 className="text-xl sm:text-2xl font-bold text-primary">Analytics & Insights</h2>
 
           {/* Counters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* EARNINGS CARD - Most Prominent */}
+            <Card className="bg-gradient-to-br from-primary/20 via-primary/10 to-card border-primary/30 shadow-lg ring-2 ring-primary/20">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-bold text-primary">Total Earnings</CardTitle>
+                <Select
+                  value={counterFilter}
+                  onValueChange={(v: "all" | "monthly") => setCounterFilter(v)}
+                >
+                  <SelectTrigger className="w-24 h-8 text-xs bg-background/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-black text-primary">
+                  ₹{(() => {
+                    if (counterFilter === "all") {
+                      return allPayments.reduce((sum, payment) => {
+                        const appointmentFee = Number(payment.appointment_fee || 0);
+                        const testPaymentsArray = payment.test_payments as any;
+                        const testTotal = Array.isArray(testPaymentsArray)
+                          ? testPaymentsArray.reduce((testSum: number, test: any) => testSum + Number(test.amount || 0), 0)
+                          : 0;
+                        return sum + appointmentFee + testTotal;
+                      }, 0).toLocaleString();
+                    }
+                    const monthlyPayments = allPayments.filter((payment: any) => {
+                      const m = appointmentMonthMap.get(payment.appointment_id);
+                      if (!m) return false;
+                      return m.month === selectedMonth && m.year === selectedYear;
+                    });
+                    return monthlyPayments.reduce((sum, payment) => {
+                      const appointmentFee = Number(payment.appointment_fee || 0);
+                      const testPaymentsArray = payment.test_payments as any;
+                      const testTotal = Array.isArray(testPaymentsArray)
+                        ? testPaymentsArray.reduce((testSum: number, test: any) => testSum + Number(test.amount || 0), 0)
+                        : 0;
+                      return sum + appointmentFee + testTotal;
+                    }, 0).toLocaleString();
+                  })()}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Revenue generated</p>
+              </CardContent>
+            </Card>
+
             <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
@@ -702,26 +752,41 @@ export const StatsPage = () => {
             {openBusiestHours && (
               <CardContent className="p-3 sm:p-6 pt-0">
                 {(() => {
-                  // Count actual appointments per hour
-                  const hourCounts: Record<number, number> = {};
+                  // Count appointments per hour per day to calculate average
+                  const hourDayCounts: Record<number, Record<string, number>> = {};
                   
                   appointmentsData.forEach((apt: any) => {
                     const time = apt.appointment_time || "00:00";
+                    const date = apt.appointment_date;
                     const [hours] = time.split(':').map(Number);
-                    hourCounts[hours] = (hourCounts[hours] || 0) + 1;
+                    
+                    if (!hourDayCounts[hours]) {
+                      hourDayCounts[hours] = {};
+                    }
+                    if (!hourDayCounts[hours][date]) {
+                      hourDayCounts[hours][date] = 0;
+                    }
+                    hourDayCounts[hours][date]++;
                   });
                   
-                  // Create data array for chart
+                  // Create data array for chart with AVERAGE patients per hour
                   const chartData = [];
                   for (let hour = 10; hour <= 20; hour++) {
-                    const count = hourCounts[hour] || 0;
+                    const daysWithAppointments = hourDayCounts[hour] ? Object.keys(hourDayCounts[hour]).length : 0;
+                    const totalPatientsThisHour = hourDayCounts[hour] 
+                      ? Object.values(hourDayCounts[hour]).reduce((sum, count) => sum + count, 0)
+                      : 0;
+                    const averagePatients = daysWithAppointments > 0 
+                      ? (totalPatientsThisHour / daysWithAppointments)
+                      : 0;
+                    
                     const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
                     const period = hour >= 12 ? "PM" : "AM";
                     
                     chartData.push({
                       hour: `${displayHour}${period}`,
                       hourValue: hour,
-                      patients: count,
+                      patients: Math.round(averagePatients * 10) / 10, // Round to 1 decimal
                     });
                   }
                   
@@ -738,7 +803,7 @@ export const StatsPage = () => {
                         />
                         <YAxis tick={{ fontSize: 12 }} />
                         <Tooltip 
-                          formatter={(value: number) => [`${value} patients`, 'Count']}
+                          formatter={(value: number) => [`${value} avg patients`, 'Average']}
                           labelFormatter={(label) => `Hour: ${label}`}
                         />
                         <Legend wrapperStyle={{ fontSize: "12px" }} />
@@ -747,7 +812,7 @@ export const StatsPage = () => {
                           dataKey="patients" 
                           stroke="hsl(200, 70%, 65%)" 
                           strokeWidth={2}
-                          name="Patients" 
+                          name="Avg Patients" 
                           dot={{ fill: "hsl(200, 70%, 65%)", r: 4 }}
                           activeDot={{ r: 6 }}
                         />
@@ -1145,6 +1210,11 @@ export const StatsPage = () => {
               </CardTitle>
             </CardHeader>
           </Card>
+        </div>
+
+        {/* Export & Clear Data Utility */}
+        <div className="mt-8">
+          <ExportClearUtility />
         </div>
 
         {/* Appointment History Modal */}
