@@ -177,9 +177,9 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
         return;
       }
       
-      // Calculate actual time: 15-minute intervals for all appointments
+      // Calculate actual time: 5-minute intervals within each 15-minute slot (3 appointments max per slot)
       const baseTime = isUnlimited ? 19 * 60 : slotMinutes;
-      const offsetMinutes = slotCount * 15;
+      const offsetMinutes = slotCount * 5;  // 5-minute intervals: 0, 5, 10 minutes within the slot
       const actualMinutes = baseTime + offsetMinutes;
       const actualHours = Math.floor(actualMinutes / 60);
       const actualMins = actualMinutes % 60;
