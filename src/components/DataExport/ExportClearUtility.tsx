@@ -1,25 +1,17 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, Trash2, AlertTriangle } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export const ExportClearUtility = () => {
   const [isExporting, setIsExporting] = useState(false);
-  const [showClearDialog, setShowClearDialog] = useState(false);
-  const [isClearing, setIsClearing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const downloadCSV = (data: any[], filename: string) => {
     if (data.length === 0) {
@@ -139,124 +131,157 @@ export const ExportClearUtility = () => {
     }
   };
 
-  const handleClearAllData = async () => {
-    setIsClearing(true);
-    try {
-      // Delete in order: payments → appointments → patients
-      const { error: paymentsError } = await supabase
-        .from('payments')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+  const parseCSV = (text: string): any[] => {
+    const lines = text.split('\n').filter(line => line.trim());
+    if (lines.length < 2) return [];
 
-      if (paymentsError) throw paymentsError;
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+    const data = [];
 
-      const { error: appointmentsError } = await supabase
-        .from('appointments')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-
-      if (appointmentsError) throw appointmentsError;
-
-      const { error: patientsError } = await supabase
-        .from('patients')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-
-      if (patientsError) throw patientsError;
-
-      toast({
-        title: 'Data Cleared',
-        description: 'All appointments, patients, and payments have been deleted',
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.replace(/"/g, '').trim());
+      const obj: any = {};
+      headers.forEach((header, index) => {
+        obj[header] = values[index] || null;
       });
+      data.push(obj);
+    }
+    return data;
+  };
 
-      // Refresh the page
+  const handleImportCSV = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const fileName = file.name.toLowerCase();
+
+      if (fileName.includes('patient')) {
+        const patients = parseCSV(text);
+        for (const patient of patients) {
+          const { error } = await supabase.from('patients').insert({
+            name: patient.name,
+            age: parseInt(patient.age) || 0,
+            contact_no: patient.contact_no,
+            medical_history: patient.medical_history,
+            allergies: patient.allergies,
+            blood_type: patient.blood_type,
+            gender: patient.gender,
+            location: patient.location,
+          });
+          if (error) throw error;
+        }
+        toast({ title: 'Success', description: `Imported ${patients.length} patients` });
+      } else if (fileName.includes('appointment')) {
+        const appointments = parseCSV(text);
+        for (const apt of appointments) {
+          const { error } = await supabase.from('appointments').insert({
+            patient_id: apt.patient_id,
+            doctor_id: apt.doctor_id,
+            receptionist_id: apt.receptionist_id,
+            appointment_date: apt.appointment_date,
+            appointment_time: apt.appointment_time,
+            status: apt.status || 'pending',
+            reason_for_visit: apt.reason_for_visit,
+            symptoms: apt.symptoms,
+          });
+          if (error) throw error;
+        }
+        toast({ title: 'Success', description: `Imported ${appointments.length} appointments` });
+      } else if (fileName.includes('payment')) {
+        const payments = parseCSV(text);
+        for (const payment of payments) {
+          const testPayments = payment.test_payments ? JSON.parse(payment.test_payments) : [];
+          const { error } = await supabase.from('payments').insert({
+            appointment_id: payment.appointment_id,
+            appointment_fee: parseFloat(payment.appointment_fee) || 0,
+            test_payments: testPayments,
+            payment_method: payment.payment_method,
+          });
+          if (error) throw error;
+        }
+        toast({ title: 'Success', description: `Imported ${payments.length} payments` });
+      } else {
+        toast({ 
+          title: 'Invalid File', 
+          description: 'Please upload a patients, appointments, or payments CSV file',
+          variant: 'destructive' 
+        });
+      }
+
+      // Refresh the page after import
       setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
-      console.error('Clear data error:', error);
+      console.error('Import error:', error);
       toast({
-        title: 'Clear Failed',
-        description: 'Failed to clear data',
+        title: 'Import Failed',
+        description: 'Failed to import data. Check CSV format.',
         variant: 'destructive',
       });
     } finally {
-      setIsClearing(false);
-      setShowClearDialog(false);
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   return (
-    <>
-      <Card className="border-2 border-primary/20 bg-gradient-to-br from-card via-background to-primary/5">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="w-5 h-5" />
-            Export & Clear Data
-          </CardTitle>
-          <CardDescription>
-            Export all data to CSV files before starting fresh
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+    <Card className="border-2 border-primary/20 bg-gradient-to-br from-card via-background to-primary/5">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Download className="w-5 h-5" />
+          Data Management
+        </CardTitle>
+        <CardDescription>
+          Export your data to CSV files or import data from CSV
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
           <Button
             onClick={handleExportAll}
             disabled={isExporting}
             className="w-full"
-            variant="outline"
+            size="lg"
           >
             <Download className="w-4 h-4 mr-2" />
             {isExporting ? 'Exporting...' : 'Export All Data to CSV'}
           </Button>
-
-          <Button
-            onClick={() => setShowClearDialog(true)}
-            disabled={isClearing}
-            className="w-full"
-            variant="destructive"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Clear All Data
-          </Button>
-
-          <p className="text-xs text-muted-foreground text-center">
-            ⚠️ Export data first! Clearing is permanent and cannot be undone.
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Downloads 3 files: patients, appointments, and payments
           </p>
-        </CardContent>
-      </Card>
+        </div>
 
-      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-5 h-5" />
-              Clear All Data?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p className="font-semibold">This will permanently delete:</p>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>All patients</li>
-                <li>All appointments</li>
-                <li>All payment records</li>
-              </ul>
-              <p className="text-destructive font-semibold mt-3">
-                This action CANNOT be undone!
-              </p>
-              <p className="text-xs mt-2">
-                Make sure you've exported the data first.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isClearing}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleClearAllData}
-              disabled={isClearing}
-              className="bg-destructive hover:bg-destructive/90"
+        <div className="space-y-2">
+          <Label htmlFor="csv-upload" className="text-sm font-medium">
+            Import Data from CSV
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              ref={fileInputRef}
+              id="csv-upload"
+              type="file"
+              accept=".csv"
+              onChange={handleImportCSV}
+              disabled={isImporting}
+              className="cursor-pointer"
+            />
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isImporting}
+              variant="outline"
+              className="shrink-0"
             >
-              {isClearing ? 'Clearing...' : 'Yes, Clear All Data'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+              <Upload className="w-4 h-4 mr-2" />
+              {isImporting ? 'Importing...' : 'Upload'}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            File name should contain: "patient", "appointment", or "payment"
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
