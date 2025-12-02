@@ -359,27 +359,24 @@ export const StatsPage = () => {
     if (paymentMethodFilter === "all") return true;
     return monthlyAppointmentIdSet.has(payment.appointment_id);
   });
-  const paymentMethodData = filteredPayments.reduce(
+
+  // Consultation payment method data (appointment_fee only)
+  const consultationPaymentMethodData = filteredPayments.reduce(
     (acc, payment) => {
-      const method = payment.payment_method;
-      const existing = acc.find((item) => item.name === method);
-      
+      const method = capitalizeLabel(payment.payment_method);
       const appointmentFee = parseFloat(String(payment.appointment_fee ?? 0).replace(/,/g, ""));
-      const testPaymentsArray = payment.test_payments as any;
-      const testPaymentsTotal = Array.isArray(testPaymentsArray)
-        ? testPaymentsArray.reduce((sum: number, test: any) => 
-            sum + parseFloat(String(test.amount ?? 0).replace(/,/g, "")), 0)
-        : 0;
-      const amt = appointmentFee + testPaymentsTotal;
       
-      if (existing) {
-        existing.value += amt;
-      } else {
-        acc.push({
-          name: method,
-          value: amt,
-          color: method === "cash" ? "hsl(200, 70%, 70%)" : "hsl(200, 70%, 55%)",
-        });
+      if (appointmentFee > 0) {
+        const existing = acc.find((item) => item.name === method);
+        if (existing) {
+          existing.value += appointmentFee;
+        } else {
+          acc.push({
+            name: method,
+            value: appointmentFee,
+            color: method === "Cash" ? "hsl(200, 70%, 70%)" : method === "Upi" ? "hsl(200, 70%, 55%)" : "hsl(200, 70%, 60%)",
+          });
+        }
       }
       return acc;
     },
@@ -390,13 +387,71 @@ export const StatsPage = () => {
     }[],
   );
 
-  const totalPayments = paymentMethodData.reduce((sum, item) => sum + item.value, 0);
+  // Labs/Tests payment method data (test_payments only)
+  const labsPaymentMethodData = filteredPayments.reduce(
+    (acc, payment) => {
+      const method = capitalizeLabel(payment.payment_method);
+      const testPaymentsArray = payment.test_payments as any;
+      const testPaymentsTotal = Array.isArray(testPaymentsArray)
+        ? testPaymentsArray.reduce((sum: number, test: any) => 
+            sum + parseFloat(String(test.amount ?? 0).replace(/,/g, "")), 0)
+        : 0;
+      
+      if (testPaymentsTotal > 0) {
+        const existing = acc.find((item) => item.name === method);
+        if (existing) {
+          existing.value += testPaymentsTotal;
+        } else {
+          acc.push({
+            name: method,
+            value: testPaymentsTotal,
+            color: method === "Cash" ? "hsl(200, 70%, 70%)" : method === "Upi" ? "hsl(200, 70%, 55%)" : "hsl(200, 70%, 60%)",
+          });
+        }
+      }
+      return acc;
+    },
+    [] as {
+      name: string;
+      value: number;
+      color: string;
+    }[],
+  );
+
+  const totalConsultationPayments = consultationPaymentMethodData.reduce((sum, item) => sum + item.value, 0);
+  const totalLabsPayments = labsPaymentMethodData.reduce((sum, item) => sum + item.value, 0);
 
   // Income distribution data (appointments vs tests)
   const filteredIncomePayments = allPayments.filter((payment) => {
     if (incomeDistributionFilter === "all") return true;
     return monthlyAppointmentIdSet.has(payment.appointment_id);
   });
+
+  // Helper function to capitalize labels
+  const capitalizeLabel = (label: string): string => {
+    if (!label) return label;
+    return label
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  // Rename test names for display
+  const renameTestName = (testName: string): string => {
+    const nameMap: Record<string, string> = {
+      'Blood Test': 'Labs',
+      'blood test': 'Labs',
+      'Sputum Test': 'Dressings',
+      'sputum test': 'Dressings',
+      'Urine Test': 'Injections',
+      'urine test': 'Injections',
+      'Body Fluids': 'Nebulization',
+      'body fluids': 'Nebulization',
+      'Body Fluid': 'Nebulization',
+      'body fluid': 'Nebulization',
+    };
+    return nameMap[testName] || testName;
+  };
 
   const incomeDistributionData = (() => {
     const distribution: { name: string; value: number; color: string }[] = [];
@@ -417,18 +472,19 @@ export const StatsPage = () => {
         }
       }
       
-      // Add individual test payments
+      // Add individual test payments with renamed test names
       const testPaymentsArray = payment.test_payments as any;
       if (testPaymentsArray && Array.isArray(testPaymentsArray)) {
         testPaymentsArray.forEach((test: any) => {
           const testAmount = parseFloat(String(test.amount ?? 0).replace(/,/g, ""));
           if (testAmount > 0) {
-            const existing = distribution.find(item => item.name === test.test_name);
+            const renamedTestName = renameTestName(test.test_name);
+            const existing = distribution.find(item => item.name === renamedTestName);
             if (existing) {
               existing.value += testAmount;
             } else {
               distribution.push({
-                name: test.test_name,
+                name: renamedTestName,
                 value: testAmount,
                 color: PASTEL_BLUE_SHADES[distribution.length % PASTEL_BLUE_SHADES.length]
               });
@@ -896,7 +952,13 @@ export const StatsPage = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
+                      <Tooltip 
+                        formatter={(value: number, name: string) => {
+                          const total = patientTypeData.reduce((s, i) => s + i.value, 0);
+                          const percentage = ((value / total) * 100).toFixed(1);
+                          return [`${value} (${percentage}%)`, capitalizeLabel(name)];
+                        }} 
+                      />
                     <Legend wrapperStyle={{ fontSize: "12px" }} />
                     <Bar dataKey="value" fill="hsl(200, 70%, 65%)" name="Visits" />
                   </BarChart>
@@ -1077,7 +1139,12 @@ export const StatsPage = () => {
                           <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: number) => `₹${value.toFixed(2)} (${((value / totalIncomeDistribution) * 100).toFixed(1)}%)`} />
+                      <Tooltip 
+                        formatter={(value: number) => {
+                          const percentage = ((value / totalIncomeDistribution) * 100).toFixed(1);
+                          return [`₹${value.toFixed(2)} (${percentage}%)`, 'Amount'];
+                        }} 
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
@@ -1100,10 +1167,10 @@ export const StatsPage = () => {
             )}
            </Card>
 
-          {/* Payment Method Distribution */}
+          {/* Payment Method Distribution - Consultation */}
           <Card>
             <CardHeader className="p-4 sm:p-6 space-y-3">
-              <CardTitle className="text-xl sm:text-2xl font-bold">Payment Method Distribution</CardTitle>
+              <CardTitle className="text-xl sm:text-2xl font-bold">Payment Method - Consultation</CardTitle>
               {openPaymentMethod && (
                 <div className="flex flex-wrap gap-2">
                   <Select
@@ -1158,12 +1225,12 @@ export const StatsPage = () => {
             </CardHeader>
             {openPaymentMethod && (
               <CardContent className="p-3 sm:p-6 pt-0">
-              {paymentMethodData.length > 0 ? (
+              {consultationPaymentMethodData.length > 0 ? (
                 <>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
-                        data={paymentMethodData}
+                        data={consultationPaymentMethodData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -1172,22 +1239,131 @@ export const StatsPage = () => {
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {paymentMethodData.map((entry, index) => (
+                        {consultationPaymentMethodData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: number) => `${((value / totalPayments) * 100).toFixed(1)}%`} />
+                      <Tooltip 
+                        formatter={(value: number) => {
+                          const percentage = ((value / totalConsultationPayments) * 100).toFixed(1);
+                          return [`₹${value.toFixed(2)} (${percentage}%)`, 'Amount'];
+                        }} 
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
-                    {paymentMethodData.map((item, idx) => (
+                    {consultationPaymentMethodData.map((item, idx) => (
                       <div key={idx} className="flex items-center gap-2">
                         <span
                           className="inline-block w-3 h-3 rounded-full"
                           style={{ backgroundColor: item.color || COLORS[idx % COLORS.length] }}
                         />
                         <span className="truncate">{item.name}</span>
-                        <span className="ml-auto font-medium">{((item.value / totalPayments) * 100).toFixed(1)}%</span>
+                        <span className="ml-auto font-medium">{((item.value / totalConsultationPayments) * 100).toFixed(1)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No data available</p>
+                )}
+              </CardContent>
+            )}
+           </Card>
+
+          {/* Payment Method Distribution - Labs & Tests */}
+          <Card>
+            <CardHeader className="p-4 sm:p-6 space-y-3">
+              <CardTitle className="text-xl sm:text-2xl font-bold">Payment Method - Labs & Tests</CardTitle>
+              {openPaymentMethod && (
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    value={paymentMethodFilter}
+                    onValueChange={(v: "all" | "monthly") => setPaymentMethodFilter(v)}
+                  >
+                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {paymentMethodFilter === "monthly" && (
+                    <>
+                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month, idx) => (
+                            <SelectItem key={idx} value={idx.toString()}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                </div>
+              )}
+              <Button 
+                variant="outline" 
+                onClick={() => setOpenPaymentMethod(!openPaymentMethod)} 
+                className="w-full"
+              >
+                {openPaymentMethod ? 'Collapse' : 'Expand'}
+              </Button>
+            </CardHeader>
+            {openPaymentMethod && (
+              <CardContent className="p-3 sm:p-6 pt-0">
+              {labsPaymentMethodData.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={labsPaymentMethodData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                        outerRadius={isMobile ? 70 : 90}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {labsPaymentMethodData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: number) => {
+                          const percentage = ((value / totalLabsPayments) * 100).toFixed(1);
+                          return [`₹${value.toFixed(2)} (${percentage}%)`, 'Amount'];
+                        }} 
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
+                    {labsPaymentMethodData.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span
+                          className="inline-block w-3 h-3 rounded-full"
+                          style={{ backgroundColor: item.color || COLORS[idx % COLORS.length] }}
+                        />
+                        <span className="truncate">{item.name}</span>
+                        <span className="ml-auto font-medium">{((item.value / totalLabsPayments) * 100).toFixed(1)}%</span>
                       </div>
                     ))}
                   </div>
