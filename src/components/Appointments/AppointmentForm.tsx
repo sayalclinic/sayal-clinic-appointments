@@ -154,7 +154,12 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       
       // For 19:00+, check all appointments starting from 19:00
       const checkStartTime = isUnlimited ? '19:00' : baseSlotTime;
-      const checkEndTime = isUnlimited ? '23:59' : `${String(slotHours).padStart(2, '0')}:${String(slotMins + 15).padStart(2, '0')}`;
+      
+      // Calculate end time properly to avoid invalid times like 10:60
+      const endMinutes = slotMinutes + 15;
+      const endHours = Math.floor(endMinutes / 60);
+      const endMins = endMinutes % 60;
+      const checkEndTime = isUnlimited ? '23:59' : `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
       
       const { data: existingAppointments, error: checkError } = await supabase
         .from('appointments')
