@@ -370,7 +370,7 @@ export const StatsPage = () => {
   useEffect(() => {
     const fetchAllPayments = async () => {
       if (isAuthenticated) {
-        const { data, error } = await supabase.from("payments").select("appointment_id, payment_method, created_at, appointment_fee, test_payments");
+        const { data, error } = await supabase.from("payments").select("appointment_id, payment_method, labs_payment_method, created_at, appointment_fee, test_payments");
         if (error) {
           console.error("Error fetching all payments:", error);
         }
@@ -386,13 +386,13 @@ export const StatsPage = () => {
     return monthlyAppointmentIdSet.has(payment.appointment_id);
   });
 
-  // Consultation payment method data (appointment_fee only)
+  // Consultation payment method data (appointment_fee only) - uses payment_method field
   const consultationPaymentMethodData = filteredPayments.reduce(
     (acc, payment) => {
-      const method = capitalizeLabel(payment.payment_method);
+      const method = capitalizeLabel(payment.payment_method || 'Unknown');
       const appointmentFee = parseFloat(String(payment.appointment_fee ?? 0).replace(/,/g, ""));
       
-      if (appointmentFee > 0) {
+      if (appointmentFee > 0 && method && method !== 'None' && method !== 'Unknown') {
         const existing = acc.find((item) => item.name === method);
         if (existing) {
           existing.value += appointmentFee;
@@ -413,17 +413,18 @@ export const StatsPage = () => {
     }[],
   );
 
-  // Labs/Tests payment method data (test_payments only)
+  // Labs/Tests payment method data (test_payments only) - uses labs_payment_method field
   const labsPaymentMethodData = filteredPayments.reduce(
     (acc, payment) => {
-      const method = capitalizeLabel(payment.payment_method);
+      // Use labs_payment_method if available, otherwise fall back to payment_method for legacy data
+      const method = capitalizeLabel(payment.labs_payment_method || payment.payment_method || 'Unknown');
       const testPaymentsArray = payment.test_payments as any;
       const testPaymentsTotal = Array.isArray(testPaymentsArray)
         ? testPaymentsArray.reduce((sum: number, test: any) => 
             sum + parseFloat(String(test.amount ?? 0).replace(/,/g, "")), 0)
         : 0;
       
-      if (testPaymentsTotal > 0) {
+      if (testPaymentsTotal > 0 && method && method !== 'None' && method !== 'Unknown') {
         const existing = acc.find((item) => item.name === method);
         if (existing) {
           existing.value += testPaymentsTotal;

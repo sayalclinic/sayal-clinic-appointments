@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { CreditCard, IndianRupee, TestTube2, Check } from 'lucide-react';
+import { CreditCard, IndianRupee, TestTube2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,8 @@ import { useAppointments } from '@/hooks/useAppointments';
 
 const paymentSchema = z.object({
   appointmentFee: z.number().min(0, 'Appointment fee must be 0 or greater'),
-  paymentMethod: z.string().min(1, 'Please select a payment method'),
+  paymentMethod: z.string().optional(),
+  labsPaymentMethod: z.string().optional(),
   testsDone: z.string().optional(),
   testPayments: z.record(z.number()).optional(),
 });
@@ -46,6 +47,7 @@ export const PaymentDialog = ({
     defaultValues: {
       appointmentFee: 0,
       paymentMethod: '',
+      labsPaymentMethod: '',
       testsDone: '',
       testPayments: {},
     },
@@ -69,7 +71,22 @@ export const PaymentDialog = ({
     'Injections',
   ];
 
+  const appointmentFee = form.watch('appointmentFee');
+  const hasAppointmentFee = appointmentFee > 0;
+  const hasLabTests = selectedTests.length > 0;
+  const totalLabAmount = selectedTests.reduce((sum, test) => sum + (testAmounts[test] || 0), 0);
+
   const onSubmit = async (data: PaymentFormData) => {
+    // Validate payment methods
+    if (hasAppointmentFee && !data.paymentMethod) {
+      form.setError('paymentMethod', { message: 'Please select consultation payment method' });
+      return;
+    }
+    if (hasLabTests && totalLabAmount > 0 && !data.labsPaymentMethod) {
+      form.setError('labsPaymentMethod', { message: 'Please select labs payment method' });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -84,7 +101,8 @@ export const PaymentDialog = ({
         appointment_id: appointmentId,
         appointment_fee: data.appointmentFee,
         test_payments: testPaymentsArray,
-        payment_method: data.paymentMethod,
+        payment_method: data.paymentMethod || 'none',
+        labs_payment_method: data.labsPaymentMethod || null,
       });
 
       form.reset();
@@ -101,7 +119,7 @@ export const PaymentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <CreditCard className="w-5 h-5 text-primary" />
@@ -113,55 +131,64 @@ export const PaymentDialog = ({
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="appointmentFee">Appointment Fee (₹)</Label>
-            <div className="relative">
-              <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="appointmentFee"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                className="pl-10"
-                {...form.register('appointmentFee', { valueAsNumber: true })}
-              />
+          {/* Consultation Fee Section */}
+          <div className="space-y-3 p-3 border rounded-lg bg-muted/30">
+            <Label className="font-semibold text-base">Consultation Fee</Label>
+            
+            <div className="space-y-2">
+              <Label htmlFor="appointmentFee" className="text-sm">Amount (₹)</Label>
+              <div className="relative">
+                <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="appointmentFee"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="pl-10"
+                  {...form.register('appointmentFee', { valueAsNumber: true })}
+                />
+              </div>
+              {form.formState.errors.appointmentFee && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.appointmentFee.message}
+                </p>
+              )}
             </div>
-            {form.formState.errors.appointmentFee && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.appointmentFee.message}
-              </p>
+
+            {hasAppointmentFee && (
+              <div className="space-y-2">
+                <Label className="text-sm">Consultation Payment Method</Label>
+                <Select onValueChange={(value) => form.setValue('paymentMethod', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.value} value={method.value}>
+                        {method.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.paymentMethod && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.paymentMethod.message}
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label>Payment Method</Label>
-            <Select onValueChange={(value) => form.setValue('paymentMethod', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select payment method" />
-              </SelectTrigger>
-              <SelectContent>
-                {paymentMethods.map((method) => (
-                  <SelectItem key={method.value} value={method.value}>
-                    {method.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {form.formState.errors.paymentMethod && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.paymentMethod.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            <Label className="flex items-center space-x-2">
+          {/* Lab Tests Section */}
+          <div className="space-y-3 p-3 border rounded-lg bg-muted/30">
+            <Label className="flex items-center space-x-2 font-semibold text-base">
               <TestTube2 className="w-4 h-4" />
-              <span>Lab Tests Performed</span>
+              <span>Lab Tests & Procedures</span>
             </Label>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
+            
+            <div className="space-y-3 max-h-48 overflow-y-auto">
               {labTestOptions.map((test) => (
-                <div key={test} className="space-y-2 p-3 border rounded-lg">
+                <div key={test} className="space-y-2 p-2 border rounded-lg bg-background">
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id={test}
@@ -183,29 +210,53 @@ export const PaymentDialog = ({
                   </div>
                   {selectedTests.includes(test) && (
                     <div className="ml-6">
-                      <Label htmlFor={`${test}-amount`} className="text-xs text-muted-foreground">
-                        Amount (₹)
-                      </Label>
                       <Input
                         id={`${test}-amount`}
                         type="number"
                         step="0.01"
-                        placeholder="0.00"
+                        placeholder="Amount (₹)"
                         value={testAmounts[test] || ''}
                         onChange={(e) => {
                           const value = parseFloat(e.target.value) || 0;
                           setTestAmounts({ ...testAmounts, [test]: value });
                         }}
-                        className="mt-1"
+                        className="h-8 text-sm"
                       />
                     </div>
                   )}
                 </div>
               ))}
             </div>
+
+            {hasLabTests && totalLabAmount > 0 && (
+              <div className="space-y-2 pt-2 border-t">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Labs Amount:</span>
+                  <span className="font-medium">₹{totalLabAmount.toFixed(2)}</span>
+                </div>
+                <Label className="text-sm">Labs Payment Method</Label>
+                <Select onValueChange={(value) => form.setValue('labsPaymentMethod', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.value} value={method.value}>
+                        {method.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.labsPaymentMethod && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.labsPaymentMethod.message}
+                  </p>
+                )}
+              </div>
+            )}
             
             <div className="space-y-2">
-              <Label htmlFor="testsDone">Additional Tests/Notes</Label>
+              <Label htmlFor="testsDone" className="text-sm">Additional Notes</Label>
               <Textarea
                 id="testsDone"
                 placeholder="Any additional tests or notes..."

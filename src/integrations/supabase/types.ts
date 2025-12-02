@@ -160,6 +160,7 @@ export type Database = {
           appointment_id: string
           created_at: string
           id: string
+          labs_payment_method: string | null
           payment_method: string
           test_payments: Json | null
         }
@@ -168,6 +169,7 @@ export type Database = {
           appointment_id: string
           created_at?: string
           id?: string
+          labs_payment_method?: string | null
           payment_method: string
           test_payments?: Json | null
         }
@@ -176,6 +178,7 @@ export type Database = {
           appointment_id?: string
           created_at?: string
           id?: string
+          labs_payment_method?: string | null
           payment_method?: string
           test_payments?: Json | null
         }
