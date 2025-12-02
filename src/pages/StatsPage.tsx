@@ -283,6 +283,32 @@ export const StatsPage = () => {
   const PASTEL_RED = "hsl(0, 70%, 75%)";
   const COLORS = PASTEL_BLUE_SHADES;
 
+  // Helper function to capitalize labels
+  const capitalizeLabel = (label: string): string => {
+    if (!label) return label;
+    return label
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  // Rename test names for display
+  const renameTestName = (testName: string): string => {
+    const nameMap: Record<string, string> = {
+      'Blood Test': 'Labs',
+      'blood test': 'Labs',
+      'Sputum Test': 'Dressings',
+      'sputum test': 'Dressings',
+      'Urine Test': 'Injections',
+      'urine test': 'Injections',
+      'Body Fluids': 'Nebulization',
+      'body fluids': 'Nebulization',
+      'Body Fluid': 'Nebulization',
+      'body fluid': 'Nebulization',
+    };
+    return nameMap[testName] || testName;
+  };
+
   // Patient type data (new vs repeat, paying vs non-paying)
   const [appointmentsData, setAppointmentsData] = useState<any[]>([]);
   useEffect(() => {
@@ -426,32 +452,6 @@ export const StatsPage = () => {
     if (incomeDistributionFilter === "all") return true;
     return monthlyAppointmentIdSet.has(payment.appointment_id);
   });
-
-  // Helper function to capitalize labels
-  const capitalizeLabel = (label: string): string => {
-    if (!label) return label;
-    return label
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  };
-
-  // Rename test names for display
-  const renameTestName = (testName: string): string => {
-    const nameMap: Record<string, string> = {
-      'Blood Test': 'Labs',
-      'blood test': 'Labs',
-      'Sputum Test': 'Dressings',
-      'sputum test': 'Dressings',
-      'Urine Test': 'Injections',
-      'urine test': 'Injections',
-      'Body Fluids': 'Nebulization',
-      'body fluids': 'Nebulization',
-      'Body Fluid': 'Nebulization',
-      'body fluid': 'Nebulization',
-    };
-    return nameMap[testName] || testName;
-  };
 
   const incomeDistributionData = (() => {
     const distribution: { name: string; value: number; color: string }[] = [];
