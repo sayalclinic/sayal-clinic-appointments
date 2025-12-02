@@ -431,6 +431,7 @@ export const useAppointments = () => {
     appointment_fee: number;
     test_payments: Array<{ test_name: string; amount: number }>;
     payment_method: string;
+    labs_payment_method?: string | null;
   }) => {
     try {
       // Create payment record
