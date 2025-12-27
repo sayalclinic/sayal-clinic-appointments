@@ -342,24 +342,43 @@ export const PatientDetailsDialog = ({ patient, open, onOpenChange, onDelete }: 
                         <div className="pt-2 border-t border-border/50">
                           <span className="font-medium text-foreground block mb-3">Payment Details</span>
                           <div className="space-y-3">
-                            {appointment.payments.map((payment: any, index: number) => (
-                              <div key={index} className="p-3 bg-muted/30 rounded-md border border-border/50">
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="font-medium text-foreground">
-                                    Amount: ₹{Number(payment.appointment_fee || 0) + 
-                                      (Array.isArray(payment.test_payments) 
-                                        ? payment.test_payments.reduce((sum: number, test: any) => sum + Number(test.amount || 0), 0) 
-                                        : 0)}
-                                  </span>
-                                  <Badge variant="outline" className="text-xs">{payment.payment_method}</Badge>
+                            {appointment.payments.map((payment: any, index: number) => {
+                              const consultationFee = Number(payment.appointment_fee || 0);
+                              const testPayments = Array.isArray(payment.test_payments) ? payment.test_payments : [];
+                              const testsTotal = testPayments.reduce((sum: number, test: any) => sum + Number(test.amount || 0), 0);
+                              const grandTotal = consultationFee + testsTotal;
+                              
+                              return (
+                                <div key={index} className="p-3 bg-muted/30 rounded-md border border-border/50 space-y-2">
+                                  {/* Consultation Fee */}
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-foreground">Consultation Fee</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm text-foreground">₹{consultationFee}</span>
+                                      <Badge variant="outline" className="text-xs">{payment.payment_method}</Badge>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Individual Test Payments */}
+                                  {testPayments.length > 0 && (
+                                    <div className="space-y-1.5 pt-1 border-t border-border/30">
+                                      {testPayments.map((test: any, testIndex: number) => (
+                                        <div key={testIndex} className="flex items-center justify-between text-sm">
+                                          <span className="text-muted-foreground">{test.test_name}</span>
+                                          <span className="text-foreground">₹{Number(test.amount || 0)}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Bold Total */}
+                                  <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                                    <span className="font-bold text-foreground">Total</span>
+                                    <span className="font-bold text-foreground text-base">₹{grandTotal}</span>
+                                  </div>
                                 </div>
-                                {payment.test_payments && Array.isArray(payment.test_payments) && payment.test_payments.length > 0 && (
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    <span className="font-medium">Tests Done:</span> {payment.test_payments.map((t: any) => t.test_name).join(', ')}
-                                  </p>
-                                )}
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}

@@ -160,26 +160,20 @@ export const AppointmentCard = ({
   return (
     <>
       <Dialog>
-        <DialogTrigger asChild>
-          <Card
-            className={`smooth-hover hover:shadow-lg border-l-4 ${
-              appointment.status === "approved"
-                ? "border-l-success"
-                : appointment.status === "denied"
-                  ? "border-l-destructive"
-                  : "border-l-primary"
-            } cursor-pointer animate-fade-in transition-all duration-150 ${isTranslucent ? "opacity-60" : ""}`}
-          >
+        <Card
+          className={`smooth-hover hover:shadow-lg border-l-4 ${
+            appointment.status === "approved"
+              ? "border-l-success"
+              : appointment.status === "denied"
+                ? "border-l-destructive"
+                : "border-l-primary"
+          } cursor-pointer animate-fade-in transition-all duration-150 ${isTranslucent ? "opacity-60" : ""}`}
+          onClick={() => setPatientDialogOpen(true)}
+        >
             <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-5 pt-3 sm:pt-4">
               <div className="space-y-2.5 sm:space-y-3">
                 <div className="flex items-start justify-between gap-2 sm:gap-3">
-                  <h3
-                    className="font-bold text-foreground text-sm sm:text-base leading-tight cursor-pointer hover:text-primary smooth-transition line-clamp-2 flex-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPatientDialogOpen(true);
-                    }}
-                  >
+                  <h3 className="font-bold text-foreground text-sm sm:text-base leading-tight line-clamp-2 flex-1">
                     {appointment.patients?.name}
                   </h3>
                   <Badge
@@ -335,7 +329,6 @@ export const AppointmentCard = ({
               </div>
             </CardHeader>
           </Card>
-        </DialogTrigger>
 
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto animate-scale-in">
           <DialogHeader className="pb-3 sm:pb-4">
