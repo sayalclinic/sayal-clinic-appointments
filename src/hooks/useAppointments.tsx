@@ -425,7 +425,7 @@ export const useAppointments = () => {
     }
   };
 
-  // Create payment
+  // Create or update payment (upsert behavior)
   const createPayment = async (paymentData: {
     appointment_id: string;
     appointment_fee: number;
@@ -434,14 +434,51 @@ export const useAppointments = () => {
     labs_payment_method?: string | null;
   }) => {
     try {
-      // Create payment record
-      const { data, error } = await supabase
+      // Check if payment already exists for this appointment
+      const { data: existingPayment } = await supabase
         .from('payments')
-        .insert(paymentData)
-        .select()
-        .single();
+        .select('id')
+        .eq('appointment_id', paymentData.appointment_id)
+        .maybeSingle();
 
-      if (error) throw error;
+      let data;
+      if (existingPayment) {
+        // Update existing payment
+        const { data: updatedData, error } = await supabase
+          .from('payments')
+          .update({
+            appointment_fee: paymentData.appointment_fee,
+            test_payments: paymentData.test_payments,
+            payment_method: paymentData.payment_method,
+            labs_payment_method: paymentData.labs_payment_method,
+          })
+          .eq('id', existingPayment.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        data = updatedData;
+
+        toast({
+          title: 'Success',
+          description: 'Payment updated successfully',
+        });
+      } else {
+        // Create new payment record
+        const { data: newData, error } = await supabase
+          .from('payments')
+          .insert(paymentData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        data = newData;
+
+        toast({
+          title: 'Success',
+          description: 'Payment recorded and appointment completed',
+        });
+      }
 
       // Update appointment status to completed
       const { error: updateError } = await supabase
@@ -450,11 +487,6 @@ export const useAppointments = () => {
         .eq('id', paymentData.appointment_id);
 
       if (updateError) throw updateError;
-
-      toast({
-        title: 'Success',
-        description: 'Payment recorded and appointment completed',
-      });
 
       await fetchPayments();
       await fetchAppointments();
