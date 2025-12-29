@@ -22,6 +22,7 @@ export type Database = {
           denial_reason: string | null
           doctor_id: string
           id: string
+          is_lab_only: boolean | null
           is_repeat: boolean | null
           patient_id: string
           patient_name: string | null
@@ -40,6 +41,7 @@ export type Database = {
           denial_reason?: string | null
           doctor_id: string
           id?: string
+          is_lab_only?: boolean | null
           is_repeat?: boolean | null
           patient_id: string
           patient_name?: string | null
@@ -58,6 +60,7 @@ export type Database = {
           denial_reason?: string | null
           doctor_id?: string
           id?: string
+          is_lab_only?: boolean | null
           is_repeat?: boolean | null
           patient_id?: string
           patient_name?: string | null

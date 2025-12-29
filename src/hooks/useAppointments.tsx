@@ -207,12 +207,13 @@ export const useAppointments = () => {
   const createAppointment = async (appointmentData: {
     patient_id: string;
     patient_name: string;
-    doctor_id: string;
+    doctor_id: string | null;
     appointment_date: string;
     appointment_time: string;
     reason_for_visit?: string;
     symptoms?: string;
     isWalkIn?: boolean;
+    isLabOnly?: boolean;
     is_repeat?: boolean;
     previous_appointment_id?: string | null;
     requires_payment?: boolean;
@@ -220,8 +221,8 @@ export const useAppointments = () => {
     try {
       if (!profile?.user_id) throw new Error('User not authenticated');
 
-      // Walk-in appointments are auto-approved
-      const appointmentStatus = appointmentData.isWalkIn ? 'approved' : 'pending';
+      // Lab-only and walk-in appointments are auto-approved
+      const appointmentStatus = (appointmentData.isLabOnly || appointmentData.isWalkIn) ? 'approved' : 'pending';
 
       const { data, error } = await supabase
         .from('appointments')
@@ -238,23 +239,27 @@ export const useAppointments = () => {
           is_repeat: appointmentData.is_repeat || false,
           previous_appointment_id: appointmentData.previous_appointment_id,
           requires_payment: appointmentData.requires_payment ?? true,
+          is_lab_only: appointmentData.isLabOnly || false,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      const successMessage = appointmentData.isWalkIn 
-        ? 'Walk-in appointment created and automatically approved'
-        : 'Appointment created successfully';
+      let successMessage = 'Appointment created successfully';
+      if (appointmentData.isLabOnly) {
+        successMessage = 'Lab-only visit created and automatically approved';
+      } else if (appointmentData.isWalkIn) {
+        successMessage = 'Walk-in appointment created and automatically approved';
+      }
 
       toast({
         title: 'Success',
         description: successMessage,
       });
 
-      // Only send push notification to doctor if it's NOT a walk-in
-      if (!appointmentData.isWalkIn) {
+      // Only send push notification to doctor if it's NOT a walk-in and NOT lab-only
+      if (!appointmentData.isWalkIn && !appointmentData.isLabOnly && appointmentData.doctor_id) {
         const { sendPushNotification } = await import('@/utils/notifications');
         const { data: patient } = await supabase
           .from('patients')

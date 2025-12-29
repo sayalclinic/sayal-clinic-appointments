@@ -50,22 +50,24 @@ export const StatsPage = () => {
   const [patientHistory, setPatientHistory] = useState<PatientHistoryRow[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryRow[]>([]);
   const [openModal, setOpenModal] = useState<"appointments" | "patients" | "payments" | null>(null);
-  const [ageFilter, setAgeFilter] = useState<"all" | "monthly">("all");
+  const [ageFilter, setAgeFilter] = useState<"all" | "monthly">("monthly");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [patientTypeFilter, setPatientTypeFilter] = useState<"all" | "monthly">("all");
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState<"all" | "monthly">("all");
-  const [incomeDistributionFilter, setIncomeDistributionFilter] = useState<"all" | "monthly">("all");
+  const [patientTypeFilter, setPatientTypeFilter] = useState<"all" | "monthly">("monthly");
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<"all" | "monthly">("monthly");
+  const [incomeDistributionFilter, setIncomeDistributionFilter] = useState<"all" | "monthly">("monthly");
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
   const [openEarnings, setOpenEarnings] = useState(false);
   const [openPatientType, setOpenPatientType] = useState(false);
+  const [openLabVsNormal, setOpenLabVsNormal] = useState(false);
   const [openPaymentMethod, setOpenPaymentMethod] = useState(false);
   const [openIncome, setOpenIncome] = useState(false);
   const [openBusiestHours, setOpenBusiestHours] = useState(false);
   const [openAgeDistribution, setOpenAgeDistribution] = useState(false);
-  const [counterFilter, setCounterFilter] = useState<"all" | "monthly">("all");
+  const [counterFilter, setCounterFilter] = useState<"all" | "monthly">("monthly");
+  const [labVsNormalFilter, setLabVsNormalFilter] = useState<"all" | "monthly">("monthly");
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 640);
     update();
@@ -316,7 +318,7 @@ export const StatsPage = () => {
       if (isAuthenticated) {
         const { data, error } = await supabase
           .from("appointments")
-          .select("id, patient_id, patient_name, appointment_date, appointment_time, is_repeat, requires_payment");
+          .select("id, patient_id, patient_name, appointment_date, appointment_time, is_repeat, requires_payment, is_lab_only");
         if (error) {
           console.error("Error fetching appointments data:", error);
         }
@@ -327,11 +329,37 @@ export const StatsPage = () => {
     };
     fetchAppointmentsData();
   }, [isAuthenticated]);
-  const filteredAppointments = appointmentsData.filter((apt) => {
+  
+  // Filter out lab-only appointments for patient counting
+  const normalAppointmentsData = appointmentsData.filter((a) => !a.is_lab_only);
+  const labOnlyAppointmentsData = appointmentsData.filter((a) => a.is_lab_only);
+  const filteredAppointments = normalAppointmentsData.filter((apt) => {
     if (patientTypeFilter === "all") return true;
     const aptDate = new Date(apt.appointment_date);
     return aptDate.getMonth() === selectedMonth && aptDate.getFullYear() === selectedYear;
   });
+  
+  // Lab vs Normal patient data for pie chart
+  const filteredLabVsNormalAppointments = (() => {
+    if (labVsNormalFilter === "all") return appointmentsData;
+    return appointmentsData.filter((apt) => {
+      const aptDate = new Date(apt.appointment_date);
+      return aptDate.getMonth() === selectedMonth && aptDate.getFullYear() === selectedYear;
+    });
+  })();
+  
+  const labVsNormalData = [
+    {
+      name: "Normal Patients",
+      value: filteredLabVsNormalAppointments.filter((a) => !a.is_lab_only).length,
+      color: "hsl(200, 70%, 65%)",
+    },
+    {
+      name: "Lab Only Visits",
+      value: filteredLabVsNormalAppointments.filter((a) => a.is_lab_only).length,
+      color: "hsl(45, 70%, 65%)",
+    },
+  ].filter((item) => item.value > 0);
   const patientTypeData = [
     {
       name: "New Patient",
@@ -685,17 +713,18 @@ export const StatsPage = () => {
               <CardContent>
                 <div className="text-2xl font-bold text-primary">
                   {(() => {
+                    // Exclude lab-only patients from counting
                     if (counterFilter === "all") {
-                      return new Set(appointmentsData.map((a: any) => a.patient_id || a.patient_name)).size;
+                      return new Set(normalAppointmentsData.map((a: any) => a.patient_id || a.patient_name)).size;
                     }
-                    const monthlyAppointments = appointmentsData.filter((a: any) => {
+                    const monthlyAppointments = normalAppointmentsData.filter((a: any) => {
                       const d = new Date(a.appointment_date);
                       return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
                     });
                     return new Set(monthlyAppointments.map((a: any) => a.patient_id || a.patient_name)).size;
                   })()}
                 </div>
-                <p className="text-xs text-muted-foreground">Unique patients</p>
+                <p className="text-xs text-muted-foreground">Unique patients (excludes lab-only)</p>
               </CardContent>
             </Card>
 
@@ -1036,18 +1065,130 @@ export const StatsPage = () => {
                         outerRadius={isMobile ? 70 : 90}
                         fill="#8884d8"
                         dataKey="value"
+                        stroke="#fff"
+                        strokeWidth={2}
                       >
                         {patientTypeData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip 
+                        formatter={(value: number, name: string, props: any) => {
+                          const total = patientTypeData.reduce((s, i) => s + i.value, 0);
+                          const percentage = ((value / total) * 100).toFixed(1);
+                          return [`${value} (${percentage}%)`, props.payload.name];
+                        }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
                     {(() => {
                       const total = patientTypeData.reduce((s, i) => s + i.value, 0);
                       return patientTypeData.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="truncate">{item.name}</span>
+                          <span className="ml-auto font-medium">{((item.value / total) * 100).toFixed(1)}%</span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No data available</p>
+                )}
+              </CardContent>
+            )}
+           </Card>
+
+          {/* Lab vs Normal Patient Distribution */}
+          <Card>
+            <CardHeader className="p-4 sm:p-6 space-y-3">
+              <CardTitle className="text-xl sm:text-2xl font-bold">Normal vs Lab-Only Visits</CardTitle>
+              {openLabVsNormal && (
+                <div className="flex flex-wrap gap-2">
+                  <Select value={labVsNormalFilter} onValueChange={(v: "all" | "monthly") => setLabVsNormalFilter(v)}>
+                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {labVsNormalFilter === "monthly" && (
+                    <>
+                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month, idx) => (
+                            <SelectItem key={idx} value={idx.toString()}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                </div>
+              )}
+              <Button 
+                variant="outline" 
+                onClick={() => setOpenLabVsNormal(!openLabVsNormal)} 
+                className="w-full"
+              >
+                {openLabVsNormal ? 'Collapse' : 'Expand'}
+              </Button>
+            </CardHeader>
+            {openLabVsNormal && (
+              <CardContent className="p-3 sm:p-6 pt-0">
+                {labVsNormalData.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={labVsNormalData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                        outerRadius={isMobile ? 70 : 90}
+                        fill="#8884d8"
+                        dataKey="value"
+                        stroke="#fff"
+                        strokeWidth={2}
+                      >
+                        {labVsNormalData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: number, name: string, props: any) => {
+                          const total = labVsNormalData.reduce((s, i) => s + i.value, 0);
+                          const percentage = ((value / total) * 100).toFixed(1);
+                          return [`${value} (${percentage}%)`, props.payload.name];
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                    {(() => {
+                      const total = labVsNormalData.reduce((s, i) => s + i.value, 0);
+                      return labVsNormalData.map((item, idx) => (
                         <div key={idx} className="flex items-center gap-2">
                           <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
                           <span className="truncate">{item.name}</span>

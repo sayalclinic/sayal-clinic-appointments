@@ -24,7 +24,7 @@ const appointmentSchema = z.object({
   patientAge: z.number().min(1, "Age must be at least 1").max(150, "Age must be less than 150"),
   contactNo: z.string().min(10, "Contact number must be at least 10 digits"),
   medicalHistory: z.string().optional(),
-  doctorId: z.string().min(1, "Please select a doctor"),
+  doctorId: z.string().optional(),
   appointmentDate: z.date({ required_error: "Please select a date" }),
   appointmentTime: z.string().min(1, "Please select a time"),
   reasonForVisit: z.string().optional(),
@@ -40,6 +40,7 @@ interface AppointmentFormProps {
 export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(false);
+  const [isLabOnly, setIsLabOnly] = useState(false);
   const [appointmentType, setAppointmentType] = useState<"new" | "repeat">("new");
   const [previousAppointments, setPreviousAppointments] = useState<any[]>([]);
   const [selectedPreviousAppointment, setSelectedPreviousAppointment] = useState<string>("");
@@ -131,6 +132,16 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
     setIsLoading(true);
 
     try {
+      // Validate doctor selection for non-lab-only appointments
+      if (!isLabOnly && !data.doctorId) {
+        form.setError('doctorId', {
+          type: 'manual',
+          message: 'Please select a doctor'
+        });
+        setIsLoading(false);
+        return;
+      }
+
       // First, create or update the patient
       const patient = await upsertPatient({
         name: data.patientName,
@@ -142,53 +153,58 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       const appointmentDate = format(data.appointmentDate, "yyyy-MM-dd");
       const selectedTime = data.appointmentTime;
       
-      // Calculate slot time and handle 19:00+ appointments
-      const [hours, minutes] = selectedTime.split(':').map(Number);
-      const isUnlimited = hours >= 19;
+      // For lab-only appointments, use the selected time directly without slot checking
+      let appointmentTime = selectedTime;
       
-      const totalMinutes = hours * 60 + minutes;
-      const slotMinutes = Math.floor(totalMinutes / 15) * 15;
-      const slotHours = Math.floor(slotMinutes / 60);
-      const slotMins = slotMinutes % 60;
-      const baseSlotTime = `${String(slotHours).padStart(2, '0')}:${String(slotMins).padStart(2, '0')}`;
-      
-      // For 19:00+, check all appointments starting from 19:00
-      const checkStartTime = isUnlimited ? '19:00' : baseSlotTime;
-      
-      // Calculate end time properly to avoid invalid times like 10:60
-      const endMinutes = slotMinutes + 15;
-      const endHours = Math.floor(endMinutes / 60);
-      const endMins = endMinutes % 60;
-      const checkEndTime = isUnlimited ? '23:59' : `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
-      
-      const { data: existingAppointments, error: checkError } = await supabase
-        .from('appointments')
-        .select('appointment_time')
-        .eq('doctor_id', data.doctorId)
-        .eq('appointment_date', appointmentDate)
-        .gte('appointment_time', checkStartTime)
-        .lt('appointment_time', checkEndTime);
-      
-      if (checkError) throw checkError;
-      
-      const slotCount = existingAppointments?.length || 0;
-      
-      if (!isUnlimited && slotCount >= 3) {
-        form.setError('appointmentTime', {
-          type: 'manual',
-          message: `This time slot is fully booked. Please select a different time.`
-        });
-        setIsLoading(false);
-        return;
+      if (!isLabOnly && data.doctorId) {
+        // Calculate slot time and handle 19:00+ appointments
+        const [hours, minutes] = selectedTime.split(':').map(Number);
+        const isUnlimited = hours >= 19;
+        
+        const totalMinutes = hours * 60 + minutes;
+        const slotMinutes = Math.floor(totalMinutes / 15) * 15;
+        const slotHours = Math.floor(slotMinutes / 60);
+        const slotMins = slotMinutes % 60;
+        const baseSlotTime = `${String(slotHours).padStart(2, '0')}:${String(slotMins).padStart(2, '0')}`;
+        
+        // For 19:00+, check all appointments starting from 19:00
+        const checkStartTime = isUnlimited ? '19:00' : baseSlotTime;
+        
+        // Calculate end time properly to avoid invalid times like 10:60
+        const endMinutes = slotMinutes + 15;
+        const endHours = Math.floor(endMinutes / 60);
+        const endMins = endMinutes % 60;
+        const checkEndTime = isUnlimited ? '23:59' : `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
+        
+        const { data: existingAppointments, error: checkError } = await supabase
+          .from('appointments')
+          .select('appointment_time')
+          .eq('doctor_id', data.doctorId)
+          .eq('appointment_date', appointmentDate)
+          .gte('appointment_time', checkStartTime)
+          .lt('appointment_time', checkEndTime);
+        
+        if (checkError) throw checkError;
+        
+        const slotCount = existingAppointments?.length || 0;
+        
+        if (!isUnlimited && slotCount >= 3) {
+          form.setError('appointmentTime', {
+            type: 'manual',
+            message: `This time slot is fully booked. Please select a different time.`
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        // Calculate actual time: 5-minute intervals within each 15-minute slot (3 appointments max per slot)
+        const baseTime = isUnlimited ? 19 * 60 : slotMinutes;
+        const offsetMinutes = slotCount * 5;  // 5-minute intervals: 0, 5, 10 minutes within the slot
+        const actualMinutes = baseTime + offsetMinutes;
+        const actualHours = Math.floor(actualMinutes / 60);
+        const actualMins = actualMinutes % 60;
+        appointmentTime = `${String(actualHours).padStart(2, '0')}:${String(actualMins).padStart(2, '0')}`;
       }
-      
-      // Calculate actual time: 5-minute intervals within each 15-minute slot (3 appointments max per slot)
-      const baseTime = isUnlimited ? 19 * 60 : slotMinutes;
-      const offsetMinutes = slotCount * 5;  // 5-minute intervals: 0, 5, 10 minutes within the slot
-      const actualMinutes = baseTime + offsetMinutes;
-      const actualHours = Math.floor(actualMinutes / 60);
-      const actualMins = actualMinutes % 60;
-      const appointmentTime = `${String(actualHours).padStart(2, '0')}:${String(actualMins).padStart(2, '0')}`;
 
       // Then create the appointment, passing isWalkIn flag
       // Ensure repeat appointments use the SAME patient_id as previous ones
@@ -205,12 +221,13 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       const appointmentData: any = {
         patient_id: finalPatientId,
         patient_name: data.patientName,
-        doctor_id: data.doctorId,
+        doctor_id: isLabOnly ? null : data.doctorId,
         appointment_date: appointmentDate,
         appointment_time: appointmentTime,
         reason_for_visit: data.reasonForVisit,
         symptoms: data.symptoms,
         isWalkIn: isWalkIn,
+        isLabOnly: isLabOnly,
         is_repeat: appointmentType === "repeat",
         previous_appointment_id: appointmentType === "repeat" ? selectedPreviousAppointment || null : null,
         requires_payment: requiresPayment,
@@ -238,6 +255,7 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
       });
       form.reset();
       setIsWalkIn(false);
+      setIsLabOnly(false);
       setAppointmentType("new");
       setPreviousAppointments([]);
       setSelectedPreviousAppointment("");
@@ -323,6 +341,23 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
 
           {/* Appointment Type Selection - Moved here */}
           <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="labOnly" 
+                checked={isLabOnly} 
+                onCheckedChange={(checked) => {
+                  setIsLabOnly(checked as boolean);
+                  // Clear doctor selection when lab-only is checked
+                  if (checked) {
+                    form.setValue("doctorId", "");
+                  }
+                }} 
+              />
+              <Label htmlFor="labOnly" className="cursor-pointer font-medium text-primary">
+                Only Lab Visit
+              </Label>
+            </div>
+
             <div className="flex items-center space-x-2">
               <Checkbox id="walkIn" checked={isWalkIn} onCheckedChange={(checked) => setIsWalkIn(checked as boolean)} />
               <Label htmlFor="walkIn" className="cursor-pointer font-medium">
@@ -437,27 +472,29 @@ export const AppointmentForm = ({ onSuccess }: AppointmentFormProps) => {
               <span>Appointment Details</span>
             </h3>
 
-            <div className="space-y-2">
-              <Label>Doctor</Label>
-              <Select onValueChange={(value) => form.setValue("doctorId", value)} defaultValue={formData.doctorId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a doctor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {doctors.map((doctor) => (
-                    <SelectItem key={doctor.user_id} value={doctor.user_id}>
-                      <div className="flex items-center space-x-2">
-                        <Stethoscope className="w-4 h-4" />
-                        <span>{doctor.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.doctorId && (
-                <p className="text-sm text-destructive">{form.formState.errors.doctorId.message}</p>
-              )}
-            </div>
+            {!isLabOnly && (
+              <div className="space-y-2">
+                <Label>Doctor</Label>
+                <Select onValueChange={(value) => form.setValue("doctorId", value)} defaultValue={formData.doctorId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a doctor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {doctors.map((doctor) => (
+                      <SelectItem key={doctor.user_id} value={doctor.user_id}>
+                        <div className="flex items-center space-x-2">
+                          <Stethoscope className="w-4 h-4" />
+                          <span>{doctor.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.doctorId && (
+                  <p className="text-sm text-destructive">{form.formState.errors.doctorId.message}</p>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
