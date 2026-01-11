@@ -59,13 +59,12 @@ export const StatsPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
-  const [openEarnings, setOpenEarnings] = useState(false);
-  const [openPatientType, setOpenPatientType] = useState(false);
-  const [openLabVsNormal, setOpenLabVsNormal] = useState(false);
-  const [openPaymentMethod, setOpenPaymentMethod] = useState(false);
-  const [openIncome, setOpenIncome] = useState(false);
-  const [openBusiestHours, setOpenBusiestHours] = useState(false);
-  const [openAgeDistribution, setOpenAgeDistribution] = useState(false);
+  // Track which panel is currently open (only one at a time)
+  const [openPanel, setOpenPanel] = useState<string | null>(null);
+  
+  const togglePanel = (panel: string) => {
+    setOpenPanel(prev => prev === panel ? null : panel);
+  };
   const [counterFilter, setCounterFilter] = useState<"all" | "monthly">("monthly");
   const [labVsNormalFilter, setLabVsNormalFilter] = useState<"all" | "monthly">("monthly");
   useEffect(() => {
@@ -762,10 +761,10 @@ export const StatsPage = () => {
           <Card>
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Monthly Earnings</CardTitle>
-              {!openEarnings ? (
+              {openPanel !== 'earnings' ? (
                 <Button 
                   variant="outline" 
-                  onClick={() => setOpenEarnings(true)} 
+                  onClick={() => togglePanel('earnings')} 
                   className="w-full"
                 >
                   Expand
@@ -786,13 +785,13 @@ export const StatsPage = () => {
                       ← Back to Monthly
                     </Button>
                   )}
-                  <Button variant="outline" onClick={() => setOpenEarnings(false)} className="w-full">
+                  <Button variant="outline" onClick={() => togglePanel('earnings')} className="w-full">
                     Collapse
                   </Button>
                 </div>
               )}
             </CardHeader>
-            {openEarnings && (
+            {openPanel === 'earnings' && (
               <CardContent className="p-3 sm:p-6 pt-0">
                 {monthlyEarningsData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
@@ -839,13 +838,13 @@ export const StatsPage = () => {
               <CardTitle className="text-xl sm:text-2xl font-bold">Busiest Hours</CardTitle>
               <Button 
                 variant="outline" 
-                onClick={() => setOpenBusiestHours(!openBusiestHours)} 
+                onClick={() => togglePanel('busiestHours')} 
                 className="w-full"
               >
-                {openBusiestHours ? 'Collapse' : 'Expand'}
+                {openPanel === 'busiestHours' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
-            {openBusiestHours && (
+            {openPanel === 'busiestHours' && (
               <CardContent className="p-3 sm:p-6 pt-0">
                 {(() => {
                   // Count appointments per hour per day to calculate average
@@ -926,7 +925,7 @@ export const StatsPage = () => {
           <Card>
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Age Distribution</CardTitle>
-              {openAgeDistribution && (
+              {openPanel === 'ageDistribution' && (
                 <div className="flex flex-wrap gap-2">
                   <Select value={ageFilter} onValueChange={(v: "all" | "monthly") => setAgeFilter(v)}>
                     <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
@@ -969,13 +968,13 @@ export const StatsPage = () => {
               )}
               <Button 
                 variant="outline" 
-                onClick={() => setOpenAgeDistribution(!openAgeDistribution)} 
+                onClick={() => togglePanel('ageDistribution')} 
                 className="w-full"
               >
-                {openAgeDistribution ? 'Collapse' : 'Expand'}
+                {openPanel === 'ageDistribution' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
-            {openAgeDistribution && (
+            {openPanel === 'ageDistribution' && (
               <CardContent className="p-3 sm:p-6 pt-0">
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={ageData}>
@@ -1001,7 +1000,7 @@ export const StatsPage = () => {
           <Card>
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Patient Type Distribution</CardTitle>
-              {openPatientType && (
+              {openPanel === 'patientType' && (
                 <div className="flex flex-wrap gap-2">
                   <Select value={patientTypeFilter} onValueChange={(v: "all" | "monthly") => setPatientTypeFilter(v)}>
                     <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
@@ -1044,13 +1043,13 @@ export const StatsPage = () => {
               )}
               <Button 
                 variant="outline" 
-                onClick={() => setOpenPatientType(!openPatientType)} 
+                onClick={() => togglePanel('patientType')} 
                 className="w-full"
               >
-                {openPatientType ? 'Collapse' : 'Expand'}
+                {openPanel === 'patientType' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
-            {openPatientType && (
+            {openPanel === 'patientType' && (
               <CardContent className="p-3 sm:p-6 pt-0">
                 {patientTypeData.length > 0 ? (
                 <>
@@ -1105,7 +1104,7 @@ export const StatsPage = () => {
           <Card>
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Normal vs Lab-Only Visits</CardTitle>
-              {openLabVsNormal && (
+              {openPanel === 'labVsNormal' && (
                 <div className="flex flex-wrap gap-2">
                   <Select value={labVsNormalFilter} onValueChange={(v: "all" | "monthly") => setLabVsNormalFilter(v)}>
                     <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
@@ -1148,13 +1147,13 @@ export const StatsPage = () => {
               )}
               <Button 
                 variant="outline" 
-                onClick={() => setOpenLabVsNormal(!openLabVsNormal)} 
+                onClick={() => togglePanel('labVsNormal')} 
                 className="w-full"
               >
-                {openLabVsNormal ? 'Collapse' : 'Expand'}
+                {openPanel === 'labVsNormal' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
-            {openLabVsNormal && (
+            {openPanel === 'labVsNormal' && (
               <CardContent className="p-3 sm:p-6 pt-0">
                 {labVsNormalData.length > 0 ? (
                 <>
@@ -1209,7 +1208,7 @@ export const StatsPage = () => {
           <Card>
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Income Distribution</CardTitle>
-              {openIncome && (
+              {openPanel === 'income' && (
                 <div className="flex flex-wrap gap-2">
                   <Select
                     value={incomeDistributionFilter}
@@ -1255,13 +1254,13 @@ export const StatsPage = () => {
               )}
               <Button 
                 variant="outline" 
-                onClick={() => setOpenIncome(!openIncome)} 
+                onClick={() => togglePanel('income')} 
                 className="w-full"
               >
-                {openIncome ? 'Collapse' : 'Expand'}
+                {openPanel === 'income' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
-            {openIncome && (
+            {openPanel === 'income' && (
               <CardContent className="p-3 sm:p-6 pt-0">
               {incomeDistributionData.length > 0 ? (
                 <>
@@ -1313,7 +1312,7 @@ export const StatsPage = () => {
           <Card>
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Payment Method - Consultation</CardTitle>
-              {openPaymentMethod && (
+              {openPanel === 'paymentConsultation' && (
                 <div className="flex flex-wrap gap-2">
                   <Select
                     value={paymentMethodFilter}
@@ -1359,13 +1358,13 @@ export const StatsPage = () => {
               )}
               <Button 
                 variant="outline" 
-                onClick={() => setOpenPaymentMethod(!openPaymentMethod)} 
+                onClick={() => togglePanel('paymentConsultation')} 
                 className="w-full"
               >
-                {openPaymentMethod ? 'Collapse' : 'Expand'}
+                {openPanel === 'paymentConsultation' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
-            {openPaymentMethod && (
+            {openPanel === 'paymentConsultation' && (
               <CardContent className="p-3 sm:p-6 pt-0">
               {consultationPaymentMethodData.length > 0 ? (
                 <>
@@ -1417,7 +1416,7 @@ export const StatsPage = () => {
           <Card>
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Payment Method - Labs & Tests</CardTitle>
-              {openPaymentMethod && (
+              {openPanel === 'paymentLabs' && (
                 <div className="flex flex-wrap gap-2">
                   <Select
                     value={paymentMethodFilter}
@@ -1463,13 +1462,13 @@ export const StatsPage = () => {
               )}
               <Button 
                 variant="outline" 
-                onClick={() => setOpenPaymentMethod(!openPaymentMethod)} 
+                onClick={() => togglePanel('paymentLabs')} 
                 className="w-full"
               >
-                {openPaymentMethod ? 'Collapse' : 'Expand'}
+                {openPanel === 'paymentLabs' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
-            {openPaymentMethod && (
+            {openPanel === 'paymentLabs' && (
               <CardContent className="p-3 sm:p-6 pt-0">
               {labsPaymentMethodData.length > 0 ? (
                 <>
