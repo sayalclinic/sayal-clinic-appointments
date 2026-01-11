@@ -20,7 +20,7 @@ export type Database = {
           appointment_time: string
           created_at: string
           denial_reason: string | null
-          doctor_id: string
+          doctor_id: string | null
           id: string
           is_lab_only: boolean | null
           is_repeat: boolean | null
@@ -39,7 +39,7 @@ export type Database = {
           appointment_time: string
           created_at?: string
           denial_reason?: string | null
-          doctor_id: string
+          doctor_id?: string | null
           id?: string
           is_lab_only?: boolean | null
           is_repeat?: boolean | null
@@ -58,7 +58,7 @@ export type Database = {
           appointment_time?: string
           created_at?: string
           denial_reason?: string | null
-          doctor_id?: string
+          doctor_id?: string | null
           id?: string
           is_lab_only?: boolean | null
           is_repeat?: boolean | null
