@@ -390,6 +390,18 @@ export const StatsPage = () => {
     return aptDate.getMonth() === selectedMonth && aptDate.getFullYear() === selectedYear;
   };
   
+  // Get available days for selected month/year
+  const availableDaysForMonth = useMemo(() => {
+    const days: number[] = [];
+    availableMonthsYears.dates.forEach((dateStr) => {
+      const d = new Date(dateStr);
+      if (d.getMonth() === selectedMonth && d.getFullYear() === selectedYear) {
+        days.push(d.getDate());
+      }
+    });
+    return days.sort((a, b) => a - b);
+  }, [availableMonthsYears, selectedMonth, selectedYear]);
+
   // DateFilterControls component for reuse
   const DateFilterControls = ({ filter, setFilter }: { filter: "all" | "monthly"; setFilter: (v: "all" | "monthly") => void }) => (
     <div className="flex flex-wrap gap-2">
@@ -408,51 +420,107 @@ export const StatsPage = () => {
             setDateFilterMode(v);
             if (v === "all") setSelectedDate(undefined);
           }}>
-            <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+            <SelectTrigger className="w-24 sm:w-28 h-8 sm:h-10 text-xs sm:text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Days</SelectItem>
-              <SelectItem value="specific">Date</SelectItem>
+              <SelectItem value="specific">Select Date</SelectItem>
             </SelectContent>
           </Select>
           {dateFilterMode === "specific" && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-28 sm:w-36 h-8 sm:h-10 text-xs sm:text-sm justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
+            <>
+              {/* Month dropdown */}
+              <Select 
+                value={selectedMonth.toString()} 
+                onValueChange={(v) => {
+                  setSelectedMonth(parseInt(v));
+                  setSelectedDate(undefined);
+                }}
+              >
+                <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMonthsForYear.length > 0 ? (
+                    availableMonthsForYear.map((monthIdx) => (
+                      <SelectItem key={monthIdx} value={monthIdx.toString()}>
+                        {months[monthIdx]}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value={selectedMonth.toString()}>
+                      {months[selectedMonth]}
+                    </SelectItem>
                   )}
-                >
-                  <CalendarIcon className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                  {selectedDate ? format(selectedDate, "MMM dd, yyyy") : "Pick date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => {
-                    setSelectedDate(date);
-                    if (date) {
-                      setSelectedMonth(date.getMonth());
-                      setSelectedYear(date.getFullYear());
-                    }
-                  }}
-                  modifiers={{
-                    hasData: (date) => hasDataForDate(date),
-                  }}
-                  modifiersStyles={{
-                    hasData: { fontWeight: "bold", backgroundColor: "hsl(var(--primary) / 0.1)" },
-                  }}
-                  disabled={(date) => !hasDataForDate(date)}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+                </SelectContent>
+              </Select>
+              {/* Year dropdown */}
+              <Select 
+                value={selectedYear.toString()} 
+                onValueChange={(v) => {
+                  setSelectedYear(parseInt(v));
+                  setSelectedDate(undefined);
+                }}
+              >
+                <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableYears.length > 0 ? (
+                    availableYears.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value={selectedYear.toString()}>
+                      {selectedYear}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              {/* Day dropdown from available days */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-24 sm:w-28 h-8 sm:h-10 text-xs sm:text-sm justify-start text-left font-normal",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                    {selectedDate ? format(selectedDate, "dd") : "Day"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    month={new Date(selectedYear, selectedMonth)}
+                    onMonthChange={() => {}}
+                    modifiers={{
+                      hasData: (date) => hasDataForDate(date),
+                    }}
+                    modifiersStyles={{
+                      hasData: { fontWeight: "bold", backgroundColor: "hsl(var(--primary) / 0.1)" },
+                    }}
+                    disabled={(date) => {
+                      const d = new Date(date);
+                      return d.getMonth() !== selectedMonth || d.getFullYear() !== selectedYear || !hasDataForDate(date);
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
+                    classNames={{
+                      nav: "hidden",
+                      caption: "hidden",
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </>
           )}
           {dateFilterMode === "all" && (
             <>
