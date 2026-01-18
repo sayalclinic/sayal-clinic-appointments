@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PinDialog } from "@/components/Auth/PinDialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Download, Maximize2 } from "lucide-react";
+import { ArrowLeft, Download, Maximize2, CalendarIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   BarChart,
@@ -24,6 +24,11 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ExportClearUtility } from "@/components/DataExport/ExportClearUtility";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+
 interface AppointmentHistoryRow {
   patient_name: string;
   patient_age: number;
@@ -53,6 +58,8 @@ export const StatsPage = () => {
   const [ageFilter, setAgeFilter] = useState<"all" | "monthly">("monthly");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [dateFilterMode, setDateFilterMode] = useState<"all" | "specific">("all");
   const [patientTypeFilter, setPatientTypeFilter] = useState<"all" | "monthly">("monthly");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<"all" | "monthly">("monthly");
   const [incomeDistributionFilter, setIncomeDistributionFilter] = useState<"all" | "monthly">("monthly");
@@ -265,6 +272,7 @@ export const StatsPage = () => {
     "November",
     "December",
   ];
+
   const years = Array.from(
     {
       length: 10,
@@ -328,6 +336,184 @@ export const StatsPage = () => {
     };
     fetchAppointmentsData();
   }, [isAuthenticated]);
+
+  // Calculate available months/years from appointment data
+  const availableMonthsYears = useMemo(() => {
+    const monthYearSet = new Set<string>();
+    const availableDates = new Set<string>();
+    
+    appointmentsData.forEach((apt: any) => {
+      const d = new Date(apt.appointment_date);
+      monthYearSet.add(`${d.getMonth()}-${d.getFullYear()}`);
+      availableDates.add(apt.appointment_date);
+    });
+    
+    const result: { month: number; year: number }[] = [];
+    monthYearSet.forEach((key) => {
+      const [month, year] = key.split("-").map(Number);
+      result.push({ month, year });
+    });
+    
+    // Sort by year descending, then month descending
+    result.sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year;
+      return b.month - a.month;
+    });
+    
+    return { monthYears: result, dates: availableDates };
+  }, [appointmentsData]);
+
+  const availableYears = useMemo(() => {
+    const yearSet = new Set<number>();
+    availableMonthsYears.monthYears.forEach((my) => yearSet.add(my.year));
+    return Array.from(yearSet).sort((a, b) => b - a);
+  }, [availableMonthsYears]);
+
+  const availableMonthsForYear = useMemo(() => {
+    return availableMonthsYears.monthYears
+      .filter((my) => my.year === selectedYear)
+      .map((my) => my.month)
+      .sort((a, b) => b - a);
+  }, [availableMonthsYears, selectedYear]);
+
+  // Check if a date has data for the calendar
+  const hasDataForDate = (date: Date) => {
+    const dateStr = format(date, "yyyy-MM-dd");
+    return availableMonthsYears.dates.has(dateStr);
+  };
+
+  // Filter helper that applies date filter
+  const matchesDateFilter = (aptDate: Date) => {
+    if (dateFilterMode === "specific" && selectedDate) {
+      return format(aptDate, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
+    }
+    return aptDate.getMonth() === selectedMonth && aptDate.getFullYear() === selectedYear;
+  };
+  
+  // DateFilterControls component for reuse
+  const DateFilterControls = ({ filter, setFilter }: { filter: "all" | "monthly"; setFilter: (v: "all" | "monthly") => void }) => (
+    <div className="flex flex-wrap gap-2">
+      <Select value={filter} onValueChange={(v: "all" | "monthly") => setFilter(v)}>
+        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Time</SelectItem>
+          <SelectItem value="monthly">Monthly</SelectItem>
+        </SelectContent>
+      </Select>
+      {filter === "monthly" && (
+        <>
+          <Select value={dateFilterMode} onValueChange={(v: "all" | "specific") => {
+            setDateFilterMode(v);
+            if (v === "all") setSelectedDate(undefined);
+          }}>
+            <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Days</SelectItem>
+              <SelectItem value="specific">Date</SelectItem>
+            </SelectContent>
+          </Select>
+          {dateFilterMode === "specific" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-28 sm:w-36 h-8 sm:h-10 text-xs sm:text-sm justify-start text-left font-normal",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                  {selectedDate ? format(selectedDate, "MMM dd, yyyy") : "Pick date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    setSelectedDate(date);
+                    if (date) {
+                      setSelectedMonth(date.getMonth());
+                      setSelectedYear(date.getFullYear());
+                    }
+                  }}
+                  modifiers={{
+                    hasData: (date) => hasDataForDate(date),
+                  }}
+                  modifiersStyles={{
+                    hasData: { fontWeight: "bold", backgroundColor: "hsl(var(--primary) / 0.1)" },
+                  }}
+                  disabled={(date) => !hasDataForDate(date)}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+          {dateFilterMode === "all" && (
+            <>
+              <Select 
+                value={selectedMonth.toString()} 
+                onValueChange={(v) => setSelectedMonth(parseInt(v))}
+              >
+                <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMonthsForYear.length > 0 ? (
+                    availableMonthsForYear.map((monthIdx) => (
+                      <SelectItem key={monthIdx} value={monthIdx.toString()}>
+                        {months[monthIdx]}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value={selectedMonth.toString()}>
+                      {months[selectedMonth]}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <Select 
+                value={selectedYear.toString()} 
+                onValueChange={(v) => {
+                  const newYear = parseInt(v);
+                  setSelectedYear(newYear);
+                  // Reset to first available month in new year
+                  const monthsForNewYear = availableMonthsYears.monthYears
+                    .filter((my) => my.year === newYear)
+                    .map((my) => my.month);
+                  if (monthsForNewYear.length > 0 && !monthsForNewYear.includes(selectedMonth)) {
+                    setSelectedMonth(monthsForNewYear[0]);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableYears.length > 0 ? (
+                    availableYears.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value={selectedYear.toString()}>
+                      {selectedYear}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
   
   // Filter out lab-only appointments for patient counting
   const normalAppointmentsData = appointmentsData.filter((a) => !a.is_lab_only);
@@ -926,45 +1112,7 @@ export const StatsPage = () => {
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Age Distribution</CardTitle>
               {openPanel === 'ageDistribution' && (
-                <div className="flex flex-wrap gap-2">
-                  <Select value={ageFilter} onValueChange={(v: "all" | "monthly") => setAgeFilter(v)}>
-                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {ageFilter === "monthly" && (
-                    <>
-                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {months.map((month, idx) => (
-                            <SelectItem key={idx} value={idx.toString()}>
-                              {month}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {years.map((year) => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </>
-                  )}
-                </div>
+                <DateFilterControls filter={ageFilter} setFilter={setAgeFilter} />
               )}
               <Button 
                 variant="outline" 
@@ -1001,45 +1149,7 @@ export const StatsPage = () => {
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Patient Type Distribution</CardTitle>
               {openPanel === 'patientType' && (
-                <div className="flex flex-wrap gap-2">
-                  <Select value={patientTypeFilter} onValueChange={(v: "all" | "monthly") => setPatientTypeFilter(v)}>
-                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {patientTypeFilter === "monthly" && (
-                    <>
-                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {months.map((month, idx) => (
-                            <SelectItem key={idx} value={idx.toString()}>
-                              {month}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {years.map((year) => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </>
-                  )}
-                </div>
+                <DateFilterControls filter={patientTypeFilter} setFilter={setPatientTypeFilter} />
               )}
               <Button 
                 variant="outline" 
@@ -1105,45 +1215,7 @@ export const StatsPage = () => {
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Normal vs Lab-Only Visits</CardTitle>
               {openPanel === 'labVsNormal' && (
-                <div className="flex flex-wrap gap-2">
-                  <Select value={labVsNormalFilter} onValueChange={(v: "all" | "monthly") => setLabVsNormalFilter(v)}>
-                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {labVsNormalFilter === "monthly" && (
-                    <>
-                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {months.map((month, idx) => (
-                            <SelectItem key={idx} value={idx.toString()}>
-                              {month}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {years.map((year) => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </>
-                  )}
-                </div>
+                <DateFilterControls filter={labVsNormalFilter} setFilter={setLabVsNormalFilter} />
               )}
               <Button 
                 variant="outline" 
@@ -1209,48 +1281,7 @@ export const StatsPage = () => {
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Income Distribution</CardTitle>
               {openPanel === 'income' && (
-                <div className="flex flex-wrap gap-2">
-                  <Select
-                    value={incomeDistributionFilter}
-                    onValueChange={(v: "all" | "monthly") => setIncomeDistributionFilter(v)}
-                  >
-                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {incomeDistributionFilter === "monthly" && (
-                    <>
-                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {months.map((month, idx) => (
-                            <SelectItem key={idx} value={idx.toString()}>
-                              {month}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {years.map((year) => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </>
-                  )}
-                </div>
+                <DateFilterControls filter={incomeDistributionFilter} setFilter={setIncomeDistributionFilter} />
               )}
               <Button 
                 variant="outline" 
@@ -1313,48 +1344,7 @@ export const StatsPage = () => {
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Payment Method - Consultation</CardTitle>
               {openPanel === 'paymentConsultation' && (
-                <div className="flex flex-wrap gap-2">
-                  <Select
-                    value={paymentMethodFilter}
-                    onValueChange={(v: "all" | "monthly") => setPaymentMethodFilter(v)}
-                  >
-                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {paymentMethodFilter === "monthly" && (
-                    <>
-                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {months.map((month, idx) => (
-                            <SelectItem key={idx} value={idx.toString()}>
-                              {month}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {years.map((year) => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </>
-                  )}
-                </div>
+                <DateFilterControls filter={paymentMethodFilter} setFilter={setPaymentMethodFilter} />
               )}
               <Button 
                 variant="outline" 
@@ -1417,48 +1407,7 @@ export const StatsPage = () => {
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Payment Method - Labs & Tests</CardTitle>
               {openPanel === 'paymentLabs' && (
-                <div className="flex flex-wrap gap-2">
-                  <Select
-                    value={paymentMethodFilter}
-                    onValueChange={(v: "all" | "monthly") => setPaymentMethodFilter(v)}
-                  >
-                    <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {paymentMethodFilter === "monthly" && (
-                    <>
-                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                        <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {months.map((month, idx) => (
-                            <SelectItem key={idx} value={idx.toString()}>
-                              {month}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                        <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {years.map((year) => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </>
-                  )}
-                </div>
+                <DateFilterControls filter={paymentMethodFilter} setFilter={setPaymentMethodFilter} />
               )}
               <Button 
                 variant="outline" 
