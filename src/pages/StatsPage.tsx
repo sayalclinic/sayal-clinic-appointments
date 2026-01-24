@@ -24,6 +24,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ExportClearUtility } from "@/components/DataExport/ExportClearUtility";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -416,168 +417,121 @@ export const StatsPage = () => {
       </Select>
       {filter === "monthly" && (
         <>
-          <Select value={dateFilterMode} onValueChange={(v: "all" | "specific") => {
-            setDateFilterMode(v);
-            if (v === "all") setSelectedDate(undefined);
-          }}>
-            <SelectTrigger className="w-24 sm:w-28 h-8 sm:h-10 text-xs sm:text-sm">
+          <Select 
+            value={selectedMonth.toString()} 
+            onValueChange={(v) => setSelectedMonth(parseInt(v))}
+          >
+            <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Days</SelectItem>
-              <SelectItem value="specific">Select Date</SelectItem>
+              {availableMonthsForYear.length > 0 ? (
+                availableMonthsForYear.map((monthIdx) => (
+                  <SelectItem key={monthIdx} value={monthIdx.toString()}>
+                    {months[monthIdx]}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value={selectedMonth.toString()}>
+                  {months[selectedMonth]}
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
-          {dateFilterMode === "specific" && (
-            <>
-              {/* Month dropdown */}
-              <Select 
-                value={selectedMonth.toString()} 
-                onValueChange={(v) => {
-                  setSelectedMonth(parseInt(v));
-                  setSelectedDate(undefined);
-                }}
+          <Select 
+            value={selectedYear.toString()} 
+            onValueChange={(v) => {
+              const newYear = parseInt(v);
+              setSelectedYear(newYear);
+              const monthsForNewYear = availableMonthsYears.monthYears
+                .filter((my) => my.year === newYear)
+                .map((my) => my.month);
+              if (monthsForNewYear.length > 0 && !monthsForNewYear.includes(selectedMonth)) {
+                setSelectedMonth(monthsForNewYear[0]);
+              }
+            }}
+          >
+            <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableYears.length > 0 ? (
+                availableYears.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value={selectedYear.toString()}>
+                  {selectedYear}
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-24 sm:w-28 h-8 sm:h-10 text-xs sm:text-sm justify-start text-left font-normal",
+                  dateFilterMode === "specific" && selectedDate ? "" : "text-muted-foreground"
+                )}
               >
-                <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableMonthsForYear.length > 0 ? (
-                    availableMonthsForYear.map((monthIdx) => (
-                      <SelectItem key={monthIdx} value={monthIdx.toString()}>
-                        {months[monthIdx]}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value={selectedMonth.toString()}>
-                      {months[selectedMonth]}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              {/* Year dropdown */}
-              <Select 
-                value={selectedYear.toString()} 
-                onValueChange={(v) => {
-                  setSelectedYear(parseInt(v));
-                  setSelectedDate(undefined);
-                }}
-              >
-                <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableYears.length > 0 ? (
-                    availableYears.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value={selectedYear.toString()}>
-                      {selectedYear}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              {/* Day dropdown from available days */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-24 sm:w-28 h-8 sm:h-10 text-xs sm:text-sm justify-start text-left font-normal",
-                      !selectedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                    {selectedDate ? format(selectedDate, "dd") : "Day"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    month={new Date(selectedYear, selectedMonth)}
-                    onMonthChange={() => {}}
-                    modifiers={{
-                      hasData: (date) => hasDataForDate(date),
-                    }}
-                    modifiersStyles={{
-                      hasData: { fontWeight: "bold", backgroundColor: "hsl(var(--primary) / 0.1)" },
-                    }}
-                    disabled={(date) => {
-                      const d = new Date(date);
-                      return d.getMonth() !== selectedMonth || d.getFullYear() !== selectedYear || !hasDataForDate(date);
-                    }}
-                    initialFocus
-                    className="pointer-events-auto"
-                    classNames={{
-                      nav: "hidden",
-                      caption: "hidden",
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-            </>
-          )}
-          {dateFilterMode === "all" && (
-            <>
-              <Select 
-                value={selectedMonth.toString()} 
-                onValueChange={(v) => setSelectedMonth(parseInt(v))}
-              >
-                <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableMonthsForYear.length > 0 ? (
-                    availableMonthsForYear.map((monthIdx) => (
-                      <SelectItem key={monthIdx} value={monthIdx.toString()}>
-                        {months[monthIdx]}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value={selectedMonth.toString()}>
-                      {months[selectedMonth]}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              <Select 
-                value={selectedYear.toString()} 
-                onValueChange={(v) => {
-                  const newYear = parseInt(v);
-                  setSelectedYear(newYear);
-                  // Reset to first available month in new year
-                  const monthsForNewYear = availableMonthsYears.monthYears
-                    .filter((my) => my.year === newYear)
-                    .map((my) => my.month);
-                  if (monthsForNewYear.length > 0 && !monthsForNewYear.includes(selectedMonth)) {
-                    setSelectedMonth(monthsForNewYear[0]);
+                <CalendarIcon className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                {dateFilterMode === "specific" && selectedDate ? format(selectedDate, "dd") : "All Days"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-3" align="start">
+              <div className="flex items-center gap-2 mb-3 pb-2 border-b">
+                <Checkbox
+                  id="all-days-checkbox"
+                  checked={dateFilterMode === "all"}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setDateFilterMode("all");
+                      setSelectedDate(undefined);
+                    } else {
+                      setDateFilterMode("specific");
+                    }
+                  }}
+                />
+                <label 
+                  htmlFor="all-days-checkbox" 
+                  className="text-sm font-medium cursor-pointer"
+                >
+                  All Days
+                </label>
+              </div>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  setSelectedDate(date);
+                  if (date) {
+                    setDateFilterMode("specific");
                   }
                 }}
-              >
-                <SelectTrigger className="w-20 sm:w-24 h-8 sm:h-10 text-xs sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableYears.length > 0 ? (
-                    availableYears.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value={selectedYear.toString()}>
-                      {selectedYear}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </>
-          )}
+                month={new Date(selectedYear, selectedMonth)}
+                onMonthChange={() => {}}
+                modifiers={{
+                  hasData: (date) => hasDataForDate(date),
+                }}
+                modifiersStyles={{
+                  hasData: { fontWeight: "bold", backgroundColor: "hsl(var(--primary) / 0.1)" },
+                }}
+                disabled={(date) => {
+                  const d = new Date(date);
+                  return d.getMonth() !== selectedMonth || d.getFullYear() !== selectedYear || !hasDataForDate(date);
+                }}
+                initialFocus
+                className="pointer-events-auto"
+                classNames={{
+                  nav: "hidden",
+                  caption: "hidden",
+                }}
+              />
+            </PopoverContent>
+          </Popover>
         </>
       )}
     </div>
