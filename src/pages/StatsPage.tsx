@@ -227,7 +227,7 @@ export const StatsPage = () => {
   const filteredVisits = patientVisits.filter((visit) => {
     if (ageFilter === "all") return true;
     const visitDate = new Date(visit.visit_date);
-    return visitDate.getMonth() === selectedMonth && visitDate.getFullYear() === selectedYear;
+    return matchesDateFilter(visitDate);
   });
   const ageData = filteredVisits.reduce(
     (acc, visit) => {
@@ -543,7 +543,7 @@ export const StatsPage = () => {
   const filteredAppointments = normalAppointmentsData.filter((apt) => {
     if (patientTypeFilter === "all") return true;
     const aptDate = new Date(apt.appointment_date);
-    return aptDate.getMonth() === selectedMonth && aptDate.getFullYear() === selectedYear;
+    return matchesDateFilter(aptDate);
   });
   
   // Lab vs Normal patient data for pie chart
@@ -551,7 +551,7 @@ export const StatsPage = () => {
     if (labVsNormalFilter === "all") return appointmentsData;
     return appointmentsData.filter((apt) => {
       const aptDate = new Date(apt.appointment_date);
-      return aptDate.getMonth() === selectedMonth && aptDate.getFullYear() === selectedYear;
+      return matchesDateFilter(aptDate);
     });
   })();
   
@@ -595,7 +595,7 @@ export const StatsPage = () => {
     appointmentsData
       .filter((a: any) => {
         const d = new Date(a.appointment_date);
-        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+        return matchesDateFilter(d);
       })
       .map((a: any) => a.id)
   );
@@ -885,7 +885,7 @@ export const StatsPage = () => {
                     const monthlyPayments = allPayments.filter((payment: any) => {
                       const m = appointmentMonthMap.get(payment.appointment_id);
                       if (!m) return false;
-                      return m.month === selectedMonth && m.year === selectedYear;
+                      return matchesDateFilter(m.date);
                     });
                     return monthlyPayments.reduce((sum, payment) => {
                       const appointmentFee = Number(payment.appointment_fee || 0);
@@ -926,7 +926,7 @@ export const StatsPage = () => {
                     }
                     const monthlyAppointments = normalAppointmentsData.filter((a: any) => {
                       const d = new Date(a.appointment_date);
-                      return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+                      return matchesDateFilter(d);
                     });
                     return new Set(monthlyAppointments.map((a: any) => a.patient_id || a.patient_name)).size;
                   })()}
@@ -957,7 +957,7 @@ export const StatsPage = () => {
                     ? appointmentsData.length
                     : appointmentsData.filter((a: any) => {
                         const d = new Date(a.appointment_date);
-                        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+                        return matchesDateFilter(d);
                       }).length}
                 </div>
                 <p className="text-xs text-muted-foreground">Total appointments</p>
