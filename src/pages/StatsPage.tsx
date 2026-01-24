@@ -75,6 +75,14 @@ export const StatsPage = () => {
   };
   const [counterFilter, setCounterFilter] = useState<"all" | "monthly">("monthly");
   const [labVsNormalFilter, setLabVsNormalFilter] = useState<"all" | "monthly">("monthly");
+
+  // Filter helper that applies date filter - defined early for use throughout
+  const matchesDateFilter = (aptDate: Date) => {
+    if (dateFilterMode === "specific" && selectedDate) {
+      return format(aptDate, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
+    }
+    return aptDate.getMonth() === selectedMonth && aptDate.getFullYear() === selectedYear;
+  };
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 640);
     update();
@@ -383,13 +391,6 @@ export const StatsPage = () => {
     return availableMonthsYears.dates.has(dateStr);
   };
 
-  // Filter helper that applies date filter
-  const matchesDateFilter = (aptDate: Date) => {
-    if (dateFilterMode === "specific" && selectedDate) {
-      return format(aptDate, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
-    }
-    return aptDate.getMonth() === selectedMonth && aptDate.getFullYear() === selectedYear;
-  };
   
   // Get available days for selected month/year
   const availableDaysForMonth = useMemo(() => {
