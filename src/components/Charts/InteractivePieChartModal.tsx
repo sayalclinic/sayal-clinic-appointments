@@ -34,64 +34,66 @@ const renderActiveShape = (props: any) => {
 
   return (
     <g>
-      {/* Expanded outer slice */}
+      {/* Expanded outer slice with subtle shadow */}
       <Sector
         cx={cx}
         cy={cy}
         innerRadius={innerRadius}
-        outerRadius={outerRadius + 20}
+        outerRadius={outerRadius + 16}
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
         style={{
-          filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.2))",
-          transition: "all 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+          filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))",
+          transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       />
-      {/* Inner highlight ring */}
+      {/* Subtle outer ring indicator */}
       <Sector
         cx={cx}
         cy={cy}
-        innerRadius={outerRadius + 24}
-        outerRadius={outerRadius + 28}
+        innerRadius={outerRadius + 20}
+        outerRadius={outerRadius + 23}
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
         style={{
-          opacity: 0.5,
-          transition: "all 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+          opacity: 0.4,
+          transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       />
-      {/* Center text */}
+      {/* Center text - name */}
       <text
         x={cx}
-        y={cy - 12}
+        y={cy - 14}
         textAnchor="middle"
-        fill="currentColor"
+        fill="hsl(220, 70%, 25%)"
         className="text-sm font-semibold"
-        style={{ transition: "all 200ms ease-out" }}
+        style={{ transition: "all 150ms ease-out" }}
       >
         {payload.name}
       </text>
+      {/* Center text - value */}
       <text
         x={cx}
-        y={cy + 8}
+        y={cy + 6}
         textAnchor="middle"
-        fill="currentColor"
+        fill="hsl(220, 70%, 30%)"
         className="text-lg font-bold"
-        style={{ transition: "all 200ms ease-out" }}
+        style={{ transition: "all 150ms ease-out" }}
       >
         {typeof value === "number" && value > 1000
           ? `₹${value.toLocaleString()}`
           : value}
       </text>
+      {/* Center text - percentage */}
       <text
         x={cx}
-        y={cy + 28}
+        y={cy + 24}
         textAnchor="middle"
-        fill="currentColor"
-        className="text-xs text-muted-foreground"
-        style={{ opacity: 0.7, transition: "all 200ms ease-out" }}
+        fill="hsl(220, 30%, 50%)"
+        className="text-xs"
+        style={{ transition: "all 150ms ease-out" }}
       >
         {`${(percent * 100).toFixed(1)}%`}
       </text>
@@ -123,18 +125,18 @@ export const InteractivePieChartModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
-        <DialogHeader className="pb-4">
-          <DialogTitle className="text-xl font-bold text-primary">
+      <DialogContent className="max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in bg-card">
+        <DialogHeader className="pb-3">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             {title}
           </DialogTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            Click or tap on any slice to see details
+          <p className="text-xs text-muted-foreground">
+            Tap any slice to view details
           </p>
         </DialogHeader>
 
         <div className="relative">
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={320}>
             <PieChart>
               <Pie
                 activeIndex={activeIndex}
@@ -142,14 +144,14 @@ export const InteractivePieChartModal = ({
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={100}
+                innerRadius={55}
+                outerRadius={95}
                 dataKey="value"
                 onMouseEnter={onPieEnter}
                 onMouseLeave={onPieLeave}
                 onClick={onPieClick}
                 animationBegin={0}
-                animationDuration={500}
+                animationDuration={350}
                 animationEasing="ease-out"
                 style={{ cursor: "pointer" }}
               >
@@ -160,8 +162,8 @@ export const InteractivePieChartModal = ({
                     stroke="hsl(var(--background))"
                     strokeWidth={2}
                     style={{
-                      transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
-                      opacity: activeIndex === undefined || activeIndex === index ? 1 : 0.4,
+                      transition: "all 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+                      opacity: activeIndex === undefined || activeIndex === index ? 1 : 0.35,
                     }}
                   />
                 ))}
@@ -180,10 +182,10 @@ export const InteractivePieChartModal = ({
           )}
         </div>
 
-        {/* Legend with smooth hover effects */}
-        <div className="mt-6 space-y-2">
-          <p className="text-sm font-medium text-muted-foreground mb-3">Distribution</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {/* Legend with subtle hover effects */}
+        <div className="mt-4 space-y-1.5">
+          <p className="text-xs font-medium text-muted-foreground mb-2">Distribution</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
             {data.map((item, idx) => {
               const percentage = ((item.value / total) * 100).toFixed(1);
               const isActive = activeIndex === idx;
@@ -193,24 +195,24 @@ export const InteractivePieChartModal = ({
                   key={idx}
                   onClick={() => setActiveIndex(isActive ? undefined : idx)}
                   className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg border transition-all duration-200",
-                    "hover:bg-accent/10 hover:border-primary/30 hover:scale-[1.02]",
-                    "focus:outline-none focus:ring-2 focus:ring-primary/30",
+                    "flex items-center gap-2.5 p-2.5 rounded-md border transition-all duration-150",
+                    "hover:bg-muted/50 hover:border-border",
+                    "focus:outline-none focus:ring-1 focus:ring-primary/20",
                     isActive
-                      ? "bg-primary/10 border-primary/50 scale-[1.02] shadow-md"
-                      : "bg-card border-border/50"
+                      ? "bg-muted/60 border-primary/40"
+                      : "bg-background border-border/40"
                   )}
                 >
                   <span
                     className={cn(
-                      "w-4 h-4 rounded-full flex-shrink-0 transition-transform duration-200",
-                      isActive && "scale-125"
+                      "w-3 h-3 rounded-full flex-shrink-0 transition-transform duration-150",
+                      isActive && "scale-110"
                     )}
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="flex-1 text-left">
+                  <span className="flex-1 text-left min-w-0">
                     <span className={cn(
-                      "block text-sm font-medium truncate transition-colors duration-200",
+                      "block text-sm font-medium truncate transition-colors duration-150",
                       isActive && "text-primary"
                     )}>
                       {item.name}
@@ -220,8 +222,8 @@ export const InteractivePieChartModal = ({
                     </span>
                   </span>
                   <span className={cn(
-                    "text-sm font-bold transition-all duration-200",
-                    isActive ? "text-primary scale-110" : "text-foreground"
+                    "text-sm font-semibold transition-colors duration-150",
+                    isActive ? "text-primary" : "text-foreground"
                   )}>
                     {percentage}%
                   </span>
