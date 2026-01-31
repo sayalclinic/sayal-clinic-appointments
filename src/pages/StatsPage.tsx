@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PinDialog } from "@/components/Auth/PinDialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Download, Maximize2, CalendarIcon } from "lucide-react";
+import { ArrowLeft, Download, Maximize2, CalendarIcon, TrendingUp, Users, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   BarChart,
@@ -29,6 +29,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { CHART_COLORS, getChartColor } from "@/lib/chartColors";
+import { InteractivePieChartModal } from "@/components/Charts/InteractivePieChartModal";
 
 interface AppointmentHistoryRow {
   patient_name: string;
@@ -69,6 +71,13 @@ export const StatsPage = () => {
   const [isMobile, setIsMobile] = useState(false);
   // Track which panel is currently open (only one at a time)
   const [openPanel, setOpenPanel] = useState<string | null>(null);
+  // Interactive pie chart modal state
+  const [interactivePieModal, setInteractivePieModal] = useState<{
+    open: boolean;
+    data: { name: string; value: number; color: string }[];
+    title: string;
+    formatValue?: (value: number) => string;
+  }>({ open: false, data: [], title: "" });
   
   const togglePanel = (panel: string) => {
     setOpenPanel(prev => prev === panel ? null : panel);
@@ -289,17 +298,8 @@ export const StatsPage = () => {
     (_, i) => new Date().getFullYear() - i,
   );
 
-  // Pastel blue shades for charts (defined early to avoid hoisting issues)
-  const PASTEL_BLUE_SHADES = [
-    "hsl(200, 70%, 75%)",
-    "hsl(200, 70%, 65%)",
-    "hsl(200, 70%, 55%)",
-    "hsl(210, 75%, 70%)",
-    "hsl(210, 75%, 60%)",
-    "hsl(220, 80%, 70%)",
-  ];
-  const PASTEL_RED = "hsl(0, 70%, 75%)";
-  const COLORS = PASTEL_BLUE_SHADES;
+  // Use themed chart colors from the color palette
+  const COLORS = CHART_COLORS.extended;
 
   // Helper function to capitalize labels
   const capitalizeLabel = (label: string): string => {
@@ -560,29 +560,29 @@ export const StatsPage = () => {
     {
       name: "Normal Patients",
       value: filteredLabVsNormalAppointments.filter((a) => !a.is_lab_only).length,
-      color: "hsl(200, 70%, 65%)",
+      color: CHART_COLORS.normalVisit,
     },
     {
       name: "Lab Only Visits",
       value: filteredLabVsNormalAppointments.filter((a) => a.is_lab_only).length,
-      color: "hsl(45, 70%, 65%)",
+      color: CHART_COLORS.labOnly,
     },
   ].filter((item) => item.value > 0);
   const patientTypeData = [
     {
       name: "New Patient",
       value: filteredAppointments.filter((a) => !a.is_repeat && a.requires_payment).length,
-      color: "hsl(200, 70%, 75%)",
+      color: CHART_COLORS.newPatient,
     },
     {
       name: "Repeat Paying",
       value: filteredAppointments.filter((a) => a.is_repeat && a.requires_payment).length,
-      color: "hsl(200, 70%, 60%)",
+      color: CHART_COLORS.repeatPaying,
     },
     {
       name: "Repeat Non Paying",
       value: filteredAppointments.filter((a) => a.is_repeat && !a.requires_payment).length,
-      color: "hsl(0, 70%, 75%)",
+      color: CHART_COLORS.repeatNonPaying,
     },
   ].filter((item) => item.value > 0);
 
@@ -633,10 +633,15 @@ export const StatsPage = () => {
         if (existing) {
           existing.value += appointmentFee;
         } else {
+          const colorMap: Record<string, string> = {
+            "Cash": CHART_COLORS.cash,
+            "Upi": CHART_COLORS.upi,
+            "Card": CHART_COLORS.card,
+          };
           acc.push({
             name: method,
             value: appointmentFee,
-            color: method === "Cash" ? "hsl(200, 70%, 70%)" : method === "Upi" ? "hsl(200, 70%, 55%)" : "hsl(200, 70%, 60%)",
+            color: colorMap[method] || getChartColor(acc.length),
           });
         }
       }
@@ -665,10 +670,15 @@ export const StatsPage = () => {
         if (existing) {
           existing.value += testPaymentsTotal;
         } else {
+          const colorMap: Record<string, string> = {
+            "Cash": CHART_COLORS.cash,
+            "Upi": CHART_COLORS.upi,
+            "Card": CHART_COLORS.card,
+          };
           acc.push({
             name: method,
             value: testPaymentsTotal,
-            color: method === "Cash" ? "hsl(200, 70%, 70%)" : method === "Upi" ? "hsl(200, 70%, 55%)" : "hsl(200, 70%, 60%)",
+            color: colorMap[method] || getChartColor(acc.length),
           });
         }
       }
@@ -704,7 +714,7 @@ export const StatsPage = () => {
           distribution.push({
             name: "Appointment Fee",
             value: appointmentFee,
-            color: "hsl(200, 70%, 75%)"
+            color: CHART_COLORS.primary[0]
           });
         }
       }
@@ -723,7 +733,7 @@ export const StatsPage = () => {
               distribution.push({
                 name: renamedTestName,
                 value: testAmount,
-                color: PASTEL_BLUE_SHADES[distribution.length % PASTEL_BLUE_SHADES.length]
+                color: getChartColor(distribution.length)
               });
             }
           }
@@ -994,14 +1004,14 @@ export const StatsPage = () => {
                       ← Back to Monthly
                     </Button>
                   )}
-                  <Button variant="outline" onClick={() => togglePanel('earnings')} className="w-full">
+                  <Button variant="outline" onClick={() => togglePanel('earnings')} className="w-full transition-all duration-200 hover:scale-[1.01]">
                     Collapse
                   </Button>
                 </div>
               )}
             </CardHeader>
             {openPanel === 'earnings' && (
-              <CardContent className="p-3 sm:p-6 pt-0">
+              <CardContent className="p-3 sm:p-6 pt-0 animate-fade-in">
                 {monthlyEarningsData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                   <BarChart
@@ -1017,21 +1027,36 @@ export const StatsPage = () => {
                       }
                     }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis
                       dataKey={earningsView === "monthly" ? "label" : "week"}
-                      tick={{ fontSize: 10 }}
+                      tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                       angle={-45}
                       textAnchor="end"
                       height={80}
                     />
-                    <YAxis tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                     <Tooltip
                       formatter={(value: number) => `₹${value.toFixed(2)}`}
-                      cursor={{ fill: "hsl(200, 70%, 90%)" }}
+                      cursor={{ fill: "hsl(var(--accent) / 0.2)" }}
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+                      }}
                     />
                     <Legend wrapperStyle={{ fontSize: "12px" }} />
-                    <Bar dataKey="earnings" fill="hsl(200, 70%, 65%)" name="Earnings (₹)" cursor="pointer" />
+                    <Bar 
+                      dataKey="earnings" 
+                      fill={CHART_COLORS.primary[0]} 
+                      name="Earnings (₹)" 
+                      cursor="pointer"
+                      animationBegin={0}
+                      animationDuration={500}
+                      animationEasing="ease-out"
+                      radius={[4, 4, 0, 0]}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
                ) : (
@@ -1042,19 +1067,19 @@ export const StatsPage = () => {
            </Card>
 
           {/* Busiest Hours Line Graph */}
-          <Card>
+          <Card className="transition-all duration-300 hover:shadow-lg">
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Busiest Hours</CardTitle>
               <Button 
                 variant="outline" 
                 onClick={() => togglePanel('busiestHours')} 
-                className="w-full"
+                className="w-full transition-all duration-200 hover:scale-[1.01]"
               >
                 {openPanel === 'busiestHours' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
             {openPanel === 'busiestHours' && (
-              <CardContent className="p-3 sm:p-6 pt-0">
+              <CardContent className="p-3 sm:p-6 pt-0 animate-fade-in">
                 {(() => {
                   // Count appointments per hour per day to calculate average
                   const hourDayCounts: Record<number, Record<string, number>> = {};
@@ -1097,28 +1122,37 @@ export const StatsPage = () => {
                   return chartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis 
                           dataKey="hour" 
-                          tick={{ fontSize: 10 }}
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                           angle={-45}
                           textAnchor="end"
                           height={80}
                         />
-                        <YAxis tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                         <Tooltip 
                           formatter={(value: number) => [`${value} avg patients`, 'Average']}
                           labelFormatter={(label) => `Hour: ${label}`}
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--background))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+                          }}
                         />
                         <Legend wrapperStyle={{ fontSize: "12px" }} />
                         <Line 
                           type="monotone" 
                           dataKey="patients" 
-                          stroke="hsl(200, 70%, 65%)" 
-                          strokeWidth={2}
+                          stroke={CHART_COLORS.primary[1]}
+                          strokeWidth={3}
                           name="Avg Patients" 
-                          dot={{ fill: "hsl(200, 70%, 65%)", r: 4 }}
-                          activeDot={{ r: 6 }}
+                          dot={{ fill: CHART_COLORS.primary[1], r: 5, strokeWidth: 2, stroke: "hsl(var(--background))" }}
+                          activeDot={{ r: 8, fill: CHART_COLORS.accent[0] }}
+                          animationBegin={0}
+                          animationDuration={600}
+                          animationEasing="ease-out"
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -1131,7 +1165,7 @@ export const StatsPage = () => {
           </Card>
 
           {/* Age Distribution */}
-          <Card>
+          <Card className="transition-all duration-300 hover:shadow-lg">
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Age Distribution</CardTitle>
               {openPanel === 'ageDistribution' && (
@@ -1140,27 +1174,41 @@ export const StatsPage = () => {
               <Button 
                 variant="outline" 
                 onClick={() => togglePanel('ageDistribution')} 
-                className="w-full"
+                className="w-full transition-all duration-200 hover:scale-[1.01]"
               >
                 {openPanel === 'ageDistribution' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
             {openPanel === 'ageDistribution' && (
-              <CardContent className="p-3 sm:p-6 pt-0">
+              <CardContent className="p-3 sm:p-6 pt-0 animate-fade-in">
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={ageData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip 
-                        formatter={(value: number, name: string) => {
-                          const total = patientTypeData.reduce((s, i) => s + i.value, 0);
-                          const percentage = ((value / total) * 100).toFixed(1);
-                          return [`${value} (${percentage}%)`, capitalizeLabel(name)];
-                        }} 
-                      />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => {
+                        const total = ageData.reduce((s, i) => s + i.value, 0);
+                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                        return [`${value} (${percentage}%)`, capitalizeLabel(name)];
+                      }}
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+                      }}
+                    />
                     <Legend wrapperStyle={{ fontSize: "12px" }} />
-                    <Bar dataKey="value" fill="hsl(200, 70%, 65%)" name="Visits" />
+                    <Bar 
+                      dataKey="value" 
+                      fill={CHART_COLORS.primary[2]} 
+                      name="Visits"
+                      animationBegin={0}
+                      animationDuration={500}
+                      animationEasing="ease-out"
+                      radius={[4, 4, 0, 0]}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -1168,7 +1216,7 @@ export const StatsPage = () => {
           </Card>
 
           {/* Patient Type Distribution */}
-          <Card>
+          <Card className="transition-all duration-300 hover:shadow-lg">
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Patient Type Distribution</CardTitle>
               {openPanel === 'patientType' && (
@@ -1177,47 +1225,65 @@ export const StatsPage = () => {
               <Button 
                 variant="outline" 
                 onClick={() => togglePanel('patientType')} 
-                className="w-full"
+                className="w-full transition-all duration-200 hover:scale-[1.01]"
               >
                 {openPanel === 'patientType' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
             {openPanel === 'patientType' && (
-              <CardContent className="p-3 sm:p-6 pt-0">
+              <CardContent className="p-3 sm:p-6 pt-0 animate-fade-in">
                 {patientTypeData.length > 0 ? (
                 <>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={patientTypeData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
-                        outerRadius={isMobile ? 70 : 90}
-                        fill="#8884d8"
-                        dataKey="value"
-                        stroke="#fff"
-                        strokeWidth={2}
-                      >
-                        {patientTypeData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: number, name: string, props: any) => {
-                          const total = patientTypeData.reduce((s, i) => s + i.value, 0);
-                          const percentage = ((value / total) * 100).toFixed(1);
-                          return [`${value} (${percentage}%)`, props.payload.name];
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div 
+                    className="cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+                    onClick={() => setInteractivePieModal({
+                      open: true,
+                      data: patientTypeData,
+                      title: "Patient Type Distribution",
+                      formatValue: (v) => `${v} patients`
+                    })}
+                  >
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={patientTypeData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                          outerRadius={isMobile ? 70 : 90}
+                          fill="#8884d8"
+                          dataKey="value"
+                          stroke="hsl(var(--background))"
+                          strokeWidth={2}
+                          animationBegin={0}
+                          animationDuration={400}
+                          animationEasing="ease-out"
+                        >
+                          {patientTypeData.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.color}
+                              className="transition-all duration-200 hover:opacity-80"
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: number, name: string, props: any) => {
+                            const total = patientTypeData.reduce((s, i) => s + i.value, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return [`${value} (${percentage}%)`, props.payload.name];
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <p className="text-center text-xs text-muted-foreground mt-2">Click chart to expand</p>
+                  </div>
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
                     {(() => {
                       const total = patientTypeData.reduce((s, i) => s + i.value, 0);
                       return patientTypeData.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
+                        <div key={idx} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent/10 transition-colors duration-150">
                           <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
                           <span className="truncate">{item.name}</span>
                           <span className="ml-auto font-medium">{((item.value / total) * 100).toFixed(1)}%</span>
@@ -1234,7 +1300,7 @@ export const StatsPage = () => {
            </Card>
 
           {/* Lab vs Normal Patient Distribution */}
-          <Card>
+          <Card className="transition-all duration-300 hover:shadow-lg">
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Normal vs Lab-Only Visits</CardTitle>
               {openPanel === 'labVsNormal' && (
@@ -1243,47 +1309,65 @@ export const StatsPage = () => {
               <Button 
                 variant="outline" 
                 onClick={() => togglePanel('labVsNormal')} 
-                className="w-full"
+                className="w-full transition-all duration-200 hover:scale-[1.01]"
               >
                 {openPanel === 'labVsNormal' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
             {openPanel === 'labVsNormal' && (
-              <CardContent className="p-3 sm:p-6 pt-0">
+              <CardContent className="p-3 sm:p-6 pt-0 animate-fade-in">
                 {labVsNormalData.length > 0 ? (
                 <>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={labVsNormalData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
-                        outerRadius={isMobile ? 70 : 90}
-                        fill="#8884d8"
-                        dataKey="value"
-                        stroke="#fff"
-                        strokeWidth={2}
-                      >
-                        {labVsNormalData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: number, name: string, props: any) => {
-                          const total = labVsNormalData.reduce((s, i) => s + i.value, 0);
-                          const percentage = ((value / total) * 100).toFixed(1);
-                          return [`${value} (${percentage}%)`, props.payload.name];
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div 
+                    className="cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+                    onClick={() => setInteractivePieModal({
+                      open: true,
+                      data: labVsNormalData,
+                      title: "Normal vs Lab-Only Visits",
+                      formatValue: (v) => `${v} visits`
+                    })}
+                  >
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={labVsNormalData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                          outerRadius={isMobile ? 70 : 90}
+                          fill="#8884d8"
+                          dataKey="value"
+                          stroke="hsl(var(--background))"
+                          strokeWidth={2}
+                          animationBegin={0}
+                          animationDuration={400}
+                          animationEasing="ease-out"
+                        >
+                          {labVsNormalData.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.color}
+                              className="transition-all duration-200 hover:opacity-80"
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: number, name: string, props: any) => {
+                            const total = labVsNormalData.reduce((s, i) => s + i.value, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return [`${value} (${percentage}%)`, props.payload.name];
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <p className="text-center text-xs text-muted-foreground mt-2">Click chart to expand</p>
+                  </div>
                   <div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:text-sm">
                     {(() => {
                       const total = labVsNormalData.reduce((s, i) => s + i.value, 0);
                       return labVsNormalData.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
+                        <div key={idx} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent/10 transition-colors duration-150">
                           <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
                           <span className="truncate">{item.name}</span>
                           <span className="ml-auto font-medium">{((item.value / total) * 100).toFixed(1)}%</span>
@@ -1300,7 +1384,7 @@ export const StatsPage = () => {
            </Card>
 
           {/* Income Distribution Chart */}
-          <Card>
+          <Card className="transition-all duration-300 hover:shadow-lg">
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Income Distribution</CardTitle>
               {openPanel === 'income' && (
@@ -1309,42 +1393,62 @@ export const StatsPage = () => {
               <Button 
                 variant="outline" 
                 onClick={() => togglePanel('income')} 
-                className="w-full"
+                className="w-full transition-all duration-200 hover:scale-[1.01]"
               >
                 {openPanel === 'income' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
             {openPanel === 'income' && (
-              <CardContent className="p-3 sm:p-6 pt-0">
+              <CardContent className="p-3 sm:p-6 pt-0 animate-fade-in">
               {incomeDistributionData.length > 0 ? (
                 <>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={incomeDistributionData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
-                        outerRadius={isMobile ? 70 : 90}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {incomeDistributionData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: number) => {
-                          const percentage = ((value / totalIncomeDistribution) * 100).toFixed(1);
-                          return [`₹${value.toFixed(2)} (${percentage}%)`, 'Amount'];
-                        }} 
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div 
+                    className="cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+                    onClick={() => setInteractivePieModal({
+                      open: true,
+                      data: incomeDistributionData,
+                      title: "Income Distribution",
+                      formatValue: (v) => `₹${v.toLocaleString()}`
+                    })}
+                  >
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={incomeDistributionData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                          outerRadius={isMobile ? 70 : 90}
+                          fill="#8884d8"
+                          dataKey="value"
+                          stroke="hsl(var(--background))"
+                          strokeWidth={2}
+                          animationBegin={0}
+                          animationDuration={400}
+                          animationEasing="ease-out"
+                        >
+                          {incomeDistributionData.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.color || COLORS[index % COLORS.length]}
+                              className="transition-all duration-200 hover:opacity-80"
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: number) => {
+                            const percentage = ((value / totalIncomeDistribution) * 100).toFixed(1);
+                            return [`₹${value.toFixed(2)} (${percentage}%)`, 'Amount'];
+                          }} 
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <p className="text-center text-xs text-muted-foreground mt-2">Click chart to expand</p>
+                  </div>
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
                     {incomeDistributionData.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
+                      <div key={idx} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent/10 transition-colors duration-150">
                         <span
                           className="inline-block w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: item.color || COLORS[idx % COLORS.length] }}
@@ -1363,7 +1467,7 @@ export const StatsPage = () => {
            </Card>
 
           {/* Payment Method Distribution - Consultation */}
-          <Card>
+          <Card className="transition-all duration-300 hover:shadow-lg">
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Payment Method - Consultation</CardTitle>
               {openPanel === 'paymentConsultation' && (
@@ -1372,42 +1476,62 @@ export const StatsPage = () => {
               <Button 
                 variant="outline" 
                 onClick={() => togglePanel('paymentConsultation')} 
-                className="w-full"
+                className="w-full transition-all duration-200 hover:scale-[1.01]"
               >
                 {openPanel === 'paymentConsultation' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
             {openPanel === 'paymentConsultation' && (
-              <CardContent className="p-3 sm:p-6 pt-0">
+              <CardContent className="p-3 sm:p-6 pt-0 animate-fade-in">
               {consultationPaymentMethodData.length > 0 ? (
                 <>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={consultationPaymentMethodData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
-                        outerRadius={isMobile ? 70 : 90}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {consultationPaymentMethodData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: number) => {
-                          const percentage = ((value / totalConsultationPayments) * 100).toFixed(1);
-                          return [`₹${value.toFixed(2)} (${percentage}%)`, 'Amount'];
-                        }} 
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div 
+                    className="cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+                    onClick={() => setInteractivePieModal({
+                      open: true,
+                      data: consultationPaymentMethodData,
+                      title: "Payment Method - Consultation",
+                      formatValue: (v) => `₹${v.toLocaleString()}`
+                    })}
+                  >
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={consultationPaymentMethodData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                          outerRadius={isMobile ? 70 : 90}
+                          fill="#8884d8"
+                          dataKey="value"
+                          stroke="hsl(var(--background))"
+                          strokeWidth={2}
+                          animationBegin={0}
+                          animationDuration={400}
+                          animationEasing="ease-out"
+                        >
+                          {consultationPaymentMethodData.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.color || COLORS[index % COLORS.length]}
+                              className="transition-all duration-200 hover:opacity-80"
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: number) => {
+                            const percentage = ((value / totalConsultationPayments) * 100).toFixed(1);
+                            return [`₹${value.toFixed(2)} (${percentage}%)`, 'Amount'];
+                          }} 
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <p className="text-center text-xs text-muted-foreground mt-2">Click chart to expand</p>
+                  </div>
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
                     {consultationPaymentMethodData.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
+                      <div key={idx} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent/10 transition-colors duration-150">
                         <span
                           className="inline-block w-3 h-3 rounded-full"
                           style={{ backgroundColor: item.color || COLORS[idx % COLORS.length] }}
@@ -1426,7 +1550,7 @@ export const StatsPage = () => {
            </Card>
 
           {/* Payment Method Distribution - Labs & Tests */}
-          <Card>
+          <Card className="transition-all duration-300 hover:shadow-lg">
             <CardHeader className="p-4 sm:p-6 space-y-3">
               <CardTitle className="text-xl sm:text-2xl font-bold">Payment Method - Labs & Tests</CardTitle>
               {openPanel === 'paymentLabs' && (
@@ -1435,42 +1559,62 @@ export const StatsPage = () => {
               <Button 
                 variant="outline" 
                 onClick={() => togglePanel('paymentLabs')} 
-                className="w-full"
+                className="w-full transition-all duration-200 hover:scale-[1.01]"
               >
                 {openPanel === 'paymentLabs' ? 'Collapse' : 'Expand'}
               </Button>
             </CardHeader>
             {openPanel === 'paymentLabs' && (
-              <CardContent className="p-3 sm:p-6 pt-0">
+              <CardContent className="p-3 sm:p-6 pt-0 animate-fade-in">
               {labsPaymentMethodData.length > 0 ? (
                 <>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={labsPaymentMethodData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
-                        outerRadius={isMobile ? 70 : 90}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {labsPaymentMethodData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: number) => {
-                          const percentage = ((value / totalLabsPayments) * 100).toFixed(1);
-                          return [`₹${value.toFixed(2)} (${percentage}%)`, 'Amount'];
-                        }} 
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div 
+                    className="cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+                    onClick={() => setInteractivePieModal({
+                      open: true,
+                      data: labsPaymentMethodData,
+                      title: "Payment Method - Labs & Tests",
+                      formatValue: (v) => `₹${v.toLocaleString()}`
+                    })}
+                  >
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={labsPaymentMethodData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={isMobile ? false : ({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                          outerRadius={isMobile ? 70 : 90}
+                          fill="#8884d8"
+                          dataKey="value"
+                          stroke="hsl(var(--background))"
+                          strokeWidth={2}
+                          animationBegin={0}
+                          animationDuration={400}
+                          animationEasing="ease-out"
+                        >
+                          {labsPaymentMethodData.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.color || COLORS[index % COLORS.length]}
+                              className="transition-all duration-200 hover:opacity-80"
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: number) => {
+                            const percentage = ((value / totalLabsPayments) * 100).toFixed(1);
+                            return [`₹${value.toFixed(2)} (${percentage}%)`, 'Amount'];
+                          }} 
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <p className="text-center text-xs text-muted-foreground mt-2">Click chart to expand</p>
+                  </div>
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
                     {labsPaymentMethodData.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
+                      <div key={idx} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent/10 transition-colors duration-150">
                         <span
                           className="inline-block w-3 h-3 rounded-full"
                           style={{ backgroundColor: item.color || COLORS[idx % COLORS.length] }}
@@ -1654,6 +1798,15 @@ export const StatsPage = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Interactive Pie Chart Modal */}
+        <InteractivePieChartModal
+          open={interactivePieModal.open}
+          onOpenChange={(open) => setInteractivePieModal(prev => ({ ...prev, open }))}
+          data={interactivePieModal.data}
+          title={interactivePieModal.title}
+          formatValue={interactivePieModal.formatValue}
+        />
       </div>
     </div>
   );
