@@ -225,11 +225,13 @@ export const ReceptionistDashboard = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mt-4 sm:mt-6">
-              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mt-4 sm:mt-6">
+              <Card className="group bg-gradient-to-br from-card via-card to-secondary/30 border-l-4 border-l-primary shadow-sm hover:shadow-md transition-all duration-150 hover:-translate-y-0.5">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Monthly Appointments</CardTitle>
-                  <Calendar className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-sm font-medium text-foreground">Monthly Appointments</CardTitle>
+                  <div className="p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors duration-150">
+                    <Calendar className="h-4 w-4 text-primary" />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-primary">
@@ -240,38 +242,40 @@ export const ReceptionistDashboard = () => {
                     return aptDate.getMonth() === currentMonth && aptDate.getFullYear() === currentYear;
                   }).length}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Scheduled this month
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
+              <Card className="group bg-gradient-to-br from-card via-card to-secondary/30 border-l-4 border-l-success shadow-sm hover:shadow-md transition-all duration-150 hover:-translate-y-0.5">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Completed Appointments</CardTitle>
-                  <Clock className="h-4 w-4 text-success" />
+                  <CardTitle className="text-sm font-medium text-foreground">Completed</CardTitle>
+                  <div className="p-2 rounded-full bg-success/10 group-hover:bg-success/20 transition-colors duration-150">
+                    <Clock className="h-4 w-4 text-success" />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-success">
                     {completedThisMonth} / {totalAppointmentsThisMonth}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Completed out of total for month
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Completed this month
                   </p>
                 </CardContent>
               </Card>
 
-              
-
-              <Card className="bg-gradient-to-r from-card to-medical-light/50 border-medical-accent/20 shadow-card hover:shadow-card-hover transition-shadow">
+              <Card className="group bg-gradient-to-br from-card via-card to-secondary/30 border-l-4 border-l-accent shadow-sm hover:shadow-md transition-all duration-150 hover:-translate-y-0.5">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Statistics</CardTitle>
-                  <FileText className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-sm font-medium text-foreground">Statistics</CardTitle>
+                  <div className="p-2 rounded-full bg-accent/10 group-hover:bg-accent/20 transition-colors duration-150">
+                    <FileText className="h-4 w-4 text-accent-foreground" />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <Button size="sm" variant="default" className="w-full" onClick={() => window.location.href = '/stats'}>
                     <FileText className="w-4 h-4 mr-2" />
-                    View Stats & Reports
+                    View Stats
                   </Button>
                   <p className="text-xs text-muted-foreground mt-2 text-center">
                     PIN required

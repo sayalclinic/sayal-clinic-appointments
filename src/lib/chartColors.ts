@@ -1,66 +1,66 @@
-// Themed chart color palette - subdued colors that match the medical theme
-// Uses HSL values that complement the app's navy/mint/gold design system
+// Themed chart color palette - teal/mint focused to match Sayal Clinic branding
+// Avoids harsh reds, dark blues, and greens - uses soft, professional tones
 
 export const CHART_COLORS = {
-  // Primary palette - subdued, professional tones matching app theme
+  // Primary palette - teal/mint/gold tones matching logo
   primary: [
-    "hsl(220, 70%, 45%)",   // Navy (primary brand)
-    "hsl(165, 45%, 50%)",   // Mint/Teal
-    "hsl(40, 65%, 50%)",    // Gold/Amber (accent)
-    "hsl(200, 55%, 50%)",   // Ocean blue
-    "hsl(280, 40%, 50%)",   // Muted purple
+    "hsl(175, 50%, 42%)",   // Teal (primary)
+    "hsl(190, 45%, 48%)",   // Cyan-teal
+    "hsl(42, 55%, 52%)",    // Warm gold
+    "hsl(160, 40%, 50%)",   // Mint
+    "hsl(205, 45%, 55%)",   // Soft sky blue
   ],
   
-  // Accent palette - warm colors for contrast, still muted
+  // Accent palette - warm complementary colors, muted
   accent: [
-    "hsl(40, 65%, 50%)",    // Gold/Amber
-    "hsl(25, 55%, 50%)",    // Warm orange
-    "hsl(350, 50%, 50%)",   // Muted rose
-    "hsl(280, 40%, 50%)",   // Muted purple
-    "hsl(320, 45%, 50%)",   // Soft pink
+    "hsl(42, 55%, 52%)",    // Warm gold
+    "hsl(28, 50%, 55%)",    // Soft coral/peach
+    "hsl(320, 35%, 55%)",   // Dusty mauve
+    "hsl(260, 35%, 55%)",   // Soft lavender
+    "hsl(15, 45%, 55%)",    // Terracotta
   ],
   
-  // Extended palette for charts with many items - alternates between cool and warm
+  // Extended palette for charts - alternating teal/warm tones
   extended: [
-    "hsl(220, 70%, 45%)",   // Navy (brand primary)
-    "hsl(165, 45%, 50%)",   // Mint/Teal
-    "hsl(40, 65%, 50%)",    // Gold (accent)
-    "hsl(200, 55%, 50%)",   // Ocean blue
-    "hsl(350, 50%, 50%)",   // Muted rose
-    "hsl(280, 40%, 50%)",   // Muted purple
-    "hsl(145, 45%, 45%)",   // Sage green
-    "hsl(25, 55%, 50%)",    // Warm orange
-    "hsl(185, 50%, 45%)",   // Teal
-    "hsl(320, 45%, 50%)",   // Soft pink
+    "hsl(175, 50%, 42%)",   // Teal (brand primary)
+    "hsl(42, 55%, 52%)",    // Warm gold
+    "hsl(190, 45%, 48%)",   // Cyan-teal
+    "hsl(28, 50%, 55%)",    // Soft coral
+    "hsl(160, 40%, 50%)",   // Mint
+    "hsl(320, 35%, 55%)",   // Dusty mauve
+    "hsl(205, 45%, 55%)",   // Soft sky blue
+    "hsl(260, 35%, 55%)",   // Soft lavender
+    "hsl(145, 38%, 48%)",   // Sage
+    "hsl(15, 45%, 55%)",    // Terracotta
   ],
   
-  // Specific use cases - more muted
-  success: "hsl(142, 55%, 42%)",
-  warning: "hsl(38, 70%, 50%)",
-  danger: "hsl(0, 60%, 52%)",
-  info: "hsl(200, 55%, 50%)",
+  // Specific use cases - teal-focused
+  success: "hsl(160, 45%, 45%)",
+  warning: "hsl(42, 55%, 52%)",
+  danger: "hsl(15, 50%, 55%)",
+  info: "hsl(190, 45%, 50%)",
   
-  // Payment methods - distinguishable but muted
-  cash: "hsl(145, 50%, 45%)",
-  upi: "hsl(220, 65%, 48%)",
-  card: "hsl(280, 40%, 50%)",
+  // Payment methods - easily distinguishable
+  cash: "hsl(160, 45%, 48%)",
+  upi: "hsl(175, 50%, 42%)",
+  card: "hsl(260, 35%, 55%)",
   
   // Patient types - clear differentiation
-  newPatient: "hsl(165, 50%, 48%)",
-  repeatPaying: "hsl(220, 65%, 48%)",
-  repeatNonPaying: "hsl(350, 45%, 52%)",
+  newPatient: "hsl(175, 50%, 45%)",
+  repeatPaying: "hsl(190, 45%, 48%)",
+  repeatNonPaying: "hsl(28, 50%, 55%)",
   
   // Visit types
-  normalVisit: "hsl(220, 65%, 48%)",
-  labOnly: "hsl(40, 60%, 50%)",
+  normalVisit: "hsl(175, 50%, 42%)",
+  labOnly: "hsl(42, 55%, 52%)",
   
-  // Age groups - gradient from cool to warm
+  // Age groups - gradient from cool teal to warm
   age: [
-    "hsl(220, 65%, 48%)",   // 0-17 - Navy
-    "hsl(200, 55%, 50%)",   // 18-29 - Ocean
-    "hsl(165, 50%, 48%)",   // 30-44 - Mint
-    "hsl(40, 60%, 50%)",    // 45-59 - Gold
-    "hsl(350, 50%, 50%)",   // 60+ - Rose
+    "hsl(175, 50%, 42%)",   // 0-17 - Teal
+    "hsl(190, 45%, 48%)",   // 18-29 - Cyan
+    "hsl(160, 40%, 50%)",   // 30-44 - Mint
+    "hsl(42, 55%, 52%)",    // 45-59 - Gold
+    "hsl(28, 50%, 55%)",    // 60+ - Coral
   ],
 };
 
