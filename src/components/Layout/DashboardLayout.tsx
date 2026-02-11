@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LogOut, User, Calendar, Clock } from 'lucide-react';
 import clinicLogo from '@/assets/sayal-clinic-logo.png';
+import patientMgmtLogo from '@/assets/patient-management-logo.png';
 interface DashboardLayoutProps {
   children: ReactNode;
 }
@@ -52,6 +53,17 @@ export const DashboardLayout = ({
                 <span className="text-xs font-medium text-foreground capitalize">{profile?.role}</span>
               </div>
               
+              {/* Patient Management Button */}
+              <a
+                href="https://sayal-clinic-patients.lovable.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-border hover:bg-secondary smooth-transition"
+              >
+                <img src={patientMgmtLogo} alt="Patient Management" className="w-7 h-7 object-contain" />
+                <span className="hidden sm:inline text-xs font-medium text-foreground">Patients</span>
+              </a>
+
               {/* Sign Out Button */}
               <Button variant="outline" size="sm" onClick={handleSignOut} className="smooth-button border-border hover:bg-secondary text-primary">
                 <LogOut className="w-4 h-4 sm:mr-2" />
