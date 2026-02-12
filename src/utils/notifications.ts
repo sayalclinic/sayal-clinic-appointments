@@ -43,7 +43,7 @@ export const subscribeToPushNotifications = async (userId: string): Promise<bool
     }
 
     // Check if already subscribed
-    let subscription = await registration.pushManager.getSubscription();
+    let subscription = await (registration as any).pushManager.getSubscription();
     
     if (!subscription) {
       // Create new subscription
@@ -52,7 +52,7 @@ export const subscribeToPushNotifications = async (userId: string): Promise<bool
       const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib37J8WbWKYxBp3nE5qCQXyYZqL1WVYHLdL-YnTdLXq3Lz8rxl6kA_XQGQE';
       const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
       
-      subscription = await registration.pushManager.subscribe({
+      subscription = await (registration as any).pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedVapidKey,
       });
