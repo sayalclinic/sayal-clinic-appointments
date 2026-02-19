@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -52,6 +52,21 @@ export const calculatePaymentTotal = (payment: Payment): number => {
   return appointmentFee + testTotal;
 };
 
+// Helper: get YYYY-MM-DD for first day of month N months ago
+const getMonthStartDate = (monthsAgo: number): string => {
+  const d = new Date();
+  d.setMonth(d.getMonth() - monthsAgo);
+  d.setDate(1);
+  return d.toISOString().split('T')[0];
+};
+
+const APPOINTMENT_SELECT = `
+  *,
+  patients (*),
+  doctor_profile:profiles!appointments_doctor_id_fkey (name),
+  receptionist_profile:profiles!appointments_receptionist_id_fkey (name)
+`;
+
 export const useAppointments = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -61,38 +76,136 @@ export const useAppointments = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
 
-  // Fetch all appointments
-  const fetchAppointments = async () => {
+  // Caching: track loaded months and whether initial load happened
+  const loadedMonthsRef = useRef<Set<string>>(new Set());
+  const initialLoadDoneRef = useRef(false);
+  const allDataLoadedRef = useRef(false);
+
+  // Helper to get month key
+  const monthKey = (year: number, month: number) => `${year}-${String(month + 1).padStart(2, '0')}`;
+
+  // Merge new appointments into state without duplicates
+  const mergeAppointments = useCallback((newApts: Appointment[]) => {
+    setAppointments(prev => {
+      const existing = new Map(prev.map(a => [a.id, a]));
+      newApts.forEach(a => existing.set(a.id, a));
+      return Array.from(existing.values()).sort(
+        (a, b) => b.appointment_date.localeCompare(a.appointment_date)
+      );
+    });
+  }, []);
+
+  // Build base query with role filter
+  const buildQuery = useCallback(() => {
+    let query = supabase.from('appointments').select(APPOINTMENT_SELECT);
+    if (profile?.role === 'doctor') {
+      query = query.eq('doctor_id', profile.user_id);
+    }
+    return query;
+  }, [profile?.role, profile?.user_id]);
+
+  // Fetch recent 2 months (initial load)
+  const fetchRecentAppointments = useCallback(async () => {
+    if (initialLoadDoneRef.current) return;
     try {
-      let query = supabase
-        .from('appointments')
-        .select(`
-          *,
-          patients (*),
-          doctor_profile:profiles!appointments_doctor_id_fkey (name),
-          receptionist_profile:profiles!appointments_receptionist_id_fkey (name)
-        `);
+      const startDate = getMonthStartDate(2);
+      const query = buildQuery()
+        .gte('appointment_date', startDate)
+        .order('appointment_date', { ascending: false });
 
-      // Filter based on user role
-      if (profile?.role === 'doctor') {
-        query = query.eq('doctor_id', profile.user_id);
-      }
-      // Receptionists can see all appointments to manage them
-      // No filtering needed for receptionists
-
-      const { data, error } = await query.order('appointment_date', { ascending: true });
-
+      const { data, error } = await query;
       if (error) throw error;
+
       setAppointments(data || []);
+
+      // Mark loaded months
+      const now = new Date();
+      for (let i = 0; i <= 2; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        loadedMonthsRef.current.add(monthKey(d.getFullYear(), d.getMonth()));
+      }
+      initialLoadDoneRef.current = true;
     } catch (error) {
       console.error('Error fetching appointments:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch appointments',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to fetch appointments', variant: 'destructive' });
     }
-  };
+  }, [buildQuery, toast]);
+
+  // Fetch a specific month's appointments (for calendar navigation)
+  const fetchMonthAppointments = useCallback(async (year: number, month: number) => {
+    const key = monthKey(year, month);
+    if (loadedMonthsRef.current.has(key) || allDataLoadedRef.current) return;
+
+    try {
+      const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+      const endDay = new Date(year, month + 1, 0).getDate();
+      const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
+
+      const query = buildQuery()
+        .gte('appointment_date', startDate)
+        .lte('appointment_date', endDate)
+        .order('appointment_date', { ascending: false });
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      loadedMonthsRef.current.add(key);
+      if (data && data.length > 0) {
+        mergeAppointments(data);
+      }
+    } catch (error) {
+      console.error('Error fetching month appointments:', error);
+    }
+  }, [buildQuery, mergeAppointments]);
+
+  // Fetch ALL appointments with internal pagination (for stats All-time)
+  const fetchAllAppointments = useCallback(async () => {
+    if (allDataLoadedRef.current) return;
+
+    try {
+      const pageSize = 1000;
+      let page = 0;
+      let allData: Appointment[] = [];
+      let hasMore = true;
+
+      while (hasMore) {
+        const query = buildQuery()
+          .order('appointment_date', { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          allData = [...allData, ...data];
+          if (data.length < pageSize) {
+            hasMore = false;
+          }
+          page++;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      // Replace all appointments with complete dataset
+      setAppointments(allData.sort(
+        (a, b) => b.appointment_date.localeCompare(a.appointment_date)
+      ));
+      allDataLoadedRef.current = true;
+    } catch (error) {
+      console.error('Error fetching all appointments:', error);
+      toast({ title: 'Error', description: 'Failed to fetch all appointments', variant: 'destructive' });
+    }
+  }, [buildQuery, toast]);
+
+  // Refresh after mutation (new appointment, status change, etc.)
+  const refreshAppointments = useCallback(async () => {
+    // Reset cache and re-fetch recent data
+    loadedMonthsRef.current.clear();
+    initialLoadDoneRef.current = false;
+    allDataLoadedRef.current = false;
+    await fetchRecentAppointments();
+  }, [fetchRecentAppointments]);
 
   // Fetch all patients
   const fetchPatients = async () => {
@@ -101,7 +214,6 @@ export const useAppointments = () => {
         .from('patients')
         .select('*')
         .order('name', { ascending: true });
-
       if (error) throw error;
       setPatients(data || []);
     } catch (error) {
@@ -117,7 +229,6 @@ export const useAppointments = () => {
         .select('*')
         .eq('role', 'doctor')
         .order('name', { ascending: true });
-
       if (error) throw error;
       setDoctors(data || []);
     } catch (error) {
@@ -132,15 +243,11 @@ export const useAppointments = () => {
         .from('payments')
         .select('*')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
-      
-      // Cast test_payments from Json to the proper type
       const typedPayments = (data || []).map(payment => ({
         ...payment,
         test_payments: payment.test_payments as Array<{ test_name: string; amount: number }> | undefined
       }));
-      
       setPayments(typedPayments);
     } catch (error) {
       console.error('Error fetching payments:', error);
@@ -155,7 +262,6 @@ export const useAppointments = () => {
         .select('*')
         .ilike('name', name)
         .maybeSingle();
-
       if (error) throw error;
       return data;
     } catch (error) {
@@ -167,7 +273,6 @@ export const useAppointments = () => {
   // Create or update patient
   const upsertPatient = async (patientData: Omit<Patient, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      // Check if patient already exists by name and contact
       const { data: existingPatient } = await supabase
         .from('patients')
         .select('*')
@@ -176,24 +281,20 @@ export const useAppointments = () => {
         .maybeSingle();
 
       if (existingPatient) {
-        // Update existing patient
         const { data, error } = await supabase
           .from('patients')
           .update(patientData)
           .eq('id', existingPatient.id)
           .select()
           .single();
-
         if (error) throw error;
         return data;
       } else {
-        // Create new patient
         const { data, error } = await supabase
           .from('patients')
           .insert(patientData)
           .select()
           .single();
-
         if (error) throw error;
         return data;
       }
@@ -221,7 +322,6 @@ export const useAppointments = () => {
     try {
       if (!profile?.user_id) throw new Error('User not authenticated');
 
-      // Lab-only and walk-in appointments are auto-approved
       const appointmentStatus = (appointmentData.isLabOnly || appointmentData.isWalkIn) ? 'approved' : 'pending';
 
       const { data, error } = await supabase
@@ -253,12 +353,8 @@ export const useAppointments = () => {
         successMessage = 'Walk-in appointment created and automatically approved';
       }
 
-      toast({
-        title: 'Success',
-        description: successMessage,
-      });
+      toast({ title: 'Success', description: successMessage });
 
-      // Only send push notification to doctor if it's NOT a walk-in and NOT lab-only
       if (!appointmentData.isWalkIn && !appointmentData.isLabOnly && appointmentData.doctor_id) {
         const { sendPushNotification } = await import('@/utils/notifications');
         const { data: patient } = await supabase
@@ -274,15 +370,11 @@ export const useAppointments = () => {
         );
       }
 
-      await fetchAppointments();
+      await refreshAppointments();
       return data;
     } catch (error) {
       console.error('Error creating appointment:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to create appointment',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to create appointment', variant: 'destructive' });
       throw error;
     }
   };
@@ -295,14 +387,8 @@ export const useAppointments = () => {
   ) => {
     try {
       const updateData: any = { status };
-      if (denialReason) {
-        updateData.denial_reason = denialReason;
-      }
-      
-      // If appointment is marked as missed, reset it to pending for rescheduling
-      if (status === 'missed') {
-        updateData.status = 'pending';
-      }
+      if (denialReason) updateData.denial_reason = denialReason;
+      if (status === 'missed') updateData.status = 'pending';
 
       const { error } = await supabase
         .from('appointments')
@@ -315,12 +401,8 @@ export const useAppointments = () => {
         ? 'Appointment marked as missed and sent back for rescheduling'
         : `Appointment ${status} successfully`;
 
-      toast({
-        title: 'Success',
-        description: successMessage,
-      });
+      toast({ title: 'Success', description: successMessage });
 
-      // Send push notification to receptionist when appointment is approved
       if (status === 'approved') {
         const { data: appointment } = await supabase
           .from('appointments')
@@ -346,14 +428,10 @@ export const useAppointments = () => {
         showNotification('Appointment Approved', 'An appointment has been approved by the doctor');
       }
 
-      await fetchAppointments();
+      await refreshAppointments();
     } catch (error) {
       console.error('Error updating appointment:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update appointment',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to update appointment', variant: 'destructive' });
       throw error;
     }
   };
@@ -375,7 +453,6 @@ export const useAppointments = () => {
     timingChanged: boolean = false
   ) => {
     try {
-      // Update patient information if provided
       if (updateData.patient_name || updateData.patient_age || updateData.contact_no) {
         const patientUpdateData: any = {};
         if (updateData.patient_name) patientUpdateData.name = updateData.patient_name;
@@ -390,7 +467,6 @@ export const useAppointments = () => {
         if (patientError) throw patientError;
       }
 
-      // Prepare appointment update data
       const appointmentUpdateData: any = {
         doctor_id: updateData.doctor_id,
         appointment_date: updateData.appointment_date,
@@ -399,10 +475,7 @@ export const useAppointments = () => {
         symptoms: updateData.symptoms,
       };
 
-      // Only set status to pending if timing changed
-      if (timingChanged) {
-        appointmentUpdateData.status = 'pending';
-      }
+      if (timingChanged) appointmentUpdateData.status = 'pending';
 
       const { error } = await supabase
         .from('appointments')
@@ -418,19 +491,15 @@ export const useAppointments = () => {
           : 'Appointment updated successfully',
       });
 
-      await fetchAppointments();
+      await refreshAppointments();
     } catch (error) {
       console.error('Error updating appointment:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update appointment',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to update appointment', variant: 'destructive' });
       throw error;
     }
   };
 
-  // Create or update payment (upsert behavior)
+  // Create or update payment
   const createPayment = async (paymentData: {
     appointment_id: string;
     appointment_fee: number;
@@ -439,7 +508,6 @@ export const useAppointments = () => {
     labs_payment_method?: string | null;
   }) => {
     try {
-      // Check if payment already exists for this appointment
       const { data: existingPayment } = await supabase
         .from('payments')
         .select('id')
@@ -448,7 +516,6 @@ export const useAppointments = () => {
 
       let data;
       if (existingPayment) {
-        // Update existing payment
         const { data: updatedData, error } = await supabase
           .from('payments')
           .update({
@@ -463,13 +530,8 @@ export const useAppointments = () => {
 
         if (error) throw error;
         data = updatedData;
-
-        toast({
-          title: 'Success',
-          description: 'Payment updated successfully',
-        });
+        toast({ title: 'Success', description: 'Payment updated successfully' });
       } else {
-        // Create new payment record
         const { data: newData, error } = await supabase
           .from('payments')
           .insert(paymentData)
@@ -478,14 +540,9 @@ export const useAppointments = () => {
 
         if (error) throw error;
         data = newData;
-
-        toast({
-          title: 'Success',
-          description: 'Payment recorded and appointment completed',
-        });
+        toast({ title: 'Success', description: 'Payment recorded and appointment completed' });
       }
 
-      // Update appointment status to completed
       const { error: updateError } = await supabase
         .from('appointments')
         .update({ status: 'completed' })
@@ -494,15 +551,11 @@ export const useAppointments = () => {
       if (updateError) throw updateError;
 
       await fetchPayments();
-      await fetchAppointments();
+      await refreshAppointments();
       return data;
     } catch (error) {
       console.error('Error recording payment:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to record payment',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to record payment', variant: 'destructive' });
       throw error;
     }
   };
@@ -510,13 +563,8 @@ export const useAppointments = () => {
   // Delete appointment
   const deleteAppointment = async (appointmentId: string) => {
     try {
-      // Delete associated payments first
-      await supabase
-        .from("payments")
-        .delete()
-        .eq("appointment_id", appointmentId);
+      await supabase.from("payments").delete().eq("appointment_id", appointmentId);
 
-      // Delete the appointment
       const { error } = await supabase
         .from('appointments')
         .delete()
@@ -524,20 +572,13 @@ export const useAppointments = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: 'Appointment deleted successfully',
-      });
+      toast({ title: 'Success', description: 'Appointment deleted successfully' });
 
-      await fetchAppointments();
+      await refreshAppointments();
       await fetchPayments();
     } catch (error) {
       console.error('Error deleting appointment:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete appointment',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to delete appointment', variant: 'destructive' });
       throw error;
     }
   };
@@ -551,20 +592,11 @@ export const useAppointments = () => {
         .eq('id', patientId);
 
       if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: 'Patient deleted successfully',
-      });
-
+      toast({ title: 'Success', description: 'Patient deleted successfully' });
       await fetchPatients();
     } catch (error) {
       console.error('Error deleting patient:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete patient',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to delete patient', variant: 'destructive' });
       throw error;
     }
   };
@@ -574,7 +606,7 @@ export const useAppointments = () => {
       if (profile?.user_id) {
         setLoading(true);
         await Promise.all([
-          fetchAppointments(),
+          fetchRecentAppointments(),
           fetchPatients(),
           fetchDoctors(),
           fetchPayments(),
@@ -599,7 +631,9 @@ export const useAppointments = () => {
     createPayment,
     deleteAppointment,
     deletePatient,
-    fetchAppointments,
+    fetchAppointments: refreshAppointments,
+    fetchMonthAppointments,
+    fetchAllAppointments,
     fetchPatients,
     fetchPayments,
     searchPatientByName,

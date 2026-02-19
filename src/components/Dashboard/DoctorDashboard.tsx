@@ -18,7 +18,7 @@ export const DoctorDashboard = () => {
   const [doctorEarnings, setDoctorEarnings] = useState(0);
   const [earningsPeriod, setEarningsPeriod] = useState<'daily' | 'monthly' | 'all'>('monthly');
   
-  const { appointments, loading, updateAppointmentStatus } = useAppointments();
+  const { appointments, loading, updateAppointmentStatus, fetchMonthAppointments } = useAppointments();
   const { profile } = useAuth();
 
   const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
@@ -157,6 +157,7 @@ export const DoctorDashboard = () => {
                   appointments={appointments}
                   onDateSelect={setSelectedDate}
                   selectedDate={selectedDate}
+                  onMonthChange={(year, month) => fetchMonthAppointments(year, month)}
                 />
               </div>
               <div className="space-y-4">

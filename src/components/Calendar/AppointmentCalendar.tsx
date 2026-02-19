@@ -11,12 +11,14 @@ interface AppointmentCalendarProps {
   appointments: Appointment[];
   onDateSelect?: (date: Date) => void;
   selectedDate?: Date;
+  onMonthChange?: (year: number, month: number) => void;
 }
 
 export const AppointmentCalendar = ({ 
   appointments, 
   onDateSelect, 
-  selectedDate 
+  selectedDate,
+  onMonthChange 
 }: AppointmentCalendarProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -60,11 +62,19 @@ export const AppointmentCalendar = ({
   };
 
   const previousMonth = () => {
-    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev.getFullYear(), prev.getMonth() - 1, 1);
+      onMonthChange?.(newDate.getFullYear(), newDate.getMonth());
+      return newDate;
+    });
   };
 
   const nextMonth = () => {
-    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev.getFullYear(), prev.getMonth() + 1, 1);
+      onMonthChange?.(newDate.getFullYear(), newDate.getMonth());
+      return newDate;
+    });
   };
 
   return (

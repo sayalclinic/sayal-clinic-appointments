@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,33 @@ interface PaymentHistoryRow {
   amount: number;
   payment_method: string;
 }
+// Paginated fetch helper to bypass 1000 row limit
+async function fetchAllRows<T>(
+  queryBuilder: () => ReturnType<ReturnType<typeof supabase.from>['select']>,
+  orderColumn: string = 'appointment_date'
+): Promise<T[]> {
+  const pageSize = 1000;
+  let page = 0;
+  let allData: T[] = [];
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await queryBuilder()
+      .order(orderColumn, { ascending: false })
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+
+    if (error) throw error;
+    if (data && data.length > 0) {
+      allData = [...allData, ...(data as T[])];
+      if (data.length < pageSize) hasMore = false;
+      page++;
+    } else {
+      hasMore = false;
+    }
+  }
+  return allData;
+}
+
 export const StatsPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [monthlyEarnings, setMonthlyEarnings] = useState(0);
@@ -127,22 +154,19 @@ export const StatsPage = () => {
       console.log("Monthly earnings calculated:", monthlyTotal, "from", payments?.length, "payments");
       setMonthlyEarnings(monthlyTotal);
 
-      // Fetch appointment history
-      const { data: appointments } = await supabase
-        .from("appointments")
-        .select(
-          `
-          patient_name,
-          appointment_date,
-          patients (name, age, contact_no),
-          doctor_profile:profiles!appointments_doctor_id_fkey (name)
-        `,
-        )
-        .order("appointment_date", {
-          ascending: false,
-        });
+      // Fetch appointment history with pagination
+      const appointmentsRaw = await fetchAllRows<any>(
+        () => supabase
+          .from("appointments")
+          .select(`
+            patient_name,
+            appointment_date,
+            patients (name, age, contact_no),
+            doctor_profile:profiles!appointments_doctor_id_fkey (name)
+          `)
+      );
       const appointmentData: AppointmentHistoryRow[] =
-        appointments?.map((apt) => ({
+        appointmentsRaw?.map((apt: any) => ({
           patient_name: apt.patients?.name || apt.patient_name || "Unknown",
           patient_age: apt.patients?.age || 0,
           patient_contact: apt.patients?.contact_no || "N/A",
@@ -151,34 +175,32 @@ export const StatsPage = () => {
         })) || [];
       setAppointmentHistory(appointmentData);
 
+      // Fetch payment history with pagination
+      const paymentDataRaw = await fetchAllRows<any>(
+        () => supabase
+          .from("payments")
+          .select(`
+            appointment_fee,
+            test_payments,
+            payment_method,
+            created_at,
+            appointments (
+              patient_name,
+              patients (name)
+            )
+          `),
+        'created_at'
+      );
       // Fetch patient history
-      const { data: patients } = await supabase.from("patients").select("name, age, contact_no").order("name", {
+      const { data: patientsData } = await supabase.from("patients").select("name, age, contact_no").order("name", {
         ascending: true,
       });
-      if (patients) {
-        setPatientHistory(patients);
+      if (patientsData) {
+        setPatientHistory(patientsData);
       }
 
-      // Fetch payment history
-      const { data: paymentData } = await supabase
-        .from("payments")
-        .select(
-          `
-          appointment_fee,
-          test_payments,
-          payment_method,
-          created_at,
-          appointments (
-            patient_name,
-            patients (name)
-          )
-        `,
-        )
-        .order("created_at", {
-          ascending: false,
-        });
       const paymentHistoryData: PaymentHistoryRow[] =
-        paymentData?.map((p) => {
+        paymentDataRaw?.map((p: any) => {
           const appointmentFee = Number(p.appointment_fee ?? 0);
           const testPaymentsArray = p.test_payments as any;
           const testPaymentsTotal = Array.isArray(testPaymentsArray)
@@ -216,26 +238,25 @@ export const StatsPage = () => {
   useEffect(() => {
     const fetchPatientVisits = async () => {
       if (isAuthenticated) {
-        const { data, error } = await supabase
-          .from("appointments")
-          .select(
-            `
-            appointment_date,
-            patients!inner (age)
-          `,
-          )
-          .not("patients.age", "is", null);
-        if (error) {
-          console.error("Error fetching appointment data:", error);
-        }
-        if (data) {
-          const formattedData = data.map((apt) => ({
+        try {
+          const data = await fetchAllRows<any>(
+            () => supabase
+              .from("appointments")
+              .select(`
+                appointment_date,
+                patients!inner (age)
+              `)
+              .not("patients.age", "is", null)
+          );
+          const formattedData = data.map((apt: any) => ({
             visit_date: apt.appointment_date,
             patients: {
               age: apt.patients.age,
             },
           }));
           setPatientVisits(formattedData);
+        } catch (error) {
+          console.error("Error fetching appointment data:", error);
         }
       }
     };
@@ -332,14 +353,15 @@ export const StatsPage = () => {
   useEffect(() => {
     const fetchAppointmentsData = async () => {
       if (isAuthenticated) {
-        const { data, error } = await supabase
-          .from("appointments")
-          .select("id, patient_id, patient_name, appointment_date, appointment_time, is_repeat, requires_payment, is_lab_only");
-        if (error) {
-          console.error("Error fetching appointments data:", error);
-        }
-        if (data) {
+        try {
+          const data = await fetchAllRows<any>(
+            () => supabase
+              .from("appointments")
+              .select("id, patient_id, patient_name, appointment_date, appointment_time, is_repeat, requires_payment, is_lab_only")
+          );
           setAppointmentsData(data);
+        } catch (error) {
+          console.error("Error fetching appointments data:", error);
         }
       }
     };

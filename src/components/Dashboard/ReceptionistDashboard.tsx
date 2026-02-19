@@ -26,7 +26,8 @@ export const ReceptionistDashboard = () => {
     appointments,
     loading,
     updateAppointmentStatus,
-    deleteAppointment
+    deleteAppointment,
+    fetchMonthAppointments
   } = useAppointments();
   const {
     toast
@@ -191,7 +192,7 @@ export const ReceptionistDashboard = () => {
           <TabsContent value="schedule" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
-                <AppointmentCalendar appointments={appointments} onDateSelect={setSelectedDate} selectedDate={selectedDate} />
+                <AppointmentCalendar appointments={appointments} onDateSelect={setSelectedDate} selectedDate={selectedDate} onMonthChange={(year, month) => fetchMonthAppointments(year, month)} />
               </div>
               <div className="space-y-4">
                 <Card className="shadow-card">
