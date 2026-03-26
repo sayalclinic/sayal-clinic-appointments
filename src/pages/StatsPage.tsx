@@ -628,12 +628,14 @@ export const StatsPage = () => {
   useEffect(() => {
     const fetchAllPayments = async () => {
       if (isAuthenticated) {
-        const { data, error } = await supabase.from("payments").select("appointment_id, payment_method, labs_payment_method, created_at, appointment_fee, test_payments");
-        if (error) {
-          console.error("Error fetching all payments:", error);
-        }
-        if (data) {
+        try {
+          const data = await fetchAllRows<any>(
+            () => supabase.from("payments").select("appointment_id, payment_method, labs_payment_method, created_at, appointment_fee, test_payments"),
+            'created_at'
+          );
           setAllPayments(data);
+        } catch (error) {
+          console.error("Error fetching all payments:", error);
         }
       }
     };
